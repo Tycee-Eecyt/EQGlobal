@@ -1,0 +1,30 @@
+[
+  {
+    "id": "mez-fade",
+    "label": "Mez Fade",
+    "pattern": "Your mesmerize spell has worn off",
+    "duration": 30,
+    "color": "#ff6b6b"
+  },
+  {
+    "id": "spirit-of-scale",
+    "label": "Spirit of Scale",
+    "pattern": "You begin casting Spirit of Scale",
+    "duration": 600,
+    "color": "#ffd93d"
+  },
+  {
+    "id": "slow-wear-off",
+    "label": "Slow Wore Off",
+    "pattern": "has worn off of",
+    "duration": 10,
+    "color": "#6bcff6"
+  },
+  {
+    "id": "enrage",
+    "label": "Mob Enrage",
+    "pattern": "has become ENRAGED",
+    "duration": 18,
+    "color": "#f06595"
+  }
+]
