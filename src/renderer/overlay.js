@@ -41,4 +41,12 @@ window.eqApi.onTimersUpdate((timers) => {
   renderOverlay(timers);
 });
 
+// Reflect move mode visually in the overlay
+if (window.eqApi.onOverlayMoveMode) {
+  window.eqApi.onOverlayMoveMode((enabled) => {
+    if (!overlayRoot) return;
+    overlayRoot.classList.toggle('move-mode', Boolean(enabled));
+  });
+}
+
 renderOverlay([]);

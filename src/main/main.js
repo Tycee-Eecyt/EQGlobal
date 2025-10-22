@@ -34,10 +34,13 @@ const defaultSettings = {
   backendUrl: process.env.BACKEND_URL || '',
   overlayClickThrough: false,
   overlayOpacity: 0.85,
+  overlayBounds: null,
   triggers: defaultTriggers,
 };
 
 let settings = { ...defaultSettings };
+let overlayBoundsSaveTimer = null;
+let overlayMoveMode = false;
 
 function resolveRendererPath(fileName) {
   return path.join(__dirname, '..', 'renderer', fileName);
@@ -97,9 +100,11 @@ function createMainWindow() {
 }
 
 function createOverlayWindow() {
-  overlayWindow = new BrowserWindow({
-    width: 320,
-    height: 360,
+  const baseBounds = { width: 320, height: 360 };
+  const saved = settings.overlayBounds || {};
+  const windowOptions = {
+    width: Number(saved.width) || baseBounds.width,
+    height: Number(saved.height) || baseBounds.height,
     frame: false,
     transparent: true,
     resizable: true,
@@ -110,12 +115,40 @@ function createOverlayWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     backgroundColor: '#00000000',
-  });
+  };
+
+  // Only apply x/y if present; Electron will pick a default otherwise
+  if (typeof saved.x === 'number' && typeof saved.y === 'number') {
+    windowOptions.x = saved.x;
+    windowOptions.y = saved.y;
+  }
+
+  overlayWindow = new BrowserWindow(windowOptions);
 
   overlayWindow.setAlwaysOnTop(true, 'screen-saver');
   overlayWindow.loadFile(resolveRendererPath('overlay.html'));
   overlayWindow.setOpacity(settings.overlayOpacity);
-  overlayWindow.setIgnoreMouseEvents(Boolean(settings.overlayClickThrough), { forward: true });
+  overlayWindow.setIgnoreMouseEvents(
+    overlayMoveMode ? false : Boolean(settings.overlayClickThrough),
+    { forward: true }
+  );
+
+  const scheduleSaveOverlayBounds = () => {
+    if (overlayBoundsSaveTimer) {
+      clearTimeout(overlayBoundsSaveTimer);
+    }
+    overlayBoundsSaveTimer = setTimeout(async () => {
+      overlayBoundsSaveTimer = null;
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        const b = overlayWindow.getBounds();
+        settings.overlayBounds = { x: b.x, y: b.y, width: b.width, height: b.height };
+        await saveSettings(settings);
+      }
+    }, 300);
+  };
+
+  overlayWindow.on('move', scheduleSaveOverlayBounds);
+  overlayWindow.on('resize', scheduleSaveOverlayBounds);
 
   overlayWindow.on('closed', () => {
     overlayWindow = null;
@@ -319,7 +352,7 @@ function registerIpcHandlers() {
   ipcMain.handle('overlay:set-click-through', async (_event, enabled) => {
     settings.overlayClickThrough = Boolean(enabled);
     if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setIgnoreMouseEvents(settings.overlayClickThrough, { forward: true });
+      overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : settings.overlayClickThrough, { forward: true });
     }
     await saveSettings(settings);
     return settings.overlayClickThrough;
@@ -348,6 +381,20 @@ function registerIpcHandlers() {
     }
     return true;
   });
+
+  ipcMain.handle('overlay:move-mode', async (_event, enabled) => {
+    overlayMoveMode = Boolean(enabled);
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      if (overlayMoveMode) {
+        overlayWindow.showInactive();
+      }
+      overlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
+    }
+    return overlayMoveMode;
+  });
+
+  ipcMain.handle('overlay:get-move-mode', () => overlayMoveMode);
 
   ipcMain.handle('triggers:default', () => defaultTriggers);
 }

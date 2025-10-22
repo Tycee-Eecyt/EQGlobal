@@ -18,6 +18,8 @@ const watcherStatus = document.getElementById('watcher-status');
 const triggersList = document.getElementById('triggers-list');
 const activeTimersContainer = document.getElementById('active-timers');
 const recentLinesList = document.getElementById('recent-lines');
+const toggleMoveModeButton = document.getElementById('toggle-move-mode');
+let overlayMoveMode = false;
 
 function escapeHtml(value) {
   if (typeof value !== 'string') {
@@ -170,6 +172,14 @@ async function hydrate() {
   overlayOpacityValue.textContent = Number(overlayOpacityInput.value).toFixed(2);
   triggers = Array.isArray(stored.triggers) && stored.triggers.length > 0 ? stored.triggers : [];
   renderTriggers();
+
+  // Initialize move mode button state
+  try {
+    overlayMoveMode = Boolean(await window.eqApi.getOverlayMoveMode());
+  } catch (_) {
+    overlayMoveMode = false;
+  }
+  updateMoveModeButton();
 }
 
 function attachEventListeners() {
@@ -245,6 +255,17 @@ function attachEventListeners() {
   document.getElementById('show-overlay').addEventListener('click', () => {
     window.eqApi.showOverlay();
   });
+
+  toggleMoveModeButton.addEventListener('click', async () => {
+    try {
+      overlayMoveMode = !(overlayMoveMode === true);
+      const actual = await window.eqApi.setOverlayMoveMode(overlayMoveMode);
+      overlayMoveMode = Boolean(actual);
+      updateMoveModeButton();
+    } catch (err) {
+      console.error('Failed to toggle overlay move mode', err);
+    }
+  });
 }
 
 function subscribeToIpc() {
@@ -270,3 +291,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderRecentLines();
   updateStatus({ state: 'idle' });
 });
+
+function updateMoveModeButton() {
+  if (!toggleMoveModeButton) return;
+  toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlay';
+  toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
+}
