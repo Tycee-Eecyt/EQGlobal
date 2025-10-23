@@ -8,7 +8,8 @@
     "app": "electron .",
     "backend": "node backend/server.js",
     "dev": "electron .",
-    "convert:gtp": "powershell -ExecutionPolicy Bypass -File scripts/convert-gina-gtp.ps1"
+    "convert:gtp": "powershell -ExecutionPolicy Bypass -File scripts/convert-gina-gtp.ps1",
+    "test:patterns": "node scripts/test-patterns.js --triggers external/all-gina.triggers.json --lines test/log-lines-sample.txt"
   },
   "keywords": [],
   "author": "",

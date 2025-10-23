@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { EventEmitter } = require('events');
+const { sanitizeRegexPattern } = require('../shared/regex');
 const chokidar = require('chokidar');
 
 const NEWLINE_REGEXP = /\r?\n/;
@@ -65,12 +66,23 @@ class LogWatcher extends EventEmitter {
       let matcher;
       if (trigger.isRegex) {
         const flags = trigger.flags || 'i';
-        matcher = (line) => {
-          const regex = new RegExp(trigger.pattern, flags);
-          return regex.test(line);
-        };
+        const original = String(trigger.pattern || '');
+        const sanitized = sanitizeRegexPattern(original);
+        let compiled = null;
+        try {
+          compiled = new RegExp(sanitized, flags);
+        } catch (err) {
+          // Fallback: use plain substring match if regex is invalid even after sanitization
+          compiled = null;
+        }
+        if (compiled) {
+          matcher = (line) => compiled.test(line);
+        } else {
+          const needle = original.toLowerCase();
+          matcher = (line) => line.toLowerCase().includes(needle);
+        }
       } else {
-        matcher = (line) => line.toLowerCase().includes(trigger.pattern.toLowerCase());
+        matcher = (line) => line.toLowerCase().includes((trigger.pattern || '').toLowerCase());
       }
 
       return {

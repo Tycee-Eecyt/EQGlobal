@@ -59,6 +59,10 @@ function renderTriggers() {
           <input type="text" class="trigger-label" value="${escapeHtml(trigger.label || '')}" placeholder="Timer name" />
         </div>
         <div class="row">
+          <label>Category</label>
+          <input type="text" class="trigger-category" list="category-options" value="${escapeHtml(trigger.category || '')}" placeholder="e.g. AoEs, Heals, Cures" />
+        </div>
+        <div class="row">
           <label>Pattern</label>
           <input type="text" class="trigger-pattern" value="${escapeHtml(trigger.pattern || '')}" placeholder="Match text or regex" />
         </div>
@@ -86,6 +90,7 @@ function collectTriggersFromDom() {
   return cards
     .map((card) => {
       const label = card.querySelector('.trigger-label').value.trim();
+      const category = (card.querySelector('.trigger-category')?.value || '').trim();
       const pattern = card.querySelector('.trigger-pattern').value.trim();
       const duration = Number(card.querySelector('.trigger-duration').value);
       const color = card.querySelector('.trigger-color').value.trim() || '#00c9ff';
@@ -98,6 +103,7 @@ function collectTriggersFromDom() {
       return {
         id: `${label || pattern}`.toLowerCase().replace(/\s+/g, '-'),
         label: label || pattern,
+        category: category || undefined,
         pattern,
         duration,
         color,
