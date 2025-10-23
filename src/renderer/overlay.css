@@ -20,50 +20,54 @@
 }
 
 
-.timer-entry {
+.timer-row {
   position: relative;
   display: flex;
-  align-items: stretch;
-  padding: 0.5rem 0.65rem 0.5rem 0.8rem;
-  border-radius: 12px;
-  background: rgba(20, 24, 35, 0.6);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.35);
-  min-width: 220px;
-  min-height: 40px;
-  letter-spacing: 0.03rem;
-  font-weight: 600;
-}
-
-.timer-entry .timer-content {
-  flex: 1;
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.9rem;
-  z-index: 1;
+  gap: 0.6rem;
 }
 
-.progress-track {
-  position: absolute;
-  left: 6px;
-  top: 6px;
-  bottom: 6px;
-  width: 8px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
+.timer-row .time {
+  color: #ffd43b;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  min-width: 82px; /* 00:00:00 */
+}
+
+.timer-row .label {
+  color: #ffe8a1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  margin-left: 0.5rem;
+}
+
+.bar-container {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  background: rgba(0,0,0,0.55);
+  border-radius: 2px;
   overflow: hidden;
 }
 
-.progress-fill {
+.bar-fill {
   position: absolute;
   left: 0;
-  right: 0;
+  top: 0;
   bottom: 0;
-  height: 100%;
-  background: var(--accent, #00eaff);
-  border-radius: 8px;
-  transition: height 0.25s ease-out;
+  width: 0%;
+  background: linear-gradient(180deg, #c92a2a 0%, #a61e1e 100%);
+  transition: width 0.2s linear;
+}
+
+.soon .bar-fill {
+  background: linear-gradient(180deg, #ff3b3b 0%, #c92a2a 100%);
+  box-shadow: 0 0 8px rgba(255,59,59,0.55);
+}
+
+.empty-state {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 .timer-entry span.remaining {

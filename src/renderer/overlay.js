@@ -23,27 +23,29 @@ function renderOverlay(timers) {
       const totalMs = Math.max(1, (Number(timer.duration) || 0) * 1000);
       const remainingMs = Math.max(0, Number(timer.remainingMs) || 0);
       const pct = Math.max(0, Math.min(100, Math.round((remainingMs / totalMs) * 100)));
-      const accent = timer.color || '#00eaff';
+      const soon = (Number(timer.remainingSeconds) || 0) <= 10;
       return `
-        <div class="timer-entry" style="--accent: ${accent};">
-          <div class="progress-track">
-            <div class="progress-fill" style="height: ${pct}%; background: ${accent};"></div>
+        <div class="timer-row ${soon ? 'soon' : ''}">
+          <span class="time">${formatHMS(timer.remainingSeconds)}</span>
+          <div class="bar-container">
+            <div class="bar-fill" style="width: ${pct}%;"></div>
           </div>
-          <div class="timer-content">
-            <span>${escapeHtml(timer.label)}</span>
-            <span class="remaining">${formatRemaining(timer.remainingSeconds)}</span>
-          </div>
+          <span class="label">${escapeHtml(timer.label)}</span>
         </div>
       `;
     })
     .join('');
 }
 
-function formatRemaining(remainingSeconds) {
+function formatHMS(remainingSeconds) {
   const value = Math.max(0, Number(remainingSeconds) || 0);
-  const minutes = Math.floor(value / 60);
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
   const seconds = value % 60;
-  return minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `${seconds}s`;
+  const hh = hours.toString().padStart(2, '0');
+  const mm = minutes.toString().padStart(2, '0');
+  const ss = seconds.toString().padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
 }
 
 window.eqApi.onTimersUpdate((timers) => {
