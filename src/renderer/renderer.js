@@ -60,7 +60,7 @@ function renderTriggers() {
         </div>
         <div class="row">
           <label>Category</label>
-          <input type="text" class="trigger-category" value="${escapeHtml(trigger.category || '')}" placeholder="e.g. AoEs, Heals, Cures" />
+          <input type="text" class="trigger-category" list="category-options" value="${escapeHtml(trigger.category || '')}" placeholder="e.g. AoEs, Heals, Cures" />
         </div>
         <div class="row">
           <label>Pattern</label>
