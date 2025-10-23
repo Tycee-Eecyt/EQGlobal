@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('eqApi', {
   loadDefaultTriggers: () => ipcRenderer.invoke('triggers:default'),
   importGinaGtp: () => ipcRenderer.invoke('triggers:import-gtp'),
   exportTriggers: (triggers) => ipcRenderer.invoke('triggers:export', triggers),
+  selectSoundFile: () => ipcRenderer.invoke('dialog:select-sound-file'),
   onTimersUpdate: (callback) => {
     const listener = (_event, timers) => callback(timers);
     ipcRenderer.on('timers:update', listener);

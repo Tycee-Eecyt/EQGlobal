@@ -37,6 +37,7 @@ const defaultSettings = {
   overlayClickThrough: false,
   overlayOpacity: 0.85,
   overlayBounds: null,
+  categories: [],
   triggers: defaultTriggers,
 };
 
@@ -315,6 +316,9 @@ async function ensureSettingsLoaded() {
       ...diskSettings,
       triggers: diskSettings.triggers && diskSettings.triggers.length > 0 ? diskSettings.triggers : defaultSettings.triggers,
     };
+    if (!Array.isArray(settings.categories)) {
+      settings.categories = [];
+    }
   }
 
   return settings;
@@ -619,6 +623,24 @@ function registerIpcHandlers() {
       await startWatcher();
     }
     return directory;
+  });
+
+  ipcMain.handle('dialog:select-sound-file', async () => {
+    const browserWindow = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined;
+    const result = await dialog.showOpenDialog(browserWindow, {
+      title: 'Select Sound File',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Audio Files', extensions: ['wav', 'mp3', 'ogg', 'flac', 'aac'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+
+    return result.filePaths[0];
   });
 
   ipcMain.handle('watcher:start', async () => {
