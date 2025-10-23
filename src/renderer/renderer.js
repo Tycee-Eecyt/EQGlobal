@@ -6,6 +6,7 @@ const STATUS_COLORS = {
 };
 
 let triggers = [];
+let timersRaf = null;
 let recentLines = [];
 
 const logDirectoryInput = document.getElementById('log-directory');
@@ -113,8 +114,16 @@ function collectTriggersFromDom() {
     .filter(Boolean);
 }
 
+function cancelTimersAnimation() {
+  if (timersRaf) {
+    cancelAnimationFrame(timersRaf);
+    timersRaf = null;
+  }
+}
+
 function renderTimers(timers) {
   if (!timers || timers.length === 0) {
+    cancelTimersAnimation();
     activeTimersContainer.innerHTML = '<p class="empty-state">No active timers.</p>';
     return;
   }
@@ -122,11 +131,12 @@ function renderTimers(timers) {
   activeTimersContainer.innerHTML = timers
     .map((timer) => {
       const totalMs = Math.max(1, (Number(timer.duration) || 0) * 1000);
-      const remainingMs = Math.max(0, Number(timer.remainingMs) || 0);
+      const expiresAt = Date.parse(timer.expiresAt) || (Date.now() + totalMs);
+      const remainingMs = Math.max(0, Number(timer.remainingMs) || Math.max(0, expiresAt - Date.now()));
       const pct = Math.max(0, Math.min(100, Math.round((remainingMs / totalMs) * 100)));
       const accent = timer.color || '#3a86ff';
       return `
-        <div class="timer-pill" style="--accent: ${accent};">
+        <div class="timer-pill" data-exp="${expiresAt}" data-dur="${totalMs}" style="--accent: ${accent};">
           <div class="timer-progress-track">
             <div class="timer-progress-fill" style="height: ${pct}%; background: ${accent};"></div>
           </div>
@@ -138,6 +148,29 @@ function renderTimers(timers) {
       `;
     })
     .join('');
+
+  // Smooth animation between backend ticks
+  cancelTimersAnimation();
+  const step = () => {
+    const now = Date.now();
+    const nodes = activeTimersContainer.querySelectorAll('.timer-pill');
+    if (nodes.length === 0) {
+      cancelTimersAnimation();
+      return;
+    }
+    nodes.forEach((node) => {
+      const exp = Number(node.dataset.exp) || 0;
+      const dur = Math.max(1, Number(node.dataset.dur) || 1);
+      const remMs = Math.max(0, exp - now);
+      const pct = Math.max(0, Math.min(100, Math.round((remMs / dur) * 100)));
+      const fill = node.querySelector('.timer-progress-fill');
+      if (fill) fill.style.height = `${pct}%`;
+      const timeEl = node.querySelector('.remaining');
+      if (timeEl) timeEl.textContent = formatRemaining(Math.ceil(remMs / 1000));
+    });
+    timersRaf = requestAnimationFrame(step);
+  };
+  timersRaf = requestAnimationFrame(step);
 }
 
 function formatRemaining(seconds) {
