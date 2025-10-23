@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } = require('electron');
 const axios = require('axios');
 const childProcess = require('child_process');
 const LogWatcher = require('./logWatcher');
@@ -13,6 +13,7 @@ let mainWindow;
 let overlayWindow;
 let logWatcher;
 let settingsPath;
+let tray;
 
 const timerManager = new TimerManager();
 timerManager.on('update', (timers) => {
@@ -42,6 +43,183 @@ const defaultSettings = {
 let settings = { ...defaultSettings };
 let overlayBoundsSaveTimer = null;
 let overlayMoveMode = false;
+
+function createTrayIconImage() {
+  const logicalSize = process.platform === 'darwin' ? 22 : 16;
+  const scaleFactor = 2;
+  const size = logicalSize * scaleFactor;
+  const buffer = Buffer.alloc(size * size * 4);
+  const center = (size - 1) / 2;
+  const radius = size * 0.45;
+  const borderRadius = radius - Math.max(2, size * 0.08);
+  const innerHighlight = borderRadius * 0.45;
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const dx = x - center;
+      const dy = y - center;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const idx = (y * size + x) * 4;
+
+      if (distance > radius) {
+        continue;
+      }
+
+      let r;
+      let g;
+      let b;
+
+      if (distance >= borderRadius) {
+        r = 12;
+        g = 74;
+        b = 112;
+      } else if (distance <= innerHighlight) {
+        const falloff = 1 - distance / Math.max(innerHighlight, 1);
+        r = Math.round(228 + 20 * falloff);
+        g = Math.round(240 + 10 * falloff);
+        b = 255;
+      } else {
+        const t = (distance - innerHighlight) / Math.max(borderRadius - innerHighlight, 1);
+        const baseR = 20;
+        const baseG = 164;
+        const baseB = 244;
+        const gradient = 1 - t * 0.35;
+        const verticalBias = 1 + ((center - y) / size) * 0.18;
+        const horizontalBias = 1 + ((center - x) / size) * 0.06;
+        const scale = gradient * verticalBias * horizontalBias;
+        r = Math.min(255, Math.round(baseR * scale + 20));
+        g = Math.min(255, Math.round(baseG * scale + 26));
+        b = Math.min(255, Math.round(baseB * scale + 38));
+
+        if (distance <= innerHighlight * 1.25) {
+          r = Math.min(255, r + 12);
+          g = Math.min(255, g + 18);
+          b = Math.min(255, b + 20);
+        }
+      }
+
+      buffer[idx] = b;
+      buffer[idx + 1] = g;
+      buffer[idx + 2] = r;
+      buffer[idx + 3] = 255;
+    }
+  }
+
+  const image = nativeImage.createFromBitmap(buffer, { width: size, height: size, scaleFactor });
+  image.setTemplateImage(process.platform === 'darwin');
+  return image;
+}
+
+function updateTrayMenu() {
+  if (!tray) {
+    return;
+  }
+
+  const mainWindowExists = mainWindow && !mainWindow.isDestroyed();
+  const mainVisible = Boolean(mainWindowExists && mainWindow.isVisible());
+  const overlayExists = overlayWindow && !overlayWindow.isDestroyed();
+  const overlayVisible = Boolean(overlayExists && overlayWindow.isVisible());
+
+  const template = [
+    {
+      label: mainVisible ? 'Hide EQGlobal' : 'Show EQGlobal',
+      click: () => {
+        toggleMainWindowVisibility();
+      },
+    },
+    {
+      label: overlayVisible ? 'Hide Overlay' : 'Show Overlay',
+      click: () => {
+        toggleOverlayVisibility();
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit EQGlobal',
+      click: () => {
+        app.quit();
+      },
+    },
+  ];
+
+  tray.setContextMenu(Menu.buildFromTemplate(template));
+}
+
+function ensureTray() {
+  if (tray) {
+    updateTrayMenu();
+    return tray;
+  }
+
+  tray = new Tray(createTrayIconImage());
+  tray.setToolTip('EQGlobal');
+  if (typeof tray.setIgnoreDoubleClickEvents === 'function') {
+    tray.setIgnoreDoubleClickEvents(true);
+  }
+  tray.on('click', () => {
+    showMainWindowFromTray();
+  });
+  tray.on('right-click', () => {
+    updateTrayMenu();
+  });
+  updateTrayMenu();
+  return tray;
+}
+
+function destroyTray() {
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+}
+
+function showMainWindowFromTray() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createMainWindow();
+  } else {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    if (!mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+    mainWindow.focus();
+  }
+  updateTrayMenu();
+}
+
+function toggleMainWindowVisibility() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createMainWindow();
+    updateTrayMenu();
+    return;
+  }
+
+  if (mainWindow.isVisible()) {
+    mainWindow.hide();
+  } else {
+    showMainWindowFromTray();
+  }
+  updateTrayMenu();
+}
+
+function toggleOverlayVisibility() {
+  if (!overlayWindow || overlayWindow.isDestroyed()) {
+    createOverlayWindow();
+  }
+
+  if (!overlayWindow || overlayWindow.isDestroyed()) {
+    updateTrayMenu();
+    return;
+  }
+
+  if (overlayWindow.isVisible()) {
+    overlayWindow.hide();
+  } else {
+    overlayWindow.showInactive();
+  }
+  updateTrayMenu();
+}
 
 const CATEGORY_COLOR_MAP = {
   'AoEs': '#f06595',
@@ -164,6 +342,10 @@ async function saveSettings(updatedSettings = settings) {
 }
 
 function createMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow;
+  }
+
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 720,
@@ -176,12 +358,24 @@ function createMainWindow() {
 
   mainWindow.loadFile(resolveRendererPath('index.html'));
 
+  mainWindow.on('show', updateTrayMenu);
+  mainWindow.on('hide', updateTrayMenu);
+  mainWindow.on('minimize', updateTrayMenu);
+  mainWindow.on('restore', updateTrayMenu);
   mainWindow.on('closed', () => {
     mainWindow = null;
+    updateTrayMenu();
   });
+
+  updateTrayMenu();
+  return mainWindow;
 }
 
 function createOverlayWindow() {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    return overlayWindow;
+  }
+
   const baseBounds = { width: 320, height: 360 };
   const saved = settings.overlayBounds || {};
   const windowOptions = {
@@ -232,9 +426,15 @@ function createOverlayWindow() {
   overlayWindow.on('move', scheduleSaveOverlayBounds);
   overlayWindow.on('resize', scheduleSaveOverlayBounds);
 
+  overlayWindow.on('show', updateTrayMenu);
+  overlayWindow.on('hide', updateTrayMenu);
   overlayWindow.on('closed', () => {
     overlayWindow = null;
+    updateTrayMenu();
   });
+
+  updateTrayMenu();
+  return overlayWindow;
 }
 
 function sendStatus(status) {
@@ -454,6 +654,7 @@ function registerIpcHandlers() {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.showInactive();
     }
+    updateTrayMenu();
     return true;
   });
 
@@ -461,6 +662,7 @@ function registerIpcHandlers() {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.hide();
     }
+    updateTrayMenu();
     return true;
   });
 
@@ -550,6 +752,7 @@ app.whenReady().then(async () => {
   await ensureSettingsLoaded();
   createMainWindow();
   createOverlayWindow();
+  ensureTray();
   registerIpcHandlers();
 
   if (app.isPackaged) {
@@ -575,6 +778,7 @@ app.on('before-quit', async () => {
     backendFlushTimer = null;
     await flushBackend();
   }
+  destroyTray();
   await stopWatcher();
 });
 
