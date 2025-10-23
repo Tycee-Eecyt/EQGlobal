@@ -9,16 +9,29 @@ const DEFAULT_FILE_PATTERNS = ['*.log', 'eqlog_*.txt'];
 
 function sanitizeRegexPattern(pattern) {
   let p = String(pattern || '');
-  // Replace .NET atomic groups (?>...) with non-capturing groups (?:...)
+  // HTML/escaped artifacts occasionally sneak in; normalize quotes
+  p = p.replace(/\u0027/g, "'");
+
+  // .NET atomic groups (?>...) -> non-capturing groups (?:...)
   p = p.replace(/\(\?>/g, '(?:');
-  // Replace .NET named capture groups (?<name>...) with non-capturing groups
-  p = p.replace(/\(\?<([A-Za-z][\w-]*)>/g, '(?:');
-  // Replace ${1}, ${name} style placeholders with a non-greedy wildcard
+
+  // Inline option groups: (?imnsx) and scoped (?imnsx:...) are unsupported inline in JS; strip them
+  p = p.replace(/\(\?[imnsx-]+\)/g, ''); // global toggles from this point
+  p = p.replace(/\(\?[imnsx-]+:/g, '('); // scoped option groups
+
+  // Inline comments (?# ... ) -> remove
+  p = p.replace(/\(\?#.*?\)/g, '');
+
+  // Anchors: \A (start of string), \Z (end of string) -> ^ and $
+  p = p.replace(/\\A/g, '^').replace(/\\Z/g, '$');
+
+  // Placeholders: ${..} and {s} -> non-greedy wildcard
   p = p.replace(/\$\{[^}]+\}/g, '.*?');
-  // GINA placeholder {s} (commonly used) -> wildcard
   p = p.replace(/\{s\}/gi, '.*?');
-  // Remove unsupported possessive quantifier suffixes like ++, *+, ?+
+
+  // Possessive quantifiers (e.g., ++, *+, ?+) -> downgrade to greedy
   p = p.replace(/([+*?])\+/g, '$1');
+
   return p;
 }
 
