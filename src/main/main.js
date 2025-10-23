@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const axios = require('axios');
+const childProcess = require('child_process');
 const LogWatcher = require('./logWatcher');
 const TimerManager = require('./timerManager');
 const defaultTriggers = require('../shared/defaultTriggers.json');
@@ -41,6 +42,87 @@ const defaultSettings = {
 let settings = { ...defaultSettings };
 let overlayBoundsSaveTimer = null;
 let overlayMoveMode = false;
+
+const CATEGORY_COLOR_MAP = {
+  'AoEs': '#f06595',
+  'Complete Heals': '#ffd93d',
+  'Cures': '#6bcff6',
+  'Death Touches': '#ff6b6b',
+  'Enrage': '#f06595',
+  'Gating': '#845ef7',
+  'Rampage': '#ffa94d',
+  'Mob Spells': '#74c0fc',
+};
+
+function hashStringDjb2(str = '') {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function colorFromCategory(category) {
+  if (!category) return null;
+  const mapped = CATEGORY_COLOR_MAP[category] || CATEGORY_COLOR_MAP[category.trim()];
+  if (mapped) return mapped;
+  const h = hashStringDjb2(category) % 360;
+  const s = 65;
+  const l = 55;
+  // Convert HSL to hex
+  function hslToRgb(hh, ss, ll) {
+    ss /= 100; ll /= 100;
+    const c = (1 - Math.abs(2 * ll - 1)) * ss;
+    const x = c * (1 - Math.abs(((hh / 60) % 2) - 1));
+    const m = ll - c / 2;
+    let r=0,g=0,b=0;
+    if (0 <= hh && hh < 60) { r=c; g=x; b=0; }
+    else if (60 <= hh && hh < 120) { r=x; g=c; b=0; }
+    else if (120 <= hh && hh < 180) { r=0; g=c; b=x; }
+    else if (180 <= hh && hh < 240) { r=0; g=x; b=c; }
+    else if (240 <= hh && hh < 300) { r=x; g=0; b=c; }
+    else { r=c; g=0; b=x; }
+    const to255 = (v) => Math.round((v + m) * 255);
+    return [to255(r), to255(g), to255(b)];
+  }
+  const [r,g,b] = hslToRgb(h, s, l);
+  const hex = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  return hex;
+}
+
+function applyCategoryColors(list = []) {
+  return list.map((t) => {
+    const out = { ...t };
+    if (!out.color || !/^#?[0-9a-f]{6}$/i.test(String(out.color))) {
+      const catColor = colorFromCategory(out.category);
+      if (catColor) {
+        out.color = catColor;
+      } else if (!out.color) {
+        out.color = '#00c9ff';
+      }
+    } else if (out.color && !out.color.startsWith('#')) {
+      out.color = `#${out.color}`;
+    }
+    return out;
+  });
+}
+
+function runPowerShellConverter(scriptPath, inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    const ps = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
+    const args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, '-InputPath', inputPath, '-OutputPath', outputPath];
+    const child = childProcess.spawn(ps, args, { windowsHide: true });
+    let stderr = '';
+    child.stdout.on('data', () => {});
+    child.stderr.on('data', (d) => (stderr += d.toString()))
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) return resolve();
+      reject(new Error(stderr || `Converter exited with code ${code}`));
+    });
+  });
+}
 
 function resolveRendererPath(fileName) {
   return path.join(__dirname, '..', 'renderer', fileName);
@@ -397,6 +479,71 @@ function registerIpcHandlers() {
   ipcMain.handle('overlay:get-move-mode', () => overlayMoveMode);
 
   ipcMain.handle('triggers:default', () => defaultTriggers);
+
+  ipcMain.handle('triggers:import-gtp', async () => {
+    // Ask user for a .gtp file
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      title: 'Select GINA package (.gtp)',
+      filters: [{ name: 'GINA Package', extensions: ['gtp'] }],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return [];
+    }
+
+    const inputPath = result.filePaths[0];
+    const scriptsDir = path.join(__dirname, '..', '..', 'scripts');
+    const scriptPath = path.join(scriptsDir, 'convert-gina-gtp.ps1');
+
+    try {
+      // Ensure output directory exists inside userData
+      const importDir = path.join(app.getPath('userData'), 'imports');
+      await fs.promises.mkdir(importDir, { recursive: true });
+      const base = path.basename(inputPath).replace(/\.[^.]+$/, '');
+      const outputPath = path.join(importDir, `${base}.triggers.json`);
+
+      // Spawn PowerShell converter
+      await runPowerShellConverter(scriptPath, inputPath, outputPath);
+
+      // Load converted triggers (strip any BOM defensively)
+      const raw = await fs.promises.readFile(outputPath, 'utf8');
+      const imported = JSON.parse(raw.replace(/^\uFEFF/, ''));
+      const colored = applyCategoryColors(imported);
+
+      // Update settings and watcher
+      settings.triggers = colored;
+      await saveSettings(settings);
+      if (logWatcher) {
+        logWatcher.setTriggers(settings.triggers);
+      }
+
+      return colored;
+    } catch (error) {
+      console.error('Failed to import GINA .gtp', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('triggers:export', async (_event, exportList) => {
+    try {
+      const toWrite = Array.isArray(exportList) && exportList.length > 0 ? exportList : settings.triggers || [];
+      const defaultName = `EQGlobal-triggers-${new Date().toISOString().slice(0,10)}.json`;
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Export Triggers',
+        defaultPath: defaultName,
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (result.canceled || !result.filePath) {
+        return null;
+      }
+      await fs.promises.writeFile(result.filePath, JSON.stringify(toWrite, null, 2), 'utf8');
+      return result.filePath;
+    } catch (error) {
+      console.error('Failed to export triggers', error);
+      throw error;
+    }
+  });
 }
 
 app.whenReady().then(async () => {

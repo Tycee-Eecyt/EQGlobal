@@ -56,6 +56,38 @@ Use the **Triggers** section in the control panel to add or edit entries. Each t
 
 Click **Reset Defaults** to reload the sample trigger set from `src/shared/defaultTriggers.json`.
 
+### Import GINA Packages (.gtp)
+
+You can convert a GINA trigger package (`.gtp`) into this app’s JSON trigger format and use it as your trigger set.
+
+- Place your `.gtp` file anywhere (e.g., `external/all-gina.gtp`).
+- Run the converter script (Windows/PowerShell):
+
+  ```bash
+  npm run convert:gtp -- -InputPath external/all-gina.gtp -OutputPath external/all-gina.triggers.json
+  ```
+
+- The script extracts `ShareData.xml` from the archive and emits a JSON array with fields compatible with this app: `id`, `label`, `pattern`, `duration`, and optional `isRegex` + `flags` for regex triggers.
+
+- To use the result, you have two options:
+  - Replace the default triggers: copy the generated JSON into `src/shared/defaultTriggers.json` and restart the app.
+  - Or edit your runtime `settings.json` (Electron userData folder) and set `triggers` to the converted JSON array, then restart.
+
+Notes:
+- Only triggers with a timer (`TimerDuration` or `TimerMillisecondDuration`) are included.
+- Regex patterns are preserved and marked with `isRegex: true` and `flags: "i"` for case-insensitive matching.
+
+### Export Current Triggers
+
+- In the app UI, click `Export Triggers` in the Triggers panel.
+- Choose a save location; a JSON file with your current trigger set is written.
+
+### Category-to-Color Mapping
+
+- When importing from GINA, trigger `Category` is preserved and used to auto-assign colors if a trigger lacks one.
+- Known categories (e.g., `AoEs`, `Complete Heals`, `Cures`, `Death Touches`, `Gating`, `Rampage`, `Mob Spells`) map to distinct colors.
+- Unknown categories receive a stable, generated color so groups remain visually consistent.
+
 ## Backend Service
 
 `backend/server.js` exposes:

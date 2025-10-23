@@ -1,0 +1,2555 @@
+﻿[
+    {
+        "id":  "plane-of-sky-dt-mobs",
+        "label":  "Plane of Sky DT Mobs",
+        "pattern":  "^(?\u003cmob\u003eSister of the Spire|The Spiroc Lord|Bazzt Zzzt|Eye of Veeshan|Keeper of Souls|Overseer of Air|the Hand of Veeshan|a greater sphinx|Key Master)(?\u003e )shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dread",
+        "label":  "Dread",
+        "pattern":  "^Dread shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fright",
+        "label":  "Fright",
+        "pattern":  "^(?:Fr)ight shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "master-yael",
+        "label":  "Master Yael",
+        "pattern":  "^(?:Master) Yael shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "gorenaire",
+        "label":  "Gorenaire",
+        "pattern":  "Gorenaire begins to cast a spell.",
+        "duration":  10,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "jorlleag",
+        "label":  "Jorlleag",
+        "pattern":  "Jorlleag begins to cast a spell.",
+        "duration":  10,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "dragon-roar",
+        "label":  "Dragon Roar",
+        "pattern":  "You lose control of yourself!",
+        "duration":  36,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "dragon-roar-resist",
+        "label":  "Dragon Roar (Resist)",
+        "pattern":  "You resist the Dragon Roar spell!",
+        "duration":  36,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "gating",
+        "label":  "Gating",
+        "pattern":  "^(?:{s} begins to cast the) gate spell\\.$",
+        "duration":  5,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "stun-breath",
+        "label":  "Stun Breath",
+        "pattern":  "Your eardrums rupture.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "stun-breath-resist",
+        "label":  "Stun Breath (Resist)",
+        "pattern":  "You resist the Stun Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "dragon-charm-resist",
+        "label":  "Dragon Charm (Resist)",
+        "pattern":  "You resist the Dragon Charm spell!",
+        "duration":  15,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "summoned",
+        "label":  "Summoned",
+        "pattern":  "^(?:{s} says \u0027You will )not evade me (?\u003ctarget\u003e[^!]+)!\u0027$",
+        "duration":  12,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cloud-of-disempowerment",
+        "label":  "Cloud of Disempowerment",
+        "pattern":  "^(?\u003eYou feel your s)kin freeze\\.$",
+        "duration":  12,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cloud-of-disempowerment-resist",
+        "label":  "Cloud of Disempowerment (Resist)",
+        "pattern":  "You resist the Cloud of Disempowerment spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "cloud-of-silence-resist",
+        "label":  "Cloud of Silence (Resist)",
+        "pattern":  "You resist the Cloud of Silence spell!",
+        "duration":  15,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "avatar-power",
+        "label":  "Avatar Power",
+        "pattern":  "You are knocked backward.",
+        "duration":  35,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "electric-blast",
+        "label":  "Electric Blast",
+        "pattern":  "Your body is electrified as lightning strikes you.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "electric-blast-resist",
+        "label":  "Electric Blast (Resist)",
+        "pattern":  "You resist the Electric Blast spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "wave-of-heat",
+        "label":  "Wave of Heat",
+        "pattern":  "A blast of heat sears your skin.",
+        "duration":  8,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "wave-of-heat-resist",
+        "label":  "Wave of Heat (Resist)",
+        "pattern":  "You resist the Wave of Heat spell!",
+        "duration":  8,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "the-dain-s-justice",
+        "label":  "The Dain\u0027s Justice",
+        "pattern":  "^(?:The justice of Dain Frostreaver casts you into the pit\\.|{s} is cast into the pit by Dain Frostreavers justice\\.)",
+        "duration":  30,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "silver-breath",
+        "label":  "Silver Breath",
+        "pattern":  "You feel your skin freeze.  You have taken 400 points of damage.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "lightning-breath",
+        "label":  "Lightning Breath",
+        "pattern":  "Your body is electrified as the lightning strikes you.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "lightning-breath-resist",
+        "label":  "Lightning Breath (Resist)",
+        "pattern":  "You resist the Lightning Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "rain-of-molten-lava",
+        "label":  "Rain of Molten Lava",
+        "pattern":  "Lava sears your skin.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "rain-of-molten-lava-resist",
+        "label":  "Rain of Molten Lava (Resist)",
+        "pattern":  "You resist the Rain of Molten Lava spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "wave-of-cold",
+        "label":  "Wave of Cold",
+        "pattern":  "A blast of cold freezes your skin.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "wave-of-cold-resist",
+        "label":  "Wave of Cold (Resist)",
+        "pattern":  "You resist the Wave of Cold spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "lava-breath",
+        "label":  "Lava Breath",
+        "pattern":  "Your body combusts as the lava hits you.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "lava-breath-resist",
+        "label":  "Lava Breath (Resist)",
+        "pattern":  "You resist the Lava Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "chill-of-unlife",
+        "label":  "Chill of Unlife",
+        "pattern":  "The chill of unlife wracks your body.",
+        "duration":  5,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "chill-of-unlife-resist",
+        "label":  "Chill of Unlife (Resist)",
+        "pattern":  "You resist the Chill of Unlife spell!",
+        "duration":  5,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "freezing-breath",
+        "label":  "Freezing Breath",
+        "pattern":  "An icy cold shoots through your body, slowing your movements.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "freezing-breath-resist",
+        "label":  "Freezing Breath (Resist)",
+        "pattern":  "You resist the Freezing Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "frost-breath",
+        "label":  "Frost Breath",
+        "pattern":  "Your body freezes as the frost hits you.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "frost-breath-resist",
+        "label":  "Frost Breath (Resist)",
+        "pattern":  "You resist the Frost Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "diseased-cloud",
+        "label":  "Diseased Cloud",
+        "pattern":  "Your body begins to rot.",
+        "duration":  12,
+        "category":  "CH Chain"
+    },
+    {
+        "id":  "diseased-cloud-resist",
+        "label":  "Diseased Cloud (Resist)",
+        "pattern":  "You resist the Diseased Cloud spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "entomb-in-ice",
+        "label":  "Entomb in Ice",
+        "pattern":  "You are entombed in ice.",
+        "duration":  18,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "cloud-of-fear",
+        "label":  "Cloud of Fear",
+        "pattern":  "Your mind is wracked by fear.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "cloud-of-fear-resist",
+        "label":  "Cloud of Fear (Resist)",
+        "pattern":  "You resist the Cloud of Fear spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "bellowing-winds",
+        "label":  "Bellowing Winds",
+        "pattern":  "You begin to spin.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "bellowing-winds-resist",
+        "label":  "Bellowing Winds (Resist)",
+        "pattern":  "You resist the Bellowing Winds spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "tsunami",
+        "label":  "Tsunami",
+        "pattern":  "A tsunami crushes you.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "tsunami-resist",
+        "label":  "Tsunami (Resist)",
+        "pattern":  "You resist the Tsunami spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "wave-of-flame",
+        "label":  "Wave of Flame",
+        "pattern":  "You feel your skin burn.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "wave-of-flame-resist",
+        "label":  "Wave of Flame (Resist)",
+        "pattern":  "You resist the Wave of Flame spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "flame-song-of-ro",
+        "label":  "Flame Song of Ro",
+        "pattern":  "You are immolated by flame.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "flame-song-of-ro-resist",
+        "label":  "Flame Song of Ro (Resist)",
+        "pattern":  "You resist the Flame Song of Ro spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "scream-of-chaos",
+        "label":  "Scream of Chaos",
+        "pattern":  "You experience chaotic weightlessness.  You have taken 100 points of damage.",
+        "duration":  12,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "scream-of-chaos-resist",
+        "label":  "Scream of Chaos (Resist)",
+        "pattern":  "You resist the Scream of Chaos spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "ice-breath",
+        "label":  "Ice Breath",
+        "pattern":  "Shards of magical ice rend you.",
+        "duration":  120,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "ice-breath-resist",
+        "label":  "Ice Breath (Resist)",
+        "pattern":  "You resist the Ice Breath spell!",
+        "duration":  120,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "mind-cloud",
+        "label":  "Mind Cloud",
+        "pattern":  "A cloud of pain covers you.",
+        "duration":  120,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "mind-cloud-resist",
+        "label":  "Mind Cloud (Resist)",
+        "pattern":  "You resist the Mind Cloud spell!",
+        "duration":  120,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "stream-of-acid",
+        "label":  "Stream of Acid",
+        "pattern":  "Your body burns as the acid hits you.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "stream-of-acid-resist",
+        "label":  "Stream of Acid (Resist)",
+        "pattern":  "You resist the Stream of Acid Spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "chaos-breath",
+        "label":  "Chaos Breath",
+        "pattern":  "^(?:You experience cha)otic weightlessness\\.  You have taken 12(?:33|60|64) points of damage\\.",
+        "duration":  12,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "chaos-breath-resist",
+        "label":  "Chaos Breath (Resist)",
+        "pattern":  "You resist the Chaos Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "ceticious-cloud",
+        "label":  "Ceticious Cloud",
+        "pattern":  "Your legs lock in pain as you choke on the noxious poison.",
+        "duration":  30,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "ceticious-cloud-resist",
+        "label":  "Ceticious Cloud (Resist)",
+        "pattern":  "You resist the Ceticious Cloud spell!",
+        "duration":  30,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "immolating-breath",
+        "label":  "Immolating Breath",
+        "pattern":  "Your flesh is seared from your bones.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "immolating-breath-resist",
+        "label":  "Immolating Breath (Resist)",
+        "pattern":  "You resist the Immolating Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "blinding-fear",
+        "label":  "Blinding Fear",
+        "pattern":  "You freeze in terror.",
+        "duration":  30,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "poison-breath",
+        "label":  "Poison Breath",
+        "pattern":  "A green mist seeps in to your skin.  You have taken ",
+        "duration":  35,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "poison-breath-resist",
+        "label":  "Poison Breath (Resist)",
+        "pattern":  "You resist the Poison Breath spell!",
+        "duration":  35,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "trakanon-s-touch",
+        "label":  "Trakanon\u0027s Touch",
+        "pattern":  "You have been teleported.",
+        "duration":  30,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "ancient-breath",
+        "label":  "Ancient Breath",
+        "pattern":  "Your life force drains away.",
+        "duration":  60,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "ancient-breath-resist",
+        "label":  "Ancient Breath (Resist)",
+        "pattern":  "You resist the Ancient Breath spell!",
+        "duration":  60,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "gift-of-aerr",
+        "label":  "Gift of Aerr",
+        "pattern":  "A small piece of your soul is sucked out of you.",
+        "duration":  15,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "mesmerizing-breath",
+        "label":  "Mesmerizing Breath",
+        "pattern":  "You are in a cloud of silence.",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "mesmerizing-breath-resist",
+        "label":  "Mesmerizing Breath (Resist)",
+        "pattern":  "You resist the Mesmerizing Breath spell!",
+        "duration":  12,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "putrefy-flesh",
+        "label":  "Putrefy Flesh",
+        "pattern":  "Your flesh begins to liquefy.",
+        "duration":  30,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "putrefy-flesh-resist",
+        "label":  "Putrefy Flesh (Resist)",
+        "pattern":  "You resist the Putrefy Flesh spell!",
+        "duration":  30,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "rotting-flesh",
+        "label":  "Rotting Flesh",
+        "pattern":  "Your flesh begins to rot.",
+        "duration":  35,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "rotting-flesh-resist",
+        "label":  "Rotting Flesh (Resist)",
+        "pattern":  "You resist the Rotting Flesh spell!",
+        "duration":  35,
+        "category":  "AoEs"
+    },
+    {
+        "id":  "avatar-of-war-depop",
+        "label":  "Avatar of War depop",
+        "pattern":  "The Avatar of War shouts \u0027Who dares defile my temple?! Come forth and face me!\u0027",
+        "duration":  3600,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "statue-lockout",
+        "label":  "Statue lockout",
+        "pattern":  "The Avatar of War shouts \u0027Who dares defile my temple?! Come forth and face me!\u0027",
+        "duration":  1200,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "pog-respawn",
+        "label":  "PoG respawn",
+        "pattern":  "^(?:a protecto)r of growth has been slain by (?:[^!]+)!$|^(?:You have slain a protecto)r of growth!$",
+        "duration":  1440,
+        "category":  "Notifications",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-1",
+        "label":  "1 - 1",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  210,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-2",
+        "label":  "1 - 2",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  420,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-3",
+        "label":  "1 - 3",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  630,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-4",
+        "label":  "1 - 4 ",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  840,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-5",
+        "label":  "1 - 5",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1050,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-6",
+        "label":  "1 - 6",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1260,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-7",
+        "label":  "1 - 7",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1470,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-1",
+        "label":  "2 - 1",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1986,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-2",
+        "label":  "2 - 2",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2196,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-3",
+        "label":  "2 - 3 ",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2406,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-4",
+        "label":  "2 - 4",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2616,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-5",
+        "label":  "2 - 5",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2826,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-6",
+        "label":  "2 - 6",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3036,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-7",
+        "label":  "2 - 7",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3246,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-1",
+        "label":  "3 - 1",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3761,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-2",
+        "label":  "3 - 2",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3971,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-3",
+        "label":  "3 - 3",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4181,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-4",
+        "label":  "3 - 4",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4391,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-5",
+        "label":  "3 - 5",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4601,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-6",
+        "label":  "3 - 6",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4811,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-7",
+        "label":  "3 - 7",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  5021,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "4-narandi",
+        "label":  "4 - Narandi",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  5526,
+        "category":  "Ring War",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "coth",
+        "label":  "COTH",
+        "pattern":  "^(?:(?\u003ccother\u003e[^ ]+) tells the group), \u0027COTH (?\u003ccothee\u003e[^\u0027]+)\u0027",
+        "duration":  12,
+        "category":  "Notifications",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "coth2",
+        "label":  "COTH2",
+        "pattern":  "^(?:(?\u003ccother\u003e[^ ]+) tells the guild), \u0027COTH (?\u003ccothee\u003e[^\u0027]+)\u0027",
+        "duration":  12,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "black-disease",
+        "label":  "Black (Disease)",
+        "pattern":  "You are covered by an aura of black petals.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "blue-magic",
+        "label":  "Blue (Magic)",
+        "pattern":  "You are covered by an aura of blue petals.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "green-poison",
+        "label":  "Green (Poison)",
+        "pattern":  "You are covered by an aura of green petals.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "red-fire",
+        "label":  "Red (Fire)",
+        "pattern":  "You are covered by an aura of red petals.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "white-cold",
+        "label":  "White (Cold)",
+        "pattern":  "You are covered by an aura of white petals.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "captain-nalot-s-quickening",
+        "label":  "Captain Nalot\u0027s Quickening",
+        "pattern":  "You are filled by the spirit of water.",
+        "duration":  600,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "eye-of-zomm-beads",
+        "label":  "Eye of Zomm (Beads)",
+        "pattern":  "Your Holgresh Elder Beads begins to glow.",
+        "duration":  35,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "gather-shadows",
+        "label":  "Gather Shadows",
+        "pattern":  "You gather shadows about you.",
+        "duration":  1200,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "grim-aura",
+        "label":  "Grim Aura",
+        "pattern":  "A dull aura covers your hand.",
+        "duration":  1620,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "journeyman-s-boots",
+        "label":  "Journeyman\u0027s Boots",
+        "pattern":  "Your feet feel quick.",
+        "duration":  1080,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "kilva-s-skin-of-flame",
+        "label":  "Kilva\u0027s Skin of Flame",
+        "pattern":  "Your skin beings to steam.",
+        "duration":  780,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "null-potion",
+        "label":  "Null Potion",
+        "pattern":  "You begin casting Null Aura.",
+        "duration":  1804,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "spikecoat",
+        "label":  "Spikecoat",
+        "pattern":  "Spikes spring from your skin.",
+        "duration":  10800,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "divine-aura",
+        "label":  "Divine Aura",
+        "pattern":  "The gods have rendered you invulnerable.",
+        "duration":  18,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "divine-barrier",
+        "label":  "Divine Barrier",
+        "pattern":  "You are surrounded by a divine barrier.",
+        "duration":  18,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "harmshield",
+        "label":  "Harmshield",
+        "pattern":  "You no longer feel pain.",
+        "duration":  18,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "quivering-veil-of-xarn",
+        "label":  "Quivering Veil of Xarn",
+        "pattern":  "You are surrounded by the Quivering Veil of Xarn.",
+        "duration":  18,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "resist-cold",
+        "label":  "Resist Cold",
+        "pattern":  "You feel resistant from cold.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "resist-disease",
+        "label":  "Resist Disease",
+        "pattern":  "You feel resistant from disease.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "resist-fire",
+        "label":  "Resist Fire",
+        "pattern":  "You feel resistant from fire.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "resist-magic",
+        "label":  "Resist Magic",
+        "pattern":  "You feel resistant from magic.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "resist-poison",
+        "label":  "Resist Poison",
+        "pattern":  "You feel resistant from poison.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "invisibility",
+        "label":  "Invisibility",
+        "pattern":  "You vanish.",
+        "duration":  1440,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "see-invis-ultravision",
+        "label":  "See Invis / Ultravision",
+        "pattern":  "Your eyes tingle.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "spirit-of-wolf",
+        "label":  "Spirit of Wolf",
+        "pattern":  "You feel the spirit of wolf enter you.",
+        "duration":  2166,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "regrowth",
+        "label":  "Regrowth",
+        "pattern":  "You begin to regenerate.",
+        "duration":  1140,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "avatar",
+        "label":  "Avatar",
+        "pattern":  "Your body screams with the power of an Avatar.",
+        "duration":  360,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "illusion",
+        "label":  "Illusion",
+        "pattern":  "You feel different.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "scale-of-wolf",
+        "label":  "Scale of Wolf",
+        "pattern":  "You feel the spirit-scale of wolf enter you.",
+        "duration":  2700,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "levitate",
+        "label":  "Levitate",
+        "pattern":  "Your feet leave the ground.",
+        "duration":  726,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "bind-sight",
+        "label":  "Bind Sight",
+        "pattern":  "Your sight is bound.",
+        "duration":  720,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "shifting-sight",
+        "label":  "Shifting Sight",
+        "pattern":  "You shift your sight.",
+        "duration":  900,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "dance-of-the-blade",
+        "label":  "Dance of the Blade",
+        "pattern":  "The edge of the blade sharpens your mind..",
+        "duration":  150,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "aegis",
+        "label":  "Aegis",
+        "pattern":  "An aegis of faith engulfs you.",
+        "duration":  8640,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "aegolism",
+        "label":  "Aegolism",
+        "pattern":  "You are filled with the power of Aegolism.",
+        "duration":  9000,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "bulwark-of-faith",
+        "label":  "Bulwark of Faith",
+        "pattern":  "A bulwark of faith engulfs you.",
+        "duration":  4860,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "celestial-elixir",
+        "label":  "Celestial Elixir",
+        "pattern":  "Celestial Elixir pumps through your body.",
+        "duration":  24,
+        "category":  "Heals"
+    },
+    {
+        "id":  "celestial-healing",
+        "label":  "Celestial Healing",
+        "pattern":  "Celestial light pumps through your body.",
+        "duration":  24,
+        "category":  "Heals"
+    },
+    {
+        "id":  "divine-intervention",
+        "label":  "Divine Intervention",
+        "pattern":  "^(:?{s} feels? the watchful eyes of th)e gods upon (?:them|you)\\.",
+        "duration":  600,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "heroic-bond",
+        "label":  "Heroic Bond",
+        "pattern":  "You feel heroic.",
+        "duration":  4320,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "symbol-of-marzin",
+        "label":  "Symbol of Marzin",
+        "pattern":  "A mystic symbol flashes before your eyes.",
+        "duration":  3780,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "symbol-of-naltron",
+        "label":  "Symbol of Naltron",
+        "pattern":  "A mystic symbol flashes before your eyes.",
+        "duration":  3240,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "circle-of-summer",
+        "label":  "Circle of Summer",
+        "pattern":  "You are surrounded by a summer haze.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "circle-of-winter",
+        "label":  "Circle of Winter",
+        "pattern":  "You are surrounded by a winter haze.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "protection-of-the-glades",
+        "label":  "Protection of the Glades",
+        "pattern":  "Your skin shimmers.",
+        "duration":  6000,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "aanya-s-quickening",
+        "label":  "Aanya\u0027s Quickening",
+        "pattern":  "You experience a quickening.",
+        "duration":  1440,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "clarity-ii",
+        "label":  "Clarity II",
+        "pattern":  "^(A soft br)eeze slips through your mind\\.$",
+        "duration":  2160,
+        "category":  "Buffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "enlightenment",
+        "label":  "Enlightenment",
+        "pattern":  "You have been enlightened.",
+        "duration":  3600,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "gift-of-brilliance",
+        "label":  "Gift of Brilliance",
+        "pattern":  "Your thoughts begin to race and flow faster.",
+        "duration":  6000,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "group-resist-magic",
+        "label":  "Group Resist Magic",
+        "pattern":  "You feel protected from magic.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "rune-v",
+        "label":  "Rune V",
+        "pattern":  "A coat of shimmering runes surround you.",
+        "duration":  6600,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "speed-of-the-shissar",
+        "label":  "Speed of the Shissar",
+        "pattern":  "Your body pulses with the spirit of the Shissar.",
+        "duration":  1800,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "visions-of-grandeur",
+        "label":  "Visions of Grandeur",
+        "pattern":  "You experience visions of grandeur.",
+        "duration":  2520,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "wonderous-rapidity",
+        "label":  "Wonderous Rapidity",
+        "pattern":  "You begin to move with wonderous rapidity.",
+        "duration":  1140,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "gift-of-pure-thought",
+        "label":  "Gift of Pure Thought",
+        "pattern":  "A soft breeze slips through your mind..",
+        "duration":  1980,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "bedlam",
+        "label":  "Bedlam",
+        "pattern":  "Your eyes gleam with bedlam.",
+        "duration":  420,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "cadeau-of-flame",
+        "label":  "Cadeau of Flame",
+        "pattern":  "You are enveloped in a cadeau of flame.",
+        "duration":  420,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "dead-man-floating",
+        "label":  "Dead Man Floating",
+        "pattern":  "You become like the dead.",
+        "duration":  4320,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "divine-glory",
+        "label":  "Divine Glory",
+        "pattern":  "You begin to radiate with divine glory.",
+        "duration":  3000,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "divine-strength",
+        "label":  "Divine Strength",
+        "pattern":  "You begin to radiate with divine strength.",
+        "duration":  3000,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "call-of-the-predator",
+        "label":  "Call of the Predator",
+        "pattern":  "The spirit of the predator strengthens your attacks.",
+        "duration":  4524,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "strength-of-nature",
+        "label":  "Strength of Nature",
+        "pattern":  "Nature\u0027s strength flows through your muscles.",
+        "duration":  3600,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "assidious-vision",
+        "label":  "Assidious Vision",
+        "pattern":  "Your spirit drifts from your body.",
+        "duration":  10800,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "focus-of-spirit",
+        "label":  "Focus of Spirit",
+        "pattern":  "You feel focused.",
+        "duration":  6000,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "primal-essence",
+        "label":  "Primal Essence",
+        "pattern":  "You feel primeval.",
+        "duration":  3780,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "riotous-health",
+        "label":  "Riotous Health",
+        "pattern":  "Your body shines with riotous health.",
+        "duration":  4320,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "talisman-of-jasinth",
+        "label":  "Talisman of Jasinth",
+        "pattern":  "You have been protected by the Talisman of Jasinth.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "torpor",
+        "label":  "Torpor",
+        "pattern":  "You fall into a state of torpor.",
+        "duration":  24,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "unfailing-reverence",
+        "label":  "Unfailing Reverence",
+        "pattern":  "People look at you with unfailing reverence.",
+        "duration":  4320,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "overwhelming-splendor",
+        "label":  "Overwhelming Splendor",
+        "pattern":  "You are adorned in an aura of radiant grace.",
+        "duration":  4860,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "nimble",
+        "label":  "Nimble",
+        "pattern":  "You feel deliriously nimble.",
+        "duration":  4320,
+        "category":  "Default"
+    },
+    {
+        "id":  "shield-of-the-magi",
+        "label":  "Shield of the Magi",
+        "pattern":  "You feel armored.",
+        "duration":  5400,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "razor-fang",
+        "label":  "Razor Fang",
+        "pattern":  "{S} is surrounded by an aura of nature.",
+        "duration":  120,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "feign-death",
+        "label":  "Feign Death",
+        "pattern":  "You must be sitting to prepare to camp.",
+        "duration":  10,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "mend",
+        "label":  "Mend",
+        "pattern":  "You mend your wounds and heal some damage.",
+        "duration":  360,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "envenomed-bolt",
+        "label":  "Envenomed Bolt",
+        "pattern":  "^{s}(?: has be)en poisoned\\.$",
+        "duration":  48,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "plague",
+        "label":  "Plague",
+        "pattern":  "^(?:{s} sweats and shivers, looking )feverish\\.$",
+        "duration":  132,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "soul-well",
+        "label":  "Soul Well",
+        "pattern":  "^(?:{s} has taken 11 damage from your )Soul Well\\.$",
+        "duration":  57,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "splurt",
+        "label":  "Splurt",
+        "pattern":  "^(?:{s} has taken 11 damage from yo)ur Splurt\\.$",
+        "duration":  102,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cajole-undead",
+        "label":  "Cajole Undead",
+        "pattern":  "^{s} moans\\.$",
+        "duration":  1140,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dread-of-night",
+        "label":  "Dread of Night",
+        "pattern":  "^(?:{s} has been instilled with the )dread of night\\.$",
+        "duration":  48,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "augmentation-of-death",
+        "label":  "Augmentation of Death",
+        "pattern":  "^(?:{s}\u0027s eyes) gleam with madness\\.$",
+        "duration":  1050,
+        "category":  "Buffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "deadeye",
+        "label":  "Deadeye",
+        "pattern":  "Your vision shifts.",
+        "duration":  1620,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "lich",
+        "label":  "Lich",
+        "pattern":  "You feel the skin peel from your bones.",
+        "duration":  1140,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "manaskin",
+        "label":  "Manaskin",
+        "pattern":  "Your skin gleams with an incandescent glow.",
+        "duration":  7200,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "shield-of-the-magi-2",
+        "label":  "Shield of the Magi",
+        "pattern":  "You feel armored.",
+        "duration":  5400,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "feign-death-2",
+        "label":  "Feign Death",
+        "pattern":  "You begin casting Feign Death.",
+        "duration":  16,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "pact-of-shadow",
+        "label":  "Pact of Shadow",
+        "pattern":  "^(?:{s} pulses with a blue-gr)een aura\\.$",
+        "duration":  24,
+        "category":  "Heals",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "screaming-terror",
+        "label":  "Screaming Terror",
+        "pattern":  "^(?:{s} begins) to scream\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "sight-graft",
+        "label":  "Sight Graft",
+        "pattern":  "You begin casting Sight Graft.",
+        "duration":  1625,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "backstab",
+        "label":  "Backstab",
+        "pattern":  "(^You backstab .*)|(^You try to backstab .*)",
+        "duration":  5,
+        "category":  "Middle // Short Duration Resist Buffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "evade-success",
+        "label":  "Evade Success",
+        "pattern":  "You have momentarily ducked away from the main combat.",
+        "duration":  10,
+        "category":  "Middle // Short Duration Resist Buffs"
+    },
+    {
+        "id":  "evade-fail",
+        "label":  "Evade Fail",
+        "pattern":  "Your attempts at ducking clear of combat fail.",
+        "duration":  10,
+        "category":  "Middle // Short Duration Resist Buffs"
+    },
+    {
+        "id":  "silver-whip",
+        "label":  "Silver Whip",
+        "pattern":  "Your skin takes on a silvery hue.",
+        "duration":  2160,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "burnout",
+        "label":  "Burnout",
+        "pattern":  "{S} goes berserk.",
+        "duration":  900,
+        "category":  "Self-Buffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dark-cloak-of-the-sky",
+        "label":  "Dark Cloak of the Sky",
+        "pattern":  "You feel your heart begin to race.",
+        "duration":  12,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "bind-wound",
+        "label":  "Bind Wound",
+        "pattern":  "^(?:You begin )to bandage {s}\\.$",
+        "duration":  10,
+        "category":  "Heals",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "camping",
+        "label":  "Camping",
+        "pattern":  "It will take you about 30 seconds to prepare your camp.",
+        "duration":  30,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "enrage-begin",
+        "label":  "Enrage (Begin)",
+        "pattern":  "^(?:{s} has become) ENRAGED\\.$",
+        "duration":  14,
+        "category":  "AoEs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "server-shutdown",
+        "label":  "Server Shutdown",
+        "pattern":  "\u003c[SERVER MESSAGE]\u003e: Server shut down initiated. Please find a safe place to camp. Server will shut down in 10 minutes.",
+        "duration":  600,
+        "category":  "Notifications"
+    },
+    {
+        "id":  "nillipuss-death",
+        "label":  "Nillipuss death",
+        "pattern":  "My body lies broken by your wicked hand. I place a curse on your soul and a pox on this land!",
+        "duration":  7200,
+        "category":  "Default"
+    },
+    {
+        "id":  "forage",
+        "label":  "Forage",
+        "pattern":  "(You have scrounged up some food|You have scrounged up some water|You fail to locate any food nearby|You have scrounged up some fishing grubs)",
+        "duration":  100,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "wort-pot",
+        "label":  "Wort Pot",
+        "pattern":  "^You feel your body go numb\\.$",
+        "duration":  360,
+        "category":  "Middle // Short Duration Resist Buffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "calm",
+        "label":  "Calm",
+        "pattern":  "^(?:{s} looks )less aggressive\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "pacify",
+        "label":  "Pacify",
+        "pattern":  "^(?:{s} looks )less aggressive\\.$",
+        "duration":  420,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "rest-the-dead",
+        "label":  "Rest the Dead",
+        "pattern":  "^{s} looks ambivalent\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "resurrection-effects",
+        "label":  "Resurrection Effects",
+        "pattern":  "You regain some experience from resurrection.",
+        "duration":  326,
+        "category":  "Debuffs"
+    },
+    {
+        "id":  "denon-s-bereavement",
+        "label":  "Denon\u0027s Bereavement",
+        "pattern":  "^{s} convulses\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "angstlich-s-assonance",
+        "label":  "Angstlich\u0027s Assonance",
+        "pattern":  "^(?:{s} has b)een deafened\\.$",
+        "duration":  60,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "asphyxiate",
+        "label":  "Asphyxiate",
+        "pattern":  "^(?:{s} begins) to choke\\.$",
+        "duration":  120,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cripple",
+        "label":  "Cripple",
+        "pattern":  "^(?:{s} has bee)n crippled\\.$",
+        "duration":  360,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fixation-of-ro",
+        "label":  "Fixation of Ro",
+        "pattern":  "^(?:{s} is surrounded by an outline of) cold flame\\.$",
+        "duration":  600,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fufil-s-curtailing-chant",
+        "label":  "Fufil\u0027s Curtailing Chant",
+        "pattern":  "^{s}\u0027s hair stands on end\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "insipid-weakness",
+        "label":  "Insipid Weakness",
+        "pattern":  "^{s} is weakened\\.$",
+        "duration":  215,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "occlusion-of-sound",
+        "label":  "Occlusion of Sound",
+        "pattern":  "^{s} reels in pain and loses concentration\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ro-s-fiery-sundering",
+        "label":  "Ro\u0027s Fiery Sundering",
+        "pattern":  "^{s} is immolated by blazing flames\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "scent-of-terris",
+        "label":  "Scent of Terris",
+        "pattern":  "^({s} is surrounded by a d)ark haze\\.$",
+        "duration":  780,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "torment-of-argli",
+        "label":  "Torment of Argli",
+        "pattern":  "^(?:{s} screams from the Torment )of Argli\\.$",
+        "duration":  120,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "tashania",
+        "label":  "Tashania",
+        "pattern":  "^(?:{s} gla)nces nervously about\\.$",
+        "duration":  780,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "forlorn-deeds",
+        "label":  "Forlorn Deeds",
+        "pattern":  "^{s} slows down\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "turgur-s-insects",
+        "label":  "Turgur\u0027s Insects",
+        "pattern":  "^{s} yawns\\.$",
+        "duration":  360,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "waves-of-the-deep-sea",
+        "label":  "Waves of the Deep Sea",
+        "pattern":  "^(?:{s} is crushe)d by a wall of water\\.$",
+        "duration":  150,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "mark-of-karn",
+        "label":  "Mark of Karn",
+        "pattern":  "^(?:{s}\u0027s sk)in gleams with a pure aura\\.$",
+        "duration":  210,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "earthcall",
+        "label":  "Earthcall",
+        "pattern":  "^(?:{s} is slowed by) the embracing earth\\.$",
+        "duration":  150,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "breath-of-the-sea",
+        "label":  "Breath of the Sea",
+        "pattern":  "^(?:{s} is slowed by the )mist of the seas\\.$ ",
+        "duration":  60,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "mesmerize",
+        "label":  "Mesmerize",
+        "pattern":  "^(?:{s} has b)een mesmerized\\.$",
+        "duration":  24,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "malo",
+        "label":  "Malo",
+        "pattern":  "^(?:{s} looks v)ery uncomfortable\\.$",
+        "duration":  780,
+        "category":  "Debuffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "razor-fang-2",
+        "label":  "Razor Fang",
+        "pattern":  "{S} is surrounded by an aura of nature.",
+        "duration":  120,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "deftdance",
+        "label":  "Deftdance",
+        "pattern":  "You prance about nimbly.",
+        "duration":  15,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "deftdance-cooldown",
+        "label":  "Deftdance (Cooldown)",
+        "pattern":  "Your movements return to normal.",
+        "duration":  4304,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "deftdance-others",
+        "label":  "Deftdance (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) dances abo)ut nimbly\\.$",
+        "duration":  15,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "puretone",
+        "label":  "Puretone",
+        "pattern":  "Your voice becomes perfectly melodious..",
+        "duration":  240,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "puretone-cooldown",
+        "label":  "Puretone (Cooldown)",
+        "pattern":  "Your voice loses its perfection.",
+        "duration":  4079,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "puretone-others",
+        "label":  "Puretone (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s voice becomes perfec)tly melodious\\.$",
+        "duration":  240,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "innerflame",
+        "label":  "Innerflame",
+        "pattern":  "Your muscles bulge with the force of will.",
+        "duration":  12,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "innerflame-cooldown",
+        "label":  "Innerflame (Cooldown)",
+        "pattern":  "Your strength of will fades.",
+        "duration":  1607,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "innerflame-others",
+        "label":  "Innerflame (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s muscles) bulge with the force of will\\.$",
+        "duration":  12,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "stonestance",
+        "label":  "Stonestance",
+        "pattern":  "Your body becomes one with the earth.",
+        "duration":  12,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "stonestance-cooldown",
+        "label":  "Stonestance (Cooldown)",
+        "pattern":  "You are no longer one with the earth.",
+        "duration":  227,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "stonestance-others",
+        "label":  "Stonestance (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s feet become one with )the earth\\.$",
+        "duration":  12,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "voiddance",
+        "label":  "Voiddance",
+        "pattern":  "You become untouchable.",
+        "duration":  8,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "voiddance-cooldown",
+        "label":  "Voiddance (Cooldown)",
+        "pattern":  "You movements return to normal.",
+        "duration":  3231,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "voiddance-others",
+        "label":  "Voiddance (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) beco)mes untouchable\\.$",
+        "duration":  8,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "whirlwind",
+        "label":  "Whirlwind",
+        "pattern":  "Your instincts take over as you turn aside every attack.",
+        "duration":  9,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "whirlwind-cooldown",
+        "label":  "Whirlwind (Cooldown)",
+        "pattern":  "Your fury fades.",
+        "duration":  3170,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "whirlwind-others",
+        "label":  "Whirlwind (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s face becomes twisted w)ith fury\\.$",
+        "duration":  9,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "weapon-shield",
+        "label":  "Weapon Shield",
+        "pattern":  "Your weapons begin to spin.",
+        "duration":  20,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "weapon-shield-cooldown",
+        "label":  "Weapon Shield (Cooldown)",
+        "pattern":  "Your weapons slow down.",
+        "duration":  4299,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "weapon-shield-others",
+        "label":  "Weapon Shield (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s weapons begin) to spin\\.$",
+        "duration":  20,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "defensive",
+        "label":  "Defensive",
+        "pattern":  "You assume a defensive fighting style..",
+        "duration":  180,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "defensive-cooldown",
+        "label":  "Defensive (Cooldown)",
+        "pattern":  "^(?:You return to your nor)mal fighting style\\.$",
+        "duration":  419,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "defensive-others",
+        "label":  "Defensive (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) assumes a defe)nsive fighting style\\.$",
+        "duration":  180,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "evasive",
+        "label":  "Evasive",
+        "pattern":  "You assume an evasive fighting style.",
+        "duration":  180,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "evasive-cooldown",
+        "label":  "Evasive (Cooldown)",
+        "pattern":  "You return to your normal fighting style..",
+        "duration":  239,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "evasive-others",
+        "label":  "Evasive (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) assumes an ev)asive fighting style\\.$",
+        "duration":  180,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "nimble-2",
+        "label":  "Nimble",
+        "pattern":  "You bounce about nimbly.",
+        "duration":  12,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "nimble-cooldown",
+        "label":  "Nimble (Cooldown)",
+        "pattern":  "Your movements return to normal.",
+        "duration":  1487,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "nimble-others",
+        "label":  "Nimble (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) bounces abou)t nimbly\\.$",
+        "duration":  12,
+        "category":  "Disciplines",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "duelist",
+        "label":  "Duelist",
+        "pattern":  "Your muscles quiver with power.",
+        "duration":  12,
+        "category":  "Disciplines"
+    },
+    {
+        "id":  "duelist-cooldown",
+        "label":  "Duelist Cooldown",
+        "pattern":  "Your fury fades.",
+        "duration":  1800,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "argli",
+        "label":  "ARGLI",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027ARGLI\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cripple-2",
+        "label":  "CRIPPLE",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027CRIPPLED?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  360,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "denon",
+        "label":  "DENON",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027DENONS?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  18,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "enc-slow",
+        "label":  "ENC SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027ENCH? SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  180,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fufils",
+        "label":  "FUFILS",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027FUFILS?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  18,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "malo-2",
+        "label":  "MALO",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027MALO(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "malosini",
+        "label":  "MALOSINI",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027MALOSINI\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  1200,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "oos",
+        "label":  "OOS",
+        "pattern":  "^(?:(?:[^ ]+) tells the gui)ld, \u0027OOS\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  18,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ro",
+        "label":  "RO",
+        "pattern":  "^(?:(?:[^ ]+) tells the gu)ild, \u0027RO\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  600,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "shm-slow",
+        "label":  "SHM SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the gu)ild, \u0027SHA?M(?\u003eAN)? SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  360,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "sunder",
+        "label":  "SUNDER",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027SUNDER\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  180,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "terris",
+        "label":  "TERRIS",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027TERRIS\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "tash",
+        "label":  "TASH",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027TASH(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "bard-slow",
+        "label":  "BARD SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the g)uild, \u0027BA?RD SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  60,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "rng-slow",
+        "label":  "RNG SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the gu)ild, \u0027RNG SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  150,
+        "category":  "Debuffs (Guild)",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ch-chain",
+        "label":  "CH Chain",
+        "pattern":  "^(?\u003ccaster\u003e[^ ]+) (?:(?:tell(?\u003es the g(?\u003euild|roup)| your party)|say(?:s?(?\u003e out of character)?| to your guild)|shouts?|auctions?)), \u0027(?\u003cnum\u003e[0-9]{3}) - CH - (?\u003ctarget\u003e.*?)\u0027$",
+        "duration":  10,
+        "category":  "CH Chain",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "rt-chain",
+        "label":  "RT Chain",
+        "pattern":  "^(?\u003ccaster\u003e[^ ]+) (?:(?:tell(?\u003es the g(?\u003euild|roup)| your party)|say(?:s?(?\u003e out of character)?| to your guild)|shouts?|auctions?)), \u0027(?\u003cnum\u003e[0-9]{3}) - RCH - (?\u003ctarget\u003e.*?)\u0027$",
+        "duration":  10,
+        "category":  "RT Chain",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ch-shout",
+        "label":  "CH_shout",
+        "pattern":  "^({s}|You) shouts?, \u0027(?\u003cnum\u003e[0-9]{3}) - CH - (?\u003ctarget\u003e.*?)\u0027$",
+        "duration":  10,
+        "category":  "CH Chain",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "frenzied-strength-self",
+        "label":  "Frenzied Strength (self)",
+        "pattern":  "Your muscles erupt with frenzied strength.",
+        "duration":  180,
+        "category":  "Buffs"
+    },
+    {
+        "id":  "frenzied-strength-other",
+        "label":  "Frenzied Strength (other)",
+        "pattern":  "^([A-Za-z ]*)\\\u0027s muscles bulge with frenzied strength.",
+        "duration":  180,
+        "category":  "Buffs",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-goes-berserk-burnout",
+        "label":  "{S} goes berserk. Burnout",
+        "pattern":  "{S} goes berserk.",
+        "duration":  900,
+        "category":  "Timers",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-looks-uncomfortable",
+        "label":  "{S} looks uncomfortable.",
+        "pattern":  "{S} looks uncomfortable.",
+        "duration":  540,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "mend-2",
+        "label":  "Mend",
+        "pattern":  "you mend your wounds and heal some damage",
+        "duration":  360,
+        "category":  "Timers"
+    },
+    {
+        "id":  "kick-try",
+        "label":  "Kick Try",
+        "pattern":  "you try to kick",
+        "duration":  6,
+        "category":  "Skills"
+    },
+    {
+        "id":  "you-kick",
+        "label":  "You Kick",
+        "pattern":  "you kick",
+        "duration":  6,
+        "category":  "Skills"
+    },
+    {
+        "id":  "feign-death-timer",
+        "label":  "Feign Death Timer",
+        "pattern":  "fd is not online at this time.",
+        "duration":  10,
+        "category":  "Skills"
+    },
+    {
+        "id":  "complete-heal-chain",
+        "label":  "Complete Heal Chain",
+        "pattern":  "CH - {S}",
+        "duration":  10,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "immobilize",
+        "label":  "Immobilize",
+        "pattern":  "{S}\u0027s feet adhere to the ground.",
+        "duration":  60,
+        "category":  "Detrimental",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "auc-ch",
+        "label":  "AUC CH",
+        "pattern":  "${1} - CH - ${2}",
+        "duration":  10,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-has-been-mesmerized",
+        "label":  "{S} has been mesmerized.",
+        "pattern":  "{S} has been mesmerized.",
+        "duration":  24,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-looks-less-aggressive",
+        "label":  "{S} looks less aggressive.",
+        "pattern":  "{S} looks less aggressive.",
+        "duration":  180,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-has-been-entranced",
+        "label":  " {S} has been entranced.",
+        "pattern":  " {S} has been entranced.",
+        "duration":  59,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-slows-down",
+        "label":  "{S} slows down.",
+        "pattern":  "{S} slows down.",
+        "duration":  180,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "wr",
+        "label":  "WR",
+        "pattern":  "{S} begins to move with wonderous rapidity.",
+        "duration":  1230,
+        "category":  "Timers",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "aq",
+        "label":  "AQ",
+        "pattern":  "{S} experiences a quickening.",
+        "duration":  1440,
+        "category":  "Timers",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dictate",
+        "label":  "Dictate",
+        "pattern":  "{S} has been charmed.",
+        "duration":  48,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-is-engulfed-in-darkness",
+        "label":  "{S} is engulfed in darkness.",
+        "pattern":  "{S} is engulfed in darkness.",
+        "duration":  66,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-looks-very-afraid",
+        "label":  " {S} looks very afraid.",
+        "pattern":  " {S} looks very afraid.",
+        "duration":  18,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-has-the-fear-of-life-put-in-them",
+        "label":  " {S} has the fear of life put in them.",
+        "pattern":  " {S} has the fear of life put in them.",
+        "duration":  18,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "epic",
+        "label":  "Epic",
+        "pattern":  "{S} has been gripped by nature\u0027s wrath.",
+        "duration":  180,
+        "category":  "Default",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "drones",
+        "label":  "Drones",
+        "pattern":  "{S} is engulfed in a swarm.",
+        "duration":  60,
+        "category":  "Drones",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "you-have-slain-a-noble",
+        "label":  "You have slain a noble!",
+        "pattern":  "You have slain a noble!",
+        "duration":  360,
+        "category":  "Default"
+    },
+    {
+        "id":  "you-have-slain-isabella-cellus",
+        "label":  "You have slain Isabella Cellus!",
+        "pattern":  "You have slain Isabella Cellus!",
+        "duration":  360,
+        "category":  "Default"
+    },
+    {
+        "id":  "you-have-slain-lozani",
+        "label":  "You have slain Lozani!",
+        "pattern":  "You have slain Lozani!",
+        "duration":  360,
+        "category":  "Default"
+    },
+    {
+        "id":  "a-hermit",
+        "label":  "a hermit",
+        "pattern":  "Your act of murder",
+        "duration":  120,
+        "category":  "Default"
+    },
+    {
+        "id":  "you-have-slain-a-body-guard",
+        "label":  "You have slain a body guard!",
+        "pattern":  "You have slain a body guard!",
+        "duration":  1080,
+        "category":  "Timers"
+    },
+    {
+        "id":  "a-body-guard-has-been-slain-by-s",
+        "label":  "a body guard has been slain by {s}",
+        "pattern":  "a body guard has been slain by {s}",
+        "duration":  1080,
+        "category":  "Timers",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "27min",
+        "label":  "27min",
+        "pattern":  "27min{S} is not online at this time.",
+        "duration":  1620,
+        "category":  "Timers",
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "you-open-your-mouth-wide-and-yawn",
+        "label":  "You open your mouth wide and yawn.",
+        "pattern":  "You open your mouth wide and yawn.",
+        "duration":  870,
+        "category":  "Timers"
+    },
+    {
+        "id":  "vhalen-nostrolo-has-been-slain",
+        "label":  "Vhalen Nostrolo has been slain",
+        "pattern":  "Vhalen Nostrolo has been slain",
+        "duration":  360,
+        "category":  "Timers"
+    },
+    {
+        "id":  "you-have-slain-vhalen-nostrolo",
+        "label":  "you have slain Vhalen Nostrolo",
+        "pattern":  "you have slain Vhalen Nostrolo",
+        "duration":  360,
+        "category":  "Timers"
+    },
+    {
+        "id":  "your-feet-leave-the-ground",
+        "label":  "Your feet leave the ground.",
+        "pattern":  "Your feet leave the ground.",
+        "duration":  720,
+        "category":  "Timers"
+    },
+    {
+        "id":  "29min",
+        "label":  "29min",
+        "pattern":  "29min is not online at this time.",
+        "duration":  1740,
+        "category":  "Timers"
+    },
+    {
+        "id":  "18min",
+        "label":  "18min",
+        "pattern":  "18min is not online at this time.",
+        "duration":  1080,
+        "category":  "Timers"
+    },
+    {
+        "id":  "6-40",
+        "label":  "6:40",
+        "pattern":  "64 is not online at this time.",
+        "duration":  400,
+        "category":  "Timers"
+    },
+    {
+        "id":  "22min",
+        "label":  "22min",
+        "pattern":  "22min is not online at this time.",
+        "duration":  1320,
+        "category":  "Timers"
+    },
+    {
+        "id":  "6min",
+        "label":  "6min",
+        "pattern":  "6min is not online at this time.",
+        "duration":  360,
+        "category":  "Timers"
+    },
+    {
+        "id":  "guard-blayle",
+        "label":  "Guard Blayle",
+        "pattern":  "You have slain Guard Blayle!",
+        "duration":  180,
+        "category":  "Default"
+    },
+    {
+        "id":  "11min",
+        "label":  "11min",
+        "pattern":  "11min is not online at this time.",
+        "duration":  660,
+        "category":  "Default"
+    },
+    {
+        "id":  "guard-chopin",
+        "label":  "Guard Chopin",
+        "pattern":  "You have slain Guard Chopin!",
+        "duration":  180,
+        "category":  "Default"
+    },
+    {
+        "id":  "20min",
+        "label":  "20min",
+        "pattern":  "20min is not online at this time.",
+        "duration":  1200,
+        "category":  "Timers"
+    },
+    {
+        "id":  "28min",
+        "label":  "28min",
+        "pattern":  "28min is not online at this time.",
+        "duration":  1680,
+        "category":  "Timers"
+    },
+    {
+        "id":  "10min",
+        "label":  "10min",
+        "pattern":  "10min is not online at this time.",
+        "duration":  600,
+        "category":  "Timers"
+    },
+    {
+        "id":  "14-5min",
+        "label":  "14.5min",
+        "pattern":  "14.5min is not online at this time.",
+        "duration":  870,
+        "category":  "Timers"
+    },
+    {
+        "id":  "9min",
+        "label":  "9min",
+        "pattern":  "9min is not online at this time.",
+        "duration":  540,
+        "category":  "Timers"
+    }
+]

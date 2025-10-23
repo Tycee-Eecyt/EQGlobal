@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('eqApi', {
   setOverlayMoveMode: (enabled) => ipcRenderer.invoke('overlay:move-mode', enabled),
   getOverlayMoveMode: () => ipcRenderer.invoke('overlay:get-move-mode'),
   loadDefaultTriggers: () => ipcRenderer.invoke('triggers:default'),
+  importGinaGtp: () => ipcRenderer.invoke('triggers:import-gtp'),
+  exportTriggers: (triggers) => ipcRenderer.invoke('triggers:export', triggers),
   onTimersUpdate: (callback) => {
     const listener = (_event, timers) => callback(timers);
     ipcRenderer.on('timers:update', listener);

@@ -229,6 +229,36 @@ function attachEventListeners() {
     await persistSettings();
   });
 
+  const importBtn = document.getElementById('import-gtp');
+  if (importBtn) {
+    importBtn.addEventListener('click', async () => {
+      try {
+        const imported = await window.eqApi.importGinaGtp();
+        if (Array.isArray(imported) && imported.length > 0) {
+          triggers = imported;
+          renderTriggers();
+          await persistSettings();
+        }
+      } catch (err) {
+        console.error('Import failed', err);
+        alert('Failed to import GINA .gtp. Check console for details.');
+      }
+    });
+  }
+
+  const exportBtn = document.getElementById('export-triggers');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      try {
+        const current = collectTriggersFromDom();
+        await window.eqApi.exportTriggers(current);
+      } catch (err) {
+        console.error('Export failed', err);
+        alert('Failed to export triggers. Check console for details.');
+      }
+    });
+  }
+
   triggersList.addEventListener('click', (event) => {
     if (event.target.classList.contains('remove-trigger')) {
       const card = event.target.closest('.trigger-card');
