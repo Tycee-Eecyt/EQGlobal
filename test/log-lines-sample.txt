@@ -1,0 +1,12 @@
+[#1] Eye of Veeshan shouts 'ABCD'
+[#2] Dread shouts 'EFGH'
+[#3] PlayerOne tells the guild, 'TASHED - PlayerTwo'
+[#4] PlayerOne tells the guild, 'ENCH SLOWED - PlayerTwo'
+[#5] PlayerOne tells the guild, 'MALOED - PlayerTwo'
+[#6] PlayerOne tells the guild, 'BARD SLOW - PlayerTwo'
+[#7] PlayerOne tells the guild, 'RNG SLOWED - PlayerTwo'
+[#8] PlayerOne tells the group, '123 - CH - Main Tank'
+[#9] PlayerOne tells your party, '234 - RCH - Off Tank'
+[#10] You feel your skin freeze.
+[#11] You lose control of yourself!
+
