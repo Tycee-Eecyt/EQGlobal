@@ -118,8 +118,9 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: minmax(560px, 2.3fr) minmax(320px, 1fr);
   gap: 1.6rem;
+  align-items: start;
 }
 
 .panel {
@@ -131,6 +132,7 @@ body {
   gap: 1.2rem;
   border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow: 0 18px 28px rgba(0, 0, 0, 0.35);
+  min-width: 0;
 }
 
 .panel h2 {
@@ -267,6 +269,32 @@ body {
   min-width: 88px;
 }
 
+@media (max-width: 1400px) {
+  .layout {
+    grid-template-columns: minmax(480px, 1.8fr) minmax(280px, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel.triggers-panel {
+    order: 1;
+  }
+}
+
+@media (max-width: 960px) {
+  .trigger-manager {
+    grid-template-columns: minmax(220px, 1fr);
+  }
+
+  .trigger-tree-panel {
+    max-height: 280px;
+  }
+}
+
 .watcher-summary {
   display: flex;
   flex-direction: column;
@@ -365,6 +393,7 @@ button:active {
   gap: 1rem;
   grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr);
   min-height: 440px;
+  align-items: stretch;
 }
 
 .trigger-tree-panel {
@@ -511,6 +540,7 @@ button:active {
   padding: 1rem 1.2rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   display: flex;
+  min-width: 0;
 }
 
 .trigger-detail {
