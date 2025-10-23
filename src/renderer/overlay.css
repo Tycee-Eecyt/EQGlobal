@@ -1,10 +1,10 @@
 .overlay-root {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #ffffff;
-  padding: 0.6rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.8rem;
   width: 100%;
   box-sizing: border-box;
   /* Allow dragging the frameless overlay window */
@@ -19,18 +19,51 @@
   cursor: move;
 }
 
+
 .timer-entry {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.45rem 0.6rem;
+  align-items: stretch;
+  padding: 0.5rem 0.65rem 0.5rem 0.8rem;
   border-radius: 12px;
-  background: rgba(20, 24, 35, 0.55);
+  background: rgba(20, 24, 35, 0.6);
   backdrop-filter: blur(6px);
   box-shadow: 0 14px 24px rgba(0, 0, 0, 0.35);
-  min-width: 200px;
+  min-width: 220px;
+  min-height: 40px;
   letter-spacing: 0.03rem;
   font-weight: 600;
+}
+
+.timer-entry .timer-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  z-index: 1;
+}
+
+.progress-track {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  background: var(--accent, #00eaff);
+  border-radius: 8px;
+  transition: height 0.25s ease-out;
 }
 
 .timer-entry span.remaining {

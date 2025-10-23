@@ -120,13 +120,23 @@ function renderTimers(timers) {
   }
 
   activeTimersContainer.innerHTML = timers
-    .map(
-      (timer) => `
-      <div class="timer-pill" style="background: ${timer.color || '#3a3f52'};">
-        <span>${escapeHtml(timer.label)}</span>
-        <span class="remaining">${formatRemaining(timer.remainingSeconds)}</span>
-      </div>`
-    )
+    .map((timer) => {
+      const totalMs = Math.max(1, (Number(timer.duration) || 0) * 1000);
+      const remainingMs = Math.max(0, Number(timer.remainingMs) || 0);
+      const pct = Math.max(0, Math.min(100, Math.round((remainingMs / totalMs) * 100)));
+      const accent = timer.color || '#3a86ff';
+      return `
+        <div class="timer-pill" style="--accent: ${accent};">
+          <div class="timer-progress-track">
+            <div class="timer-progress-fill" style="height: ${pct}%; background: ${accent};"></div>
+          </div>
+          <div class="timer-content">
+            <span>${escapeHtml(timer.label)}</span>
+            <span class="remaining">${formatRemaining(timer.remainingSeconds)}</span>
+          </div>
+        </div>
+      `;
+    })
     .join('');
 }
 

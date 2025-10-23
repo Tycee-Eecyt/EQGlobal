@@ -19,14 +19,23 @@ function renderOverlay(timers) {
   }
 
   overlayRoot.innerHTML = timers
-    .map(
-      (timer) => `
-        <div class="timer-entry" style="border-left: 6px solid ${timer.color || '#00eaff'};">
-          <span>${escapeHtml(timer.label)}</span>
-          <span class="remaining">${formatRemaining(timer.remainingSeconds)}</span>
+    .map((timer) => {
+      const totalMs = Math.max(1, (Number(timer.duration) || 0) * 1000);
+      const remainingMs = Math.max(0, Number(timer.remainingMs) || 0);
+      const pct = Math.max(0, Math.min(100, Math.round((remainingMs / totalMs) * 100)));
+      const accent = timer.color || '#00eaff';
+      return `
+        <div class="timer-entry" style="--accent: ${accent};">
+          <div class="progress-track">
+            <div class="progress-fill" style="height: ${pct}%; background: ${accent};"></div>
+          </div>
+          <div class="timer-content">
+            <span>${escapeHtml(timer.label)}</span>
+            <span class="remaining">${formatRemaining(timer.remainingSeconds)}</span>
+          </div>
         </div>
-      `
-    )
+      `;
+    })
     .join('');
 }
 
