@@ -1,10 +1,10 @@
 .overlay-root {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #ffffff;
-  padding: 0.6rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.8rem;
   width: 100%;
   box-sizing: border-box;
   /* Allow dragging the frameless overlay window */
@@ -19,18 +19,55 @@
   cursor: move;
 }
 
-.timer-entry {
+
+.timer-row {
+  position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.45rem 0.6rem;
-  border-radius: 12px;
-  background: rgba(20, 24, 35, 0.55);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.35);
-  min-width: 200px;
-  letter-spacing: 0.03rem;
-  font-weight: 600;
+  gap: 0.6rem;
+}
+
+.timer-row .time {
+  color: #ffd43b;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  min-width: 82px; /* 00:00:00 */
+}
+
+.timer-row .label {
+  color: #ffe8a1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  margin-left: 0.5rem;
+}
+
+.bar-container {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  background: rgba(0,0,0,0.55);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(180deg, #c92a2a 0%, #a61e1e 100%);
+  transition: width 0.2s linear;
+}
+
+.soon .bar-fill {
+  background: linear-gradient(180deg, #ff3b3b 0%, #c92a2a 100%);
+  box-shadow: 0 0 8px rgba(255,59,59,0.55);
+}
+
+.empty-state {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 .timer-entry span.remaining {

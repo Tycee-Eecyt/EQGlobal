@@ -59,20 +59,18 @@ class TimerManager extends EventEmitter {
 
   tick() {
     const now = Date.now();
-    let changed = false;
     for (const [id, timer] of this.timers.entries()) {
       const expiresAt = Date.parse(timer.expiresAt);
       if (Number.isNaN(expiresAt) || expiresAt <= now) {
         this.timers.delete(id);
-        changed = true;
       }
     }
 
-    if (changed) {
+    // Always emit updates while timers are active so UIs can animate countdowns.
+    if (this.timers.size > 0) {
       this.emitUpdate();
-    }
-
-    if (this.timers.size === 0) {
+    } else {
+      // When no timers remain, stop the interval and emit a final update via stop().
       this.stop();
     }
   }
