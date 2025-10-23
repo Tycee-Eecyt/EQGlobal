@@ -3,3 +3,8 @@ dist/
 out/
 *.log
 .env
+ 
+# GINA import artifacts and temp archives
+external/*.gtp
+external/*.zip
+external/*-unpacked/
