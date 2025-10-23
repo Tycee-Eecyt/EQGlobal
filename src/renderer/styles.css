@@ -784,24 +784,26 @@ button:active {
 
 .timer-progress-track {
   position: absolute;
-  left: 8px;
-  top: 6px;
-  bottom: 6px;
-  width: 8px;
-  border-radius: 8px;
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
+  height: 6px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 }
 
 .timer-progress-fill {
   position: absolute;
-  left: 0;
-  right: 0;
+  top: 0;
   bottom: 0;
-  height: 100%;
+  left: 0;
+  width: 100%;
   background: var(--accent, #3a86ff);
-  border-radius: 8px;
-  transition: height 0.25s ease-out;
+  border-radius: 999px;
+  transform-origin: left center;
+  transform: scaleX(1);
+  transition: transform 0.25s ease-out;
 }
 
 .timer-pill .remaining {
