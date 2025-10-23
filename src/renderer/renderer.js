@@ -1528,13 +1528,14 @@ function renderTimers(timers) {
       );
       const total = Math.max(timer.duration * 1000, 1);
       const progress = Math.max(0, Math.min(1, 1 - remaining / total));
+      const scaledProgress = progress <= 0 ? 0 : Math.max(0.02, progress);
       const remainingSeconds = Math.ceil(remaining / 1000);
       const minutes = Math.floor(remainingSeconds / 60);
       const seconds = remainingSeconds % 60;
       return `
         <div class="timer-pill" style="--accent: ${timer.color || '#00c9ff'}">
           <div class="timer-progress-track">
-            <div class="timer-progress-fill" style="height: ${(progress * 100).toFixed(1)}%"></div>
+            <div class="timer-progress-fill" style="transform: scaleX(${scaledProgress.toFixed(4)})"></div>
           </div>
           <div class="timer-content">
             <span>${escapeHtml(timer.label || '')}</span>
@@ -1808,3 +1809,6 @@ function updateMoveModeButton() {
   toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlay';
   toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
 }
+
+
+
