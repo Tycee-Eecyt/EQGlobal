@@ -7,6 +7,21 @@ const NEWLINE_REGEXP = /\r?\n/;
 const SUPPORTED_EXTENSIONS = ['.log', '.txt'];
 const DEFAULT_FILE_PATTERNS = ['*.log', 'eqlog_*.txt'];
 
+function sanitizeRegexPattern(pattern) {
+  let p = String(pattern || '');
+  // Replace .NET atomic groups (?>...) with non-capturing groups (?:...)
+  p = p.replace(/\(\?>/g, '(?:');
+  // Replace .NET named capture groups (?<name>...) with non-capturing groups
+  p = p.replace(/\(\?<([A-Za-z][\w-]*)>/g, '(?:');
+  // Replace ${1}, ${name} style placeholders with a non-greedy wildcard
+  p = p.replace(/\$\{[^}]+\}/g, '.*?');
+  // GINA placeholder {s} (commonly used) -> wildcard
+  p = p.replace(/\{s\}/gi, '.*?');
+  // Remove unsupported possessive quantifier suffixes like ++, *+, ?+
+  p = p.replace(/([+*?])\+/g, '$1');
+  return p;
+}
+
 function isSupportedLogFile(fileName = '') {
   const lower = fileName.toLowerCase();
   if (!SUPPORTED_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
@@ -65,12 +80,23 @@ class LogWatcher extends EventEmitter {
       let matcher;
       if (trigger.isRegex) {
         const flags = trigger.flags || 'i';
-        matcher = (line) => {
-          const regex = new RegExp(trigger.pattern, flags);
-          return regex.test(line);
-        };
+        const original = String(trigger.pattern || '');
+        const sanitized = sanitizeRegexPattern(original);
+        let compiled = null;
+        try {
+          compiled = new RegExp(sanitized, flags);
+        } catch (err) {
+          // Fallback: use plain substring match if regex is invalid even after sanitization
+          compiled = null;
+        }
+        if (compiled) {
+          matcher = (line) => compiled.test(line);
+        } else {
+          const needle = original.toLowerCase();
+          matcher = (line) => line.toLowerCase().includes(needle);
+        }
       } else {
-        matcher = (line) => line.toLowerCase().includes(trigger.pattern.toLowerCase());
+        matcher = (line) => line.toLowerCase().includes((trigger.pattern || '').toLowerCase());
       }
 
       return {
