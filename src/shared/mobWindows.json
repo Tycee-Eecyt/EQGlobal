@@ -2,30 +2,21 @@
   {
     "id": "derakor-the-vindicator",
     "name": "Derakor the Vindicator",
-    "aliases": ["Vindicator", "Vindi"],
+    "aliases": [
+      "Vindicator",
+      "Vindi"
+    ],
     "zone": "Kael Drakkel",
-    "expansion": "Velious",
-    "respawnDisplay": "8h ± 1h",
+    "respawnDisplay": "8h \u00b1 1h",
     "minRespawnHours": 7,
     "maxRespawnHours": 9,
     "notes": "Storm Giant warrior. Window opens roughly 7 hours after death and closes around 9 hours."
   },
   {
-    "id": "lord-bob",
-    "name": "Lord Bob",
-    "zone": "Western Wastes",
-    "expansion": "Velious",
-    "respawnDisplay": "24h ± 2h",
-    "minRespawnHours": 22,
-    "maxRespawnHours": 26,
-    "notes": "Example placeholder entry for a long respawn window raid NPC."
-  },
-  {
     "id": "statue-of-rallos-zek",
     "name": "The Statue of Rallos Zek",
     "zone": "Kael Drakkel",
-    "expansion": "Velious",
-    "respawnDisplay": "16h ± 2h",
+    "respawnDisplay": "16h \u00b1 2h",
     "minRespawnHours": 14,
     "maxRespawnHours": 18,
     "notes": "Classic Kael Drakkel raid target leading into Avatar of War."
