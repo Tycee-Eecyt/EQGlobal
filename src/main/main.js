@@ -5,12 +5,15 @@ const axios = require('axios');
 const childProcess = require('child_process');
 const LogWatcher = require('./logWatcher');
 const TimerManager = require('./timerManager');
+const MobWindowManager = require('./mobWindowManager');
 const defaultTriggers = require('../shared/defaultTriggers.json');
+const mobWindowDefinitions = require('../shared/mobWindows.json');
 
 require('dotenv').config();
 
 let mainWindow;
 let overlayWindow;
+let mobOverlayWindow;
 let logWatcher;
 let settingsPath;
 let tray;
@@ -25,6 +28,17 @@ timerManager.on('update', (timers) => {
   }
 });
 
+const mobWindowManager = new MobWindowManager(mobWindowDefinitions, { tickRateMs: 30_000 });
+mobWindowManager.on('update', (snapshot) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('mob-windows:update', snapshot);
+  }
+  if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+    mobOverlayWindow.webContents.send('mob-windows:update', snapshot);
+  }
+});
+mobWindowManager.start();
+
 const backendQueue = {
   lines: [],
   events: [],
@@ -37,12 +51,17 @@ const defaultSettings = {
   overlayClickThrough: false,
   overlayOpacity: 0.85,
   overlayBounds: null,
+  mobOverlayBounds: null,
   categories: [],
   triggers: defaultTriggers,
+  mobWindows: {
+    kills: {},
+  },
 };
 
 let settings = { ...defaultSettings };
 let overlayBoundsSaveTimer = null;
+let mobOverlayBoundsSaveTimer = null;
 let overlayMoveMode = false;
 
 function createTrayIconImage() {
@@ -120,6 +139,7 @@ function updateTrayMenu() {
   const mainVisible = Boolean(mainWindowExists && mainWindow.isVisible());
   const overlayExists = overlayWindow && !overlayWindow.isDestroyed();
   const overlayVisible = Boolean(overlayExists && overlayWindow.isVisible());
+  const mobOverlayVisible = Boolean(mobOverlayWindow && !mobOverlayWindow.isDestroyed() && mobOverlayWindow.isVisible());
 
   const template = [
     {
@@ -129,9 +149,15 @@ function updateTrayMenu() {
       },
     },
     {
-      label: overlayVisible ? 'Hide Overlay' : 'Show Overlay',
+      label: overlayVisible ? 'Hide Timer Overlay' : 'Show Timer Overlay',
       click: () => {
         toggleOverlayVisibility();
+      },
+    },
+    {
+      label: mobOverlayVisible ? 'Hide Mob Overlay' : 'Show Mob Overlay',
+      click: () => {
+        toggleMobOverlayVisibility();
       },
     },
     { type: 'separator' },
@@ -218,6 +244,24 @@ function toggleOverlayVisibility() {
     overlayWindow.hide();
   } else {
     overlayWindow.showInactive();
+  }
+  updateTrayMenu();
+}
+
+function toggleMobOverlayVisibility() {
+  if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+    createMobOverlayWindow();
+  }
+
+  if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+    updateTrayMenu();
+    return;
+  }
+
+  if (mobOverlayWindow.isVisible()) {
+    mobOverlayWindow.hide();
+  } else {
+    mobOverlayWindow.showInactive();
   }
   updateTrayMenu();
 }
@@ -319,6 +363,15 @@ async function ensureSettingsLoaded() {
     if (!Array.isArray(settings.categories)) {
       settings.categories = [];
     }
+    if (!settings.mobOverlayBounds || typeof settings.mobOverlayBounds !== 'object') {
+      settings.mobOverlayBounds = null;
+    }
+    if (!settings.mobWindows || typeof settings.mobWindows !== 'object') {
+      settings.mobWindows = { kills: {} };
+    } else if (!settings.mobWindows.kills || typeof settings.mobWindows.kills !== 'object') {
+      settings.mobWindows.kills = {};
+    }
+    mobWindowManager.loadState(settings.mobWindows);
   }
 
   return settings;
@@ -339,7 +392,14 @@ async function saveSettings(updatedSettings = settings) {
   }
 
   try {
-    await fs.promises.writeFile(settingsPath, JSON.stringify(updatedSettings, null, 2), 'utf8');
+    const serializedMobWindows = mobWindowManager.serializeState();
+    settings.mobWindows = serializedMobWindows;
+    const payload = {
+      ...updatedSettings,
+      mobWindows: serializedMobWindows,
+      mobOverlayBounds: settings.mobOverlayBounds,
+    };
+    await fs.promises.writeFile(settingsPath, JSON.stringify(payload, null, 2), 'utf8');
   } catch (error) {
     console.error('Failed to persist settings', error);
   }
@@ -361,6 +421,9 @@ function createMainWindow() {
   });
 
   mainWindow.loadFile(resolveRendererPath('index.html'));
+  mainWindow.webContents.once('did-finish-load', () => {
+    mainWindow.webContents.send('mob-windows:update', mobWindowManager.computeSnapshot());
+  });
 
   mainWindow.on('show', updateTrayMenu);
   mainWindow.on('hide', updateTrayMenu);
@@ -406,7 +469,11 @@ function createOverlayWindow() {
   overlayWindow = new BrowserWindow(windowOptions);
 
   overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-  overlayWindow.loadFile(resolveRendererPath('overlay.html'));
+  overlayWindow.loadFile(resolveRendererPath('overlay-timers.html'));
+  overlayWindow.webContents.once('did-finish-load', () => {
+    overlayWindow.webContents.send('timers:update', timerManager.getTimers());
+    overlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
+  });
   overlayWindow.setOpacity(settings.overlayOpacity);
   overlayWindow.setIgnoreMouseEvents(
     overlayMoveMode ? false : Boolean(settings.overlayClickThrough),
@@ -439,6 +506,73 @@ function createOverlayWindow() {
 
   updateTrayMenu();
   return overlayWindow;
+}
+
+function createMobOverlayWindow() {
+  if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+    return mobOverlayWindow;
+  }
+
+  const baseBounds = { width: 320, height: 360 };
+  const saved = settings.mobOverlayBounds || {};
+  const windowOptions = {
+    width: Number(saved.width) || baseBounds.width,
+    height: Number(saved.height) || baseBounds.height,
+    frame: false,
+    transparent: true,
+    resizable: true,
+    alwaysOnTop: true,
+    focusable: false,
+    skipTaskbar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
+    backgroundColor: '#00000000',
+  };
+
+  if (typeof saved.x === 'number' && typeof saved.y === 'number') {
+    windowOptions.x = saved.x;
+    windowOptions.y = saved.y;
+  }
+
+  mobOverlayWindow = new BrowserWindow(windowOptions);
+  mobOverlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  mobOverlayWindow.loadFile(resolveRendererPath('overlay-mobs.html'));
+  mobOverlayWindow.webContents.once('did-finish-load', () => {
+    mobOverlayWindow.webContents.send('mob-windows:update', mobWindowManager.computeSnapshot());
+    mobOverlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
+  });
+  mobOverlayWindow.setOpacity(settings.overlayOpacity);
+  mobOverlayWindow.setIgnoreMouseEvents(
+    overlayMoveMode ? false : Boolean(settings.overlayClickThrough),
+    { forward: true }
+  );
+
+  const scheduleSaveMobOverlayBounds = () => {
+    if (mobOverlayBoundsSaveTimer) {
+      clearTimeout(mobOverlayBoundsSaveTimer);
+    }
+    mobOverlayBoundsSaveTimer = setTimeout(async () => {
+      mobOverlayBoundsSaveTimer = null;
+      if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+        const b = mobOverlayWindow.getBounds();
+        settings.mobOverlayBounds = { x: b.x, y: b.y, width: b.width, height: b.height };
+        await saveSettings(settings);
+      }
+    }, 300);
+  };
+
+  mobOverlayWindow.on('move', scheduleSaveMobOverlayBounds);
+  mobOverlayWindow.on('resize', scheduleSaveMobOverlayBounds);
+  mobOverlayWindow.on('show', updateTrayMenu);
+  mobOverlayWindow.on('hide', updateTrayMenu);
+  mobOverlayWindow.on('closed', () => {
+    mobOverlayWindow = null;
+    updateTrayMenu();
+  });
+
+  updateTrayMenu();
+  return mobOverlayWindow;
 }
 
 function sendStatus(status) {
@@ -488,7 +622,7 @@ function handleTriggerMatch(payload) {
   queueBackendEvent(payload, timer);
 }
 
-function handleNewLines({ filePath, lines }) {
+async function handleNewLines({ filePath, lines }) {
   const decoratedLines = lines.map((line) => {
     const timestampMatch = line.match(/^\[(.+?)\]/);
     const timestamp = timestampMatch ? new Date(timestampMatch[1]) : new Date();
@@ -505,6 +639,11 @@ function handleNewLines({ filePath, lines }) {
 
   backendQueue.lines.push(...decoratedLines);
   scheduleBackendFlush();
+
+  const mobUpdated = mobWindowManager.ingestLines(decoratedLines);
+  if (mobUpdated) {
+    await saveSettings(settings);
+  }
 }
 
 function queueBackendEvent(payload, timer) {
@@ -658,6 +797,9 @@ function registerIpcHandlers() {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : settings.overlayClickThrough, { forward: true });
     }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : settings.overlayClickThrough, { forward: true });
+    }
     await saveSettings(settings);
     return settings.overlayClickThrough;
   });
@@ -667,6 +809,9 @@ function registerIpcHandlers() {
     settings.overlayOpacity = nextOpacity;
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setOpacity(nextOpacity);
+    }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.setOpacity(nextOpacity);
     }
     await saveSettings(settings);
     return nextOpacity;
@@ -688,6 +833,25 @@ function registerIpcHandlers() {
     return true;
   });
 
+  ipcMain.handle('overlay:show-mobs', () => {
+    if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+      createMobOverlayWindow();
+    }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.showInactive();
+    }
+    updateTrayMenu();
+    return true;
+  });
+
+  ipcMain.handle('overlay:hide-mobs', () => {
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.hide();
+    }
+    updateTrayMenu();
+    return true;
+  });
+
   ipcMain.handle('overlay:move-mode', async (_event, enabled) => {
     overlayMoveMode = Boolean(enabled);
     if (overlayWindow && !overlayWindow.isDestroyed()) {
@@ -697,12 +861,36 @@ function registerIpcHandlers() {
       }
       overlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
     }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      if (overlayMoveMode) {
+        mobOverlayWindow.showInactive();
+      }
+      mobOverlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
+    }
     return overlayMoveMode;
   });
 
   ipcMain.handle('overlay:get-move-mode', () => overlayMoveMode);
 
   ipcMain.handle('triggers:default', () => defaultTriggers);
+
+  ipcMain.handle('mob-windows:get', () => mobWindowManager.computeSnapshot());
+  ipcMain.handle('mob-windows:definitions', () => mobWindowManager.getDefinitions());
+  ipcMain.handle('mob-windows:record-kill', async (_event, mobId, timestamp) => {
+    const updated = mobWindowManager.recordKill(mobId, timestamp ? new Date(timestamp) : new Date());
+    if (updated) {
+      await saveSettings(settings);
+    }
+    return mobWindowManager.computeSnapshot();
+  });
+  ipcMain.handle('mob-windows:clear', async (_event, mobId) => {
+    const cleared = mobWindowManager.clearKill(mobId);
+    if (cleared) {
+      await saveSettings(settings);
+    }
+    return mobWindowManager.computeSnapshot();
+  });
 
   ipcMain.handle('triggers:import-gtp', async () => {
     // Ask user for a .gtp file
@@ -774,6 +962,7 @@ app.whenReady().then(async () => {
   await ensureSettingsLoaded();
   createMainWindow();
   createOverlayWindow();
+  createMobOverlayWindow();
   ensureTray();
   registerIpcHandlers();
 
@@ -789,6 +978,9 @@ app.whenReady().then(async () => {
       createMainWindow();
       if (!overlayWindow) {
         createOverlayWindow();
+      }
+      if (!mobOverlayWindow) {
+        createMobOverlayWindow();
       }
     }
   });

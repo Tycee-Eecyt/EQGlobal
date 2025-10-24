@@ -19,12 +19,46 @@
   cursor: move;
 }
 
+.overlay-section {
+  background: rgba(18, 24, 35, 0.8);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1rem;
+  box-shadow: 0 12px 28px rgba(6, 10, 18, 0.45);
+  -webkit-app-region: no-drag;
+}
+
+.overlay-root.move-mode .overlay-section {
+  -webkit-app-region: drag;
+}
+
+.overlay-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.overlay-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.overlay-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
 
 .timer-row {
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  padding: 0.15rem 0;
 }
 
 .timer-row .time {
@@ -68,6 +102,7 @@
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.95rem;
   text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  text-align: center;
 }
 
 .timer-entry span.remaining {
@@ -75,8 +110,62 @@
   font-variant-numeric: tabular-nums;
 }
 
-.empty-state {
+.overlay-mob-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.overlay-mob-item {
+  background: rgba(9, 13, 22, 0.65);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.overlay-mob-item .mob-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.overlay-mob-item .mob-name {
+  font-weight: 600;
+  color: #f5f7fa;
+}
+
+.overlay-mob-item .mob-status {
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.75);
-  font-size: 0.9rem;
-  text-align: center;
+  text-align: right;
+}
+
+.overlay-mob-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0.45rem 0 0.35rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.overlay-mob-progress span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--progress, 0%);
+  background: linear-gradient(135deg, #49d1a4, #14c3ff);
+  border-radius: 999px;
+  transition: width 0.3s ease-out;
+}
+
+.overlay-mob-item .mob-meta {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
 }

@@ -16,6 +16,7 @@ let expandedCategories = new Set([ROOT_CATEGORY_ID]);
 let activeTriggerTab = 'basic';
 let timersRaf = null;
 let recentLines = [];
+let mobWindowSnapshot = { generatedAt: null, mobs: [] };
 
 const logDirectoryInput = document.getElementById('log-directory');
 const chooseLogDirButton = document.getElementById('choose-log-dir');
@@ -29,6 +30,10 @@ const triggerDetailContainer = document.getElementById('trigger-detail');
 const activeTimersContainer = document.getElementById('active-timers');
 const recentLinesList = document.getElementById('recent-lines');
 const toggleMoveModeButton = document.getElementById('toggle-move-mode');
+const showMobOverlayButton = document.getElementById('show-mob-overlay');
+const mobWindowCurrentContainer = document.getElementById('mob-window-current');
+const mobWindowUpcomingContainer = document.getElementById('mob-window-upcoming');
+const mobWindowTableContainer = document.getElementById('mob-window-table');
 let overlayMoveMode = false;
 
 const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
@@ -1512,6 +1517,300 @@ function cancelTimersAnimation() {
   }
 }
 
+function formatDurationShort(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return '';
+  }
+  const abs = Math.max(0, Math.round(seconds));
+  const days = Math.floor(abs / 86400);
+  const hours = Math.floor((abs % 86400) / 3600);
+  const minutes = Math.floor((abs % 3600) / 60);
+  const secs = abs % 60;
+  const parts = [];
+  if (days > 0) {
+    parts.push(`${days}d`);
+  }
+  if (parts.length < 2 && hours > 0) {
+    parts.push(`${hours}h`);
+  }
+  if (parts.length < 2 && minutes > 0) {
+    parts.push(`${minutes}m`);
+  }
+  if (parts.length === 0) {
+    parts.push(`${Math.max(1, secs)}s`);
+  }
+  return parts.join(' ');
+}
+
+function formatCountdown(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return 'Unknown';
+  }
+  if (seconds <= 0) {
+    return 'now';
+  }
+  return formatDurationShort(seconds);
+}
+
+function formatAbsoluteTime(isoString) {
+  if (!isoString) {
+    return 'Unknown';
+  }
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return 'Unknown';
+  }
+  const now = new Date();
+  const options = { hour: 'numeric', minute: '2-digit' };
+  if (date.toDateString() !== now.toDateString()) {
+    options.month = 'short';
+    options.day = 'numeric';
+  }
+  return date.toLocaleString(undefined, options);
+}
+
+function formatSince(isoString) {
+  if (!isoString) {
+    return 'Unknown';
+  }
+  const parsed = Date.parse(isoString);
+  if (Number.isNaN(parsed)) {
+    return 'Unknown';
+  }
+  const diffSeconds = Math.round((Date.now() - parsed) / 1000);
+  if (diffSeconds < 10) {
+    return 'moments ago';
+  }
+  return `${formatDurationShort(diffSeconds)} ago`;
+}
+
+function formatRespawnRange(mob = {}) {
+  if (mob.respawnDisplay) {
+    return mob.respawnDisplay;
+  }
+  const minMinutes = Number(mob.minRespawnMinutes);
+  const maxMinutes = Number(mob.maxRespawnMinutes);
+  if (!Number.isFinite(minMinutes) || !Number.isFinite(maxMinutes)) {
+    return '';
+  }
+  const minLabel = formatDurationShort(minMinutes * 60);
+  const maxLabel = formatDurationShort(maxMinutes * 60);
+  if (minLabel === maxLabel) {
+    return `Respawn ${minLabel}`;
+  }
+  return `Respawn ${minLabel} - ${maxLabel}`;
+}
+
+function categorizeMobWindows(mobs = []) {
+  const current = [];
+  const upcoming = [];
+  const future = [];
+  const unknown = [];
+
+  mobs.forEach((mob) => {
+    if (!mob || !mob.id) {
+      return;
+    }
+    if (!mob.lastKillAt) {
+      unknown.push(mob);
+      return;
+    }
+    if (mob.inWindow) {
+      current.push(mob);
+    } else if (Number.isFinite(mob.secondsUntilOpen) && mob.secondsUntilOpen > 0 && mob.secondsUntilOpen <= 86_400) {
+      upcoming.push(mob);
+    } else if (Number.isFinite(mob.secondsUntilOpen) && mob.secondsUntilOpen > 0) {
+      future.push(mob);
+    } else {
+      future.push(mob);
+    }
+  });
+
+  const sortBy = (key) => (a, b) => {
+    const av = Number.isFinite(a[key]) ? a[key] : Number.MAX_SAFE_INTEGER;
+    const bv = Number.isFinite(b[key]) ? b[key] : Number.MAX_SAFE_INTEGER;
+    return av - bv;
+  };
+
+  current.sort(sortBy('secondsUntilClose'));
+  upcoming.sort(sortBy('secondsUntilOpen'));
+  future.sort(sortBy('secondsUntilOpen'));
+
+  return { current, upcoming, future, unknown };
+}
+
+function buildMobWindowItem(mob, mode) {
+  const respawnRange = formatRespawnRange(mob);
+  const lastKillText = mob.lastKillAt ? `Last kill ${formatSince(mob.lastKillAt)}` : 'Last kill unknown';
+  const zoneParts = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
+
+  let descriptor = '';
+  let footerLeft = mob.windowOpensAt ? `${mode === 'current' ? 'Opened' : 'Earliest'}: ${formatAbsoluteTime(mob.windowOpensAt)}` : 'Earliest: Unknown';
+  let footerRight = mob.windowClosesAt ? `${mode === 'current' ? 'Ends' : 'Latest'}: ${formatAbsoluteTime(mob.windowClosesAt)}` : '';
+  let progressPct = 0;
+
+  if (mode === 'current') {
+    descriptor = `Window ends in ${formatCountdown(mob.secondsUntilClose)}`;
+    progressPct = Math.max(0, Math.min(100, Math.round((Number(mob.windowProgress) || 0) * 100)));
+  } else if (mode === 'upcoming') {
+    descriptor = `Window opens in ${formatCountdown(mob.secondsUntilOpen)}`;
+    progressPct = 0;
+  } else {
+    descriptor = respawnRange || '';
+  }
+
+  const metaParts = [];
+  if (descriptor) metaParts.push(descriptor);
+  if (respawnRange && respawnRange !== descriptor) metaParts.push(respawnRange);
+  if (lastKillText) metaParts.push(lastKillText);
+  if (zoneParts) metaParts.push(zoneParts);
+  const meta = metaParts.filter(Boolean).join(' • ');
+
+  const footerRightText = footerRight ? `<span>${escapeHtml(footerRight)}</span>` : '<span></span>';
+
+  return `
+    <article class="mob-window-item">
+      <div class="mob-window-header">
+        <span class="mob-name">${escapeHtml(mob.name || '')}</span>
+        <span class="mob-meta">${escapeHtml(meta)}</span>
+      </div>
+      <div class="mob-window-progress" style="--progress: ${progressPct}%;">
+        <span style="width: ${progressPct}%;"></span>
+      </div>
+      <div class="mob-window-footer">
+        <span>${escapeHtml(footerLeft)}</span>
+        ${footerRightText}
+      </div>
+    </article>
+  `;
+}
+
+function renderMobWindowList(container, mobs, emptyMessage, mode) {
+  if (!container) {
+    return;
+  }
+  if (!mobs || mobs.length === 0) {
+    container.innerHTML = `<div class="mob-window-empty">${escapeHtml(emptyMessage)}</div>`;
+    return;
+  }
+  container.innerHTML = mobs.map((mob) => buildMobWindowItem(mob, mode)).join('');
+}
+
+function renderMobWindowTable(snapshot) {
+  if (!mobWindowTableContainer) {
+    return;
+  }
+  const mobs = Array.isArray(snapshot?.mobs) ? snapshot.mobs : Array.isArray(snapshot) ? snapshot : [];
+  if (mobs.length === 0) {
+    mobWindowTableContainer.innerHTML = '<div class="mob-window-empty">No tracked mobs configured.</div>';
+    return;
+  }
+
+  const rowsHtml = mobs
+    .map((mob) => {
+      const respawnRange = formatRespawnRange(mob);
+      const lastKillDisplay = mob.lastKillAt
+        ? `${formatAbsoluteTime(mob.lastKillAt)} (${formatSince(mob.lastKillAt)})`
+        : 'Unknown';
+      const statusParts = [];
+      if (mob.inWindow) {
+        statusParts.push('In window');
+        if (Number.isFinite(mob.secondsUntilClose)) {
+          statusParts.push(`ends in ${formatCountdown(mob.secondsUntilClose)}`);
+        }
+      } else if (Number.isFinite(mob.secondsUntilOpen) && mob.secondsUntilOpen > 0) {
+        statusParts.push(`Opens in ${formatCountdown(mob.secondsUntilOpen)}`);
+      } else if (!mob.lastKillAt) {
+        statusParts.push('Awaiting first kill');
+      } else {
+        statusParts.push('Window closed');
+      }
+      const statusText = statusParts.join(' • ');
+      const clearDisabled = mob.lastKillAt ? '' : 'disabled';
+      const zoneText = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
+      return `
+        <tr data-mob-id="${escapeHtml(mob.id || '')}">
+          <td>
+            <div>${escapeHtml(mob.name || '')}</div>
+            ${zoneText ? `<div class="mob-window-zone">${escapeHtml(zoneText)}</div>` : ''}
+          </td>
+          <td>${escapeHtml(lastKillDisplay)}</td>
+          <td>${escapeHtml(respawnRange)}</td>
+          <td>${escapeHtml(statusText)}</td>
+          <td>
+            <div class="mob-window-actions">
+              <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
+              <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  mobWindowTableContainer.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Mob</th>
+          <th>Last Kill</th>
+          <th>Respawn</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `;
+}
+
+function renderMobWindows(snapshot) {
+  const mobs = Array.isArray(snapshot?.mobs) ? snapshot.mobs : [];
+  const categories = categorizeMobWindows(mobs);
+  renderMobWindowList(
+    mobWindowCurrentContainer,
+    categories.current,
+    'No mobs are currently in window.',
+    'current'
+  );
+  renderMobWindowList(
+    mobWindowUpcomingContainer,
+    categories.upcoming,
+    'No windows expected in the next 24 hours.',
+    'upcoming'
+  );
+  renderMobWindowTable(snapshot);
+}
+
+async function handleMobWindowActionClick(event) {
+  const button = event.target.closest('button[data-mob-id]');
+  if (!button || button.disabled) {
+    return;
+  }
+  const mobId = button.dataset.mobId;
+  const action = button.dataset.action;
+  if (!mobId || !action) {
+    return;
+  }
+  try {
+    if (action === 'set-now') {
+      const snapshot = await window.eqApi.recordMobKill(mobId, new Date().toISOString());
+      if (snapshot && snapshot.mobs) {
+        mobWindowSnapshot = snapshot;
+        renderMobWindows(mobWindowSnapshot);
+      }
+    } else if (action === 'clear') {
+      const snapshot = await window.eqApi.clearMobKill(mobId);
+      if (snapshot && snapshot.mobs) {
+        mobWindowSnapshot = snapshot;
+        renderMobWindows(mobWindowSnapshot);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to update mob window state', error);
+  }
+}
+
 function renderTimers(timers) {
   if (!timers || timers.length === 0) {
     cancelTimersAnimation();
@@ -1630,6 +1929,18 @@ async function hydrate() {
   selectFirstAvailableNode();
   renderTriggerTree();
   renderTriggerDetail();
+
+  if (window.eqApi.getMobWindows) {
+    try {
+      const snapshot = await window.eqApi.getMobWindows();
+      mobWindowSnapshot = snapshot || { generatedAt: null, mobs: [] };
+    } catch (error) {
+      mobWindowSnapshot = { generatedAt: null, mobs: [] };
+    }
+    renderMobWindows(mobWindowSnapshot);
+  } else {
+    renderMobWindows(mobWindowSnapshot);
+  }
 
   try {
     overlayMoveMode = Boolean(await window.eqApi.getOverlayMoveMode());
@@ -1750,6 +2061,12 @@ function attachEventListeners() {
     window.eqApi.showOverlay();
   });
 
+  if (showMobOverlayButton) {
+    showMobOverlayButton.addEventListener('click', () => {
+      window.eqApi.showMobOverlay();
+    });
+  }
+
   toggleMoveModeButton.addEventListener('click', async () => {
     try {
       overlayMoveMode = !(overlayMoveMode === true);
@@ -1760,6 +2077,10 @@ function attachEventListeners() {
       console.error('Failed to toggle overlay move mode', err);
     }
   });
+
+  if (mobWindowTableContainer) {
+    mobWindowTableContainer.addEventListener('click', handleMobWindowActionClick);
+  }
 
   triggerTreeContainer.addEventListener('click', handleTreeClick);
   triggerDetailContainer.addEventListener('click', handleDetailClick);
@@ -1784,6 +2105,13 @@ function subscribeToIpc() {
     renderTimers(timers);
   });
 
+  if (window.eqApi.onMobWindowsUpdate) {
+    window.eqApi.onMobWindowsUpdate((snapshot) => {
+      mobWindowSnapshot = snapshot || { generatedAt: null, mobs: [] };
+      renderMobWindows(mobWindowSnapshot);
+    });
+  }
+
   window.eqApi.onWatcherStatus((status) => {
     updateStatus(status);
   });
@@ -1800,13 +2128,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   switchView('dashboard');
   subscribeToIpc();
   renderTimers([]);
+  renderMobWindows(mobWindowSnapshot);
   renderRecentLines();
   updateStatus({ state: 'idle' });
 });
 
 function updateMoveModeButton() {
   if (!toggleMoveModeButton) return;
-  toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlay';
+  toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlays';
   toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
 }
 
