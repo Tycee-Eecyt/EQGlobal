@@ -36,6 +36,7 @@ const mobWindowUpcomingContainer = document.getElementById('mob-window-upcoming'
 const mobWindowTableContainer = document.getElementById('mob-window-table');
 let overlayMoveMode = false;
 let draggedTriggerId = null;
+let draggedCategoryId = null;
 let currentDropTarget = null;
 
 const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
@@ -155,6 +156,12 @@ function getDescendantCategoryIds(id) {
     }
   }
   return result;
+}
+
+function isCategoryDescendant(categoryId, ancestorId) {
+  if (!categoryId || !ancestorId) return false;
+  const descendants = getDescendantCategoryIds(ancestorId);
+  return descendants.includes(categoryId);
 }
 
 function ensureCategoryPath(pathSegments = []) {
@@ -482,7 +489,7 @@ function renderTreeNode(node) {
 
   return `
     <li>
-      <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}" data-drop-target="category" data-category-id="${node.id}">
+      <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}" data-drop-target="category" data-category-id="${node.id}" draggable="true" data-drag-type="category">
         ${toggle}
         <span class="tree-icon folder"></span>
         <span class="tree-label">${escapeHtml(node.name)}</span>
@@ -1374,6 +1381,36 @@ function moveTriggerToCategory(triggerId, categoryId) {
   return true;
 }
 
+function moveCategoryToParent(categoryId, parentCategoryId) {
+  const category = getCategoryById(categoryId);
+  if (!category) {
+    return false;
+  }
+
+  const normalizedParentId =
+    parentCategoryId && getCategoryById(parentCategoryId) ? parentCategoryId : null;
+
+  if (category.parentId === normalizedParentId) {
+    return false;
+  }
+
+  if (normalizedParentId) {
+    if (normalizedParentId === categoryId || isCategoryDescendant(normalizedParentId, categoryId)) {
+      return false;
+    }
+  }
+
+  category.parentId = normalizedParentId;
+  rebuildCategoryCaches();
+  updateAllDerivedTriggerFields();
+  expandForCategory(categoryId);
+  setSelectedNode('category', categoryId);
+  renderTriggerTree();
+  renderTriggerDetail();
+  persistSettings().catch(() => {});
+  return true;
+}
+
 function handleTriggerFieldChange(event) {
   if (!selectedNode || selectedNode.type !== 'trigger') return;
   const trigger = getTriggerById(selectedNode.id);
@@ -2156,13 +2193,23 @@ function attachEventListeners() {
   }
 
   triggerTreeContainer.addEventListener('dragstart', (event) => {
-    const item = event.target.closest('[data-drag-type="trigger"]');
+    const item = event.target.closest('[data-drag-type]');
     if (!item) return;
-    draggedTriggerId = item.dataset.nodeId;
+    const dragType = item.dataset.dragType;
+    draggedTriggerId = null;
+    draggedCategoryId = null;
+    if (dragType === 'trigger') {
+      draggedTriggerId = item.dataset.nodeId;
+    } else if (dragType === 'category') {
+      draggedCategoryId = item.dataset.categoryId || item.dataset.nodeId;
+    }
+    if (!draggedTriggerId && !draggedCategoryId) {
+      return;
+    }
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
       try {
-        event.dataTransfer.setData('text/plain', draggedTriggerId);
+        event.dataTransfer.setData('text/plain', draggedTriggerId || draggedCategoryId || '');
       } catch (err) {
         // Ignore browsers that prevent setting data
       }
@@ -2171,18 +2218,47 @@ function attachEventListeners() {
   });
 
   triggerTreeContainer.addEventListener('dragend', () => {
-    const dragging = triggerTreeContainer.querySelector('.tree-item.trigger.dragging');
+    const dragging = triggerTreeContainer.querySelector('.tree-item.dragging');
     if (dragging) {
       dragging.classList.remove('dragging');
     }
     draggedTriggerId = null;
+    draggedCategoryId = null;
     clearCurrentDropTarget();
   });
 
   triggerTreeContainer.addEventListener('dragover', (event) => {
-    if (!draggedTriggerId) return;
+    if (!draggedTriggerId && !draggedCategoryId) return;
     const dropTarget = getDropTargetElement(event.target);
     if (!dropTarget) return;
+    const targetType = dropTarget.dataset.dropTarget;
+    let allowed = false;
+
+    if (draggedTriggerId) {
+      allowed = targetType === 'category' || targetType === 'root';
+    } else if (draggedCategoryId) {
+      if (targetType === 'category') {
+        const targetCategoryId = dropTarget.dataset.categoryId;
+        if (
+          targetCategoryId &&
+          targetCategoryId !== draggedCategoryId &&
+          !isCategoryDescendant(targetCategoryId, draggedCategoryId)
+        ) {
+          allowed = true;
+        }
+      } else if (targetType === 'root') {
+        allowed = true;
+      }
+    }
+
+    if (!allowed) {
+      if (currentDropTarget === dropTarget) {
+        dropTarget.classList.remove('drag-over');
+        currentDropTarget = null;
+      }
+      return;
+    }
+
     event.preventDefault();
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move';
@@ -2195,7 +2271,7 @@ function attachEventListeners() {
   });
 
   triggerTreeContainer.addEventListener('dragleave', (event) => {
-    if (!draggedTriggerId) return;
+    if (!draggedTriggerId && !draggedCategoryId) return;
     const dropTarget = getDropTargetElement(event.target);
     if (!dropTarget) return;
     if (event.relatedTarget && dropTarget.contains(event.relatedTarget)) {
@@ -2208,15 +2284,41 @@ function attachEventListeners() {
   });
 
   triggerTreeContainer.addEventListener('drop', (event) => {
-    if (!draggedTriggerId) return;
+    if (!draggedTriggerId && !draggedCategoryId) return;
     const dropTarget = getDropTargetElement(event.target);
     if (!dropTarget) return;
-    event.preventDefault();
     const targetType = dropTarget.dataset.dropTarget;
-    const categoryId =
-      targetType === 'category' ? dropTarget.dataset.categoryId || null : null;
-    moveTriggerToCategory(draggedTriggerId, categoryId);
+    event.preventDefault();
+
+    if (draggedTriggerId) {
+      const categoryId =
+        targetType === 'category' ? dropTarget.dataset.categoryId || null : null;
+      moveTriggerToCategory(draggedTriggerId, categoryId);
+    } else if (draggedCategoryId) {
+      let parentId = null;
+      if (targetType === 'category') {
+        parentId = dropTarget.dataset.categoryId || null;
+        if (
+          !parentId ||
+          parentId === draggedCategoryId ||
+          isCategoryDescendant(parentId, draggedCategoryId)
+        ) {
+          draggedCategoryId = null;
+          clearCurrentDropTarget();
+          return;
+        }
+      } else if (targetType === 'root') {
+        parentId = null;
+      } else {
+        draggedCategoryId = null;
+        clearCurrentDropTarget();
+        return;
+      }
+      moveCategoryToParent(draggedCategoryId, parentId);
+    }
+
     draggedTriggerId = null;
+    draggedCategoryId = null;
     clearCurrentDropTarget();
   });
 
