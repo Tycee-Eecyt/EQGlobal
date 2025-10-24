@@ -35,6 +35,8 @@ const mobWindowCurrentContainer = document.getElementById('mob-window-current');
 const mobWindowUpcomingContainer = document.getElementById('mob-window-upcoming');
 const mobWindowTableContainer = document.getElementById('mob-window-table');
 let overlayMoveMode = false;
+let draggedTriggerId = null;
+let currentDropTarget = null;
 
 const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
 const views = Array.from(document.querySelectorAll('.view'));
@@ -435,8 +437,20 @@ function buildCategoryTree() {
     node.children.forEach(sortChildren);
   };
 
-  sortChildren(root);
+sortChildren(root);
   return root;
+}
+
+function getDropTargetElement(element) {
+  if (!element) return null;
+  return element.closest('[data-drop-target]');
+}
+
+function clearCurrentDropTarget() {
+  if (currentDropTarget) {
+    currentDropTarget.classList.remove('drag-over');
+    currentDropTarget = null;
+  }
 }
 
 function renderTreeNode(node) {
@@ -444,7 +458,7 @@ function renderTreeNode(node) {
     const isSelected = selectedNode && selectedNode.type === 'trigger' && selectedNode.id === node.id;
     return `
       <li>
-        <div class="tree-item trigger ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="trigger" role="treeitem" aria-selected="${isSelected}">
+        <div class="tree-item trigger ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="trigger" role="treeitem" aria-selected="${isSelected}" draggable="true" data-drag-type="trigger">
           <span class="tree-toggle-placeholder"></span>
           <span class="tree-icon trigger"></span>
           <span class="tree-label">${escapeHtml(node.name)}</span>
@@ -468,7 +482,7 @@ function renderTreeNode(node) {
 
   return `
     <li>
-      <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}">
+      <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}" data-drop-target="category" data-category-id="${node.id}">
         ${toggle}
         <span class="tree-icon folder"></span>
         <span class="tree-label">${escapeHtml(node.name)}</span>
@@ -503,9 +517,13 @@ function renderTriggerTree() {
     return;
   }
 
-  triggerTreeContainer.innerHTML = `<ul class="tree-root" role="tree">${root.children
-    .map((node) => renderTreeNode(node))
-    .join('')}</ul>`;
+  triggerTreeContainer.innerHTML = `
+    <div class="tree-item category root-drop" data-node-type="root" data-drop-target="root" role="treeitem" aria-label="All triggers">
+      <span class="tree-toggle-placeholder"></span>
+      <span class="tree-icon folder root"></span>
+      <span class="tree-label">All Triggers</span>
+    </div>
+    <ul class="tree-root" role="tree">${root.children.map((node) => renderTreeNode(node)).join('')}</ul>`;
 }
 
 function splitDuration(seconds = 0) {
@@ -1333,6 +1351,29 @@ function updateNestedField(target, path, value) {
   }
 }
 
+function moveTriggerToCategory(triggerId, categoryId) {
+  const trigger = getTriggerById(triggerId);
+  if (!trigger) {
+    return false;
+  }
+
+  const normalizedCategoryId =
+    categoryId && getCategoryById(categoryId) ? categoryId : null;
+  const currentCategoryId = trigger.categoryId || null;
+  if (currentCategoryId === normalizedCategoryId) {
+    return false;
+  }
+
+  trigger.categoryId = normalizedCategoryId;
+  updateDerivedTriggerFields(trigger);
+  expandForCategory(normalizedCategoryId);
+  setSelectedNode('trigger', trigger.id);
+  renderTriggerTree();
+  renderTriggerDetail();
+  persistSettings().catch(() => {});
+  return true;
+}
+
 function handleTriggerFieldChange(event) {
   if (!selectedNode || selectedNode.type !== 'trigger') return;
   const trigger = getTriggerById(selectedNode.id);
@@ -2113,6 +2154,71 @@ function attachEventListeners() {
   if (mobWindowTableContainer) {
     mobWindowTableContainer.addEventListener('click', handleMobWindowActionClick);
   }
+
+  triggerTreeContainer.addEventListener('dragstart', (event) => {
+    const item = event.target.closest('[data-drag-type="trigger"]');
+    if (!item) return;
+    draggedTriggerId = item.dataset.nodeId;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      try {
+        event.dataTransfer.setData('text/plain', draggedTriggerId);
+      } catch (err) {
+        // Ignore browsers that prevent setting data
+      }
+    }
+    item.classList.add('dragging');
+  });
+
+  triggerTreeContainer.addEventListener('dragend', () => {
+    const dragging = triggerTreeContainer.querySelector('.tree-item.trigger.dragging');
+    if (dragging) {
+      dragging.classList.remove('dragging');
+    }
+    draggedTriggerId = null;
+    clearCurrentDropTarget();
+  });
+
+  triggerTreeContainer.addEventListener('dragover', (event) => {
+    if (!draggedTriggerId) return;
+    const dropTarget = getDropTargetElement(event.target);
+    if (!dropTarget) return;
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    if (currentDropTarget !== dropTarget) {
+      clearCurrentDropTarget();
+      dropTarget.classList.add('drag-over');
+      currentDropTarget = dropTarget;
+    }
+  });
+
+  triggerTreeContainer.addEventListener('dragleave', (event) => {
+    if (!draggedTriggerId) return;
+    const dropTarget = getDropTargetElement(event.target);
+    if (!dropTarget) return;
+    if (event.relatedTarget && dropTarget.contains(event.relatedTarget)) {
+      return;
+    }
+    if (currentDropTarget === dropTarget) {
+      dropTarget.classList.remove('drag-over');
+      currentDropTarget = null;
+    }
+  });
+
+  triggerTreeContainer.addEventListener('drop', (event) => {
+    if (!draggedTriggerId) return;
+    const dropTarget = getDropTargetElement(event.target);
+    if (!dropTarget) return;
+    event.preventDefault();
+    const targetType = dropTarget.dataset.dropTarget;
+    const categoryId =
+      targetType === 'category' ? dropTarget.dataset.categoryId || null : null;
+    moveTriggerToCategory(draggedTriggerId, categoryId);
+    draggedTriggerId = null;
+    clearCurrentDropTarget();
+  });
 
   triggerTreeContainer.addEventListener('click', handleTreeClick);
   triggerDetailContainer.addEventListener('click', handleDetailClick);

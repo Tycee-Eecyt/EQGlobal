@@ -516,6 +516,21 @@ button:active {
   box-shadow: inset 0 0 0 1px rgba(73, 209, 164, 0.3);
 }
 
+.tree-item.trigger.dragging {
+  opacity: 0.45;
+}
+
+.tree-item.drag-over {
+  background: rgba(73, 209, 164, 0.25);
+  color: #f5f7fa;
+  box-shadow: inset 0 0 0 1px rgba(73, 209, 164, 0.35);
+}
+
+.tree-item.root-drop {
+  margin-bottom: 0.75rem;
+  cursor: default;
+}
+
 .tree-toggle {
   background: none;
   border: none;
