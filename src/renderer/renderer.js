@@ -535,9 +535,11 @@ function renderDurationInputs(parts, { targetField, minimumSeconds = 0 }) {
 }
 
 function renderSoundFilePicker(fieldPath, value, enabled) {
+  const displayText = value ? value : 'No file selected';
+  const stateClass = enabled ? '' : ' disabled';
   return `
-    <div class="input-with-button">
-      <input type="text" value="${escapeHtml(value || '')}" data-role="trigger-field" data-field="${fieldPath}" ${enabled ? '' : 'disabled'} />
+    <div class="sound-file-picker${stateClass}">
+      <span class="sound-file-display ${value ? '' : 'empty'}" title="${escapeHtml(displayText)}">${escapeHtml(displayText)}</span>
       <button type="button" class="secondary small" data-action="browse-sound-file" data-field="${fieldPath}" ${enabled ? '' : 'disabled'}>Browse…</button>
     </div>
   `;
@@ -649,6 +651,31 @@ function renderBasicTab(trigger, categoryOptions) {
     interrupt: false,
     soundFile: '',
   };
+  const audioMode = audioSettings.mode || 'none';
+  const audioFields = [];
+  if (audioMode === 'tts') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Text To Say</label>
+        <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="audio.text" />
+      </div>
+      <div class="editor-field audio-field">
+        <label class="checkbox-row">
+          <input type="checkbox" data-role="trigger-field" data-field="audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} />
+          Interrupt Speech
+        </label>
+      </div>
+    `);
+  }
+  if (audioMode === 'file') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Sound File</label>
+        ${renderSoundFilePicker('audio.soundFile', audioSettings.soundFile, true)}
+      </div>
+    `);
+  }
+  const audioFieldsMarkup = audioFields.join('');
 
   const categoryOptionsMarkup = categoryOptions
     .map(
@@ -719,29 +746,14 @@ function renderBasicTab(trigger, categoryOptions) {
             <input type="radio" name="basic-audio-${trigger.id}" data-role="trigger-field" data-field="audio.mode" value="tts" ${audioSettings.mode === 'tts' ? 'checked' : ''} />
             Use Text To Speech
           </label>
-          <label class="radio-row">
-            <input type="radio" name="basic-audio-${trigger.id}" data-role="trigger-field" data-field="audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
-            Play Sound File
-          </label>
-        </div>
-        <div class="editor-grid">
-          <div class="editor-field">
-            <label>Text To Say</label>
-            <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="audio.text" ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-          </div>
-          <div class="editor-field">
-            <label>Sound File</label>
-            ${renderSoundFilePicker('audio.soundFile', audioSettings.soundFile, audioSettings.mode === 'file')}
-          </div>
-          <div class="editor-field">
-            <label class="checkbox-row">
-              <input type="checkbox" data-role="trigger-field" data-field="audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-              Interrupt Speech
-            </label>
-          </div>
-        </div>
-      </div>
+      <label class="radio-row">
+        <input type="radio" name="basic-audio-${trigger.id}" data-role="trigger-field" data-field="audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
+        Play Sound File
+      </label>
     </div>
+    ${audioFieldsMarkup ? `<div class="editor-grid audio-grid">${audioFieldsMarkup}</div>` : ''}
+  </div>
+</div>
   `;
 }
 
@@ -818,6 +830,31 @@ function renderTimerEndingTab(trigger, thresholdParts) {
     clipboardText: '',
   };
   const audioSettings = timerEnding.audio || { mode: 'none', text: '', soundFile: '', interrupt: false };
+  const audioMode = audioSettings.mode || 'none';
+  const audioFields = [];
+  if (audioMode === 'tts') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Text To Say</label>
+        <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnding.audio.text" />
+      </div>
+      <div class="editor-field audio-field">
+        <label class="checkbox-row">
+          <input type="checkbox" data-role="trigger-field" data-field="timerEnding.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} />
+          Interrupt Speech
+        </label>
+      </div>
+    `);
+  }
+  if (audioMode === 'file') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Sound File</label>
+        ${renderSoundFilePicker('timerEnding.audio.soundFile', audioSettings.soundFile, true)}
+      </div>
+    `);
+  }
+  const audioFieldsMarkup = audioFields.join('');
 
   return `
     <div class="tab-content ${activeTriggerTab === 'timerEnding' ? 'active' : ''}" data-tab="timerEnding" role="tabpanel">
@@ -857,29 +894,14 @@ function renderTimerEndingTab(trigger, thresholdParts) {
             <input type="radio" name="timer-ending-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnding.audio.mode" value="tts" ${audioSettings.mode === 'tts' ? 'checked' : ''} />
             Use Text To Speech
           </label>
-          <label class="radio-row">
-            <input type="radio" name="timer-ending-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnding.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
-            Play Sound File
-          </label>
-        </div>
-        <div class="editor-grid">
-          <div class="editor-field">
-            <label>Text To Say</label>
-            <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnding.audio.text" ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-          </div>
-          <div class="editor-field">
-            <label>Sound File</label>
-            ${renderSoundFilePicker('timerEnding.audio.soundFile', audioSettings.soundFile, audioSettings.mode === 'file')}
-          </div>
-          <div class="editor-field">
-            <label class="checkbox-row">
-              <input type="checkbox" data-role="trigger-field" data-field="timerEnding.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-              Interrupt Speech
-            </label>
-          </div>
-        </div>
-      </div>
+      <label class="radio-row">
+        <input type="radio" name="timer-ending-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnding.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
+        Play Sound File
+      </label>
     </div>
+    ${audioFieldsMarkup ? `<div class="editor-grid audio-grid">${audioFieldsMarkup}</div>` : ''}
+  </div>
+</div>
   `;
 }
 
@@ -892,6 +914,31 @@ function renderTimerEndedTab(trigger) {
     clipboardText: '',
   };
   const audioSettings = timerEnded.audio || { mode: 'none', text: '', soundFile: '', interrupt: false };
+  const audioMode = audioSettings.mode || 'none';
+  const audioFields = [];
+  if (audioMode === 'tts') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Text To Say</label>
+        <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnded.audio.text" />
+      </div>
+      <div class="editor-field audio-field">
+        <label class="checkbox-row">
+          <input type="checkbox" data-role="trigger-field" data-field="timerEnded.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} />
+          Interrupt Speech
+        </label>
+      </div>
+    `);
+  }
+  if (audioMode === 'file') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Sound File</label>
+        ${renderSoundFilePicker('timerEnded.audio.soundFile', audioSettings.soundFile, true)}
+      </div>
+    `);
+  }
+  const audioFieldsMarkup = audioFields.join('');
 
   return `
     <div class="tab-content ${activeTriggerTab === 'timerEnded' ? 'active' : ''}" data-tab="timerEnded" role="tabpanel">
@@ -928,29 +975,14 @@ function renderTimerEndedTab(trigger) {
             <input type="radio" name="timer-ended-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnded.audio.mode" value="tts" ${audioSettings.mode === 'tts' ? 'checked' : ''} />
             Use Text To Speech
           </label>
-          <label class="radio-row">
-            <input type="radio" name="timer-ended-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnded.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
-            Play Sound File
-          </label>
-        </div>
-        <div class="editor-grid">
-          <div class="editor-field">
-            <label>Text To Say</label>
-            <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnded.audio.text" ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-          </div>
-          <div class="editor-field">
-            <label>Sound File</label>
-            ${renderSoundFilePicker('timerEnded.audio.soundFile', audioSettings.soundFile, audioSettings.mode === 'file')}
-          </div>
-          <div class="editor-field">
-            <label class="checkbox-row">
-              <input type="checkbox" data-role="trigger-field" data-field="timerEnded.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-              Interrupt Speech
-            </label>
-          </div>
-        </div>
-      </div>
+      <label class="radio-row">
+        <input type="radio" name="timer-ended-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnded.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
+        Play Sound File
+      </label>
     </div>
+    ${audioFieldsMarkup ? `<div class="editor-grid audio-grid">${audioFieldsMarkup}</div>` : ''}
+  </div>
+</div>
   `;
 }
 

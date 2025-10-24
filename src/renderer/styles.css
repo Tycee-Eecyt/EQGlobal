@@ -214,6 +214,41 @@ body {
   white-space: nowrap;
 }
 
+.sound-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.sound-file-picker.disabled .sound-file-display {
+  opacity: 0.45;
+}
+
+.sound-file-display {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(18, 21, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.9rem;
+  color: rgba(245, 247, 250, 0.8);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sound-file-display.empty {
+  color: rgba(245, 247, 250, 0.45);
+  font-style: italic;
+}
+
+.sound-file-picker button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
