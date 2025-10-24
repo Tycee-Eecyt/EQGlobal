@@ -9,6 +9,34 @@ const MobWindowManager = require('./mobWindowManager');
 const defaultTriggers = require('../shared/defaultTriggers.json');
 const mobWindowDefinitions = require('../shared/mobWindows.json');
 
+const ASSETS_DIR = path.join(__dirname, '..', '..', 'assets');
+const APP_ICON_FILENAME = 'EQ-Global-logo.png';
+const TRAY_ICON_FILENAME = 'EQ-Global-logo-transparent.png';
+
+function resolveAssetPath(fileName) {
+  return path.join(ASSETS_DIR, fileName);
+}
+
+function loadAssetImage(fileName, resize) {
+  try {
+    const fullPath = resolveAssetPath(fileName);
+    if (!fs.existsSync(fullPath)) {
+      return null;
+    }
+    let image = nativeImage.createFromPath(fullPath);
+    if (!image || image.isEmpty()) {
+      return null;
+    }
+    if (resize && resize.width && resize.height) {
+      image = image.resize({ width: resize.width, height: resize.height, quality: 'best' });
+    }
+    return image && !image.isEmpty() ? image : null;
+  } catch (error) {
+    console.error(`Failed to load asset image "${fileName}"`, error);
+    return null;
+  }
+}
+
 require('dotenv').config();
 
 let mainWindow;
@@ -64,7 +92,7 @@ let overlayBoundsSaveTimer = null;
 let mobOverlayBoundsSaveTimer = null;
 let overlayMoveMode = false;
 
-function createTrayIconImage() {
+function createFallbackTrayIconImage() {
   const logicalSize = process.platform === 'darwin' ? 22 : 16;
   const scaleFactor = 2;
   const size = logicalSize * scaleFactor;
@@ -128,6 +156,18 @@ function createTrayIconImage() {
   const image = nativeImage.createFromBitmap(buffer, { width: size, height: size, scaleFactor });
   image.setTemplateImage(process.platform === 'darwin');
   return image;
+}
+
+function createTrayIconImage() {
+  const size = process.platform === 'darwin' ? 22 : 18;
+  const desired = loadAssetImage(TRAY_ICON_FILENAME, { width: size, height: size });
+  if (desired) {
+    if (process.platform === 'darwin') {
+      desired.setTemplateImage(false);
+    }
+    return desired;
+  }
+  return createFallbackTrayIconImage();
 }
 
 function updateTrayMenu() {
@@ -416,11 +456,15 @@ function createMainWindow() {
     return mainWindow;
   }
 
+  const iconPath = resolveAssetPath(APP_ICON_FILENAME);
+  const hasIcon = fs.existsSync(iconPath);
+
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 720,
     minWidth: 820,
     minHeight: 640,
+    icon: hasIcon ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -449,6 +493,9 @@ function createOverlayWindow() {
     return overlayWindow;
   }
 
+  const iconPath = resolveAssetPath(APP_ICON_FILENAME);
+  const hasIcon = fs.existsSync(iconPath);
+
   const baseBounds = { width: 320, height: 360 };
   const saved = settings.overlayBounds || {};
   const windowOptions = {
@@ -460,6 +507,7 @@ function createOverlayWindow() {
     alwaysOnTop: true,
     focusable: false,
     skipTaskbar: true,
+    icon: hasIcon ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -519,6 +567,9 @@ function createMobOverlayWindow() {
     return mobOverlayWindow;
   }
 
+  const iconPath = resolveAssetPath(APP_ICON_FILENAME);
+  const hasIcon = fs.existsSync(iconPath);
+
   const baseBounds = { width: 320, height: 360 };
   const saved = settings.mobOverlayBounds || {};
   const windowOptions = {
@@ -530,6 +581,7 @@ function createMobOverlayWindow() {
     alwaysOnTop: true,
     focusable: false,
     skipTaskbar: true,
+    icon: hasIcon ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -1031,6 +1083,14 @@ function registerIpcHandlers() {
 
 app.whenReady().then(async () => {
   await ensureSettingsLoaded();
+
+  if (process.platform === 'darwin' && app.dock && typeof app.dock.setIcon === 'function') {
+    const dockIcon = loadAssetImage(APP_ICON_FILENAME, { width: 256, height: 256 });
+    if (dockIcon) {
+      app.dock.setIcon(dockIcon);
+    }
+  }
+
   createMainWindow();
   createOverlayWindow();
   createMobOverlayWindow();
