@@ -179,7 +179,8 @@ function updateTrayMenu() {
   const mainVisible = Boolean(mainWindowExists && mainWindow.isVisible());
   const overlayExists = overlayWindow && !overlayWindow.isDestroyed();
   const overlayVisible = Boolean(overlayExists && overlayWindow.isVisible());
-  const mobOverlayVisible = Boolean(mobOverlayWindow && !mobOverlayWindow.isDestroyed() && mobOverlayWindow.isVisible());
+  const mobOverlayExists = mobOverlayWindow && !mobOverlayWindow.isDestroyed();
+  const mobOverlayVisible = Boolean(mobOverlayExists && mobOverlayWindow.isVisible());
 
   const template = [
     {
@@ -301,7 +302,22 @@ function toggleMobOverlayVisibility() {
   if (mobOverlayWindow.isVisible()) {
     mobOverlayWindow.hide();
   } else {
+    if (typeof mobOverlayWindow.isMinimized === 'function' && mobOverlayWindow.isMinimized()) {
+      mobOverlayWindow.restore();
+    }
     mobOverlayWindow.showInactive();
+  }
+  updateTrayMenu();
+}
+
+function minimizeMobOverlayWindow() {
+  if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+    return;
+  }
+  if (typeof mobOverlayWindow.minimize === 'function' && !mobOverlayWindow.isMinimized()) {
+    mobOverlayWindow.minimize();
+  } else {
+    mobOverlayWindow.hide();
   }
   updateTrayMenu();
 }
@@ -961,6 +977,9 @@ function registerIpcHandlers() {
       createMobOverlayWindow();
     }
     if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      if (typeof mobOverlayWindow.isMinimized === 'function' && mobOverlayWindow.isMinimized()) {
+        mobOverlayWindow.restore();
+      }
       mobOverlayWindow.showInactive();
     }
     updateTrayMenu();
