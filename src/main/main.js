@@ -372,6 +372,11 @@ async function ensureSettingsLoaded() {
       settings.mobWindows.kills = {};
     }
     mobWindowManager.loadState(settings.mobWindows);
+    const loadedRemote = await loadMobWindowsFromBackend();
+    if (loadedRemote) {
+      settings.mobWindows = mobWindowManager.serializeState();
+      await saveSettings(settings);
+    }
   }
 
   return settings;
@@ -400,6 +405,7 @@ async function saveSettings(updatedSettings = settings) {
       mobOverlayBounds: settings.mobOverlayBounds,
     };
     await fs.promises.writeFile(settingsPath, JSON.stringify(payload, null, 2), 'utf8');
+    await syncMobWindowsToBackend(serializedMobWindows);
   } catch (error) {
     console.error('Failed to persist settings', error);
   }
@@ -719,6 +725,58 @@ function joinBackendUrl(base, suffix) {
   }
 }
 
+let mobWindowsFetchedFromBackend = false;
+
+async function fetchMobWindowsFromBackend() {
+  const baseUrl = (settings.backendUrl || '').trim();
+  if (!baseUrl) {
+    return null;
+  }
+
+  try {
+    const response = await axios.get(joinBackendUrl(baseUrl, '/api/mob-windows'));
+    const data = response?.data;
+    if (!data || typeof data.kills !== 'object' || !data.kills) {
+      return null;
+    }
+    return { kills: data.kills };
+  } catch (error) {
+    console.error('Failed to fetch mob windows from backend', error.message || error);
+    return null;
+  }
+}
+
+async function loadMobWindowsFromBackend({ force = false } = {}) {
+  if (mobWindowsFetchedFromBackend && !force) {
+    return false;
+  }
+
+  const remote = await fetchMobWindowsFromBackend();
+  if (!remote) {
+    return false;
+  }
+
+  mobWindowManager.loadState(remote);
+  mobWindowsFetchedFromBackend = true;
+  return true;
+}
+
+async function syncMobWindowsToBackend(state) {
+  const baseUrl = (settings.backendUrl || '').trim();
+  if (!baseUrl) {
+    return;
+  }
+  const payload = state && typeof state === 'object' ? state : mobWindowManager.serializeState();
+  if (!payload || typeof payload.kills !== 'object') {
+    return;
+  }
+  try {
+    await axios.post(joinBackendUrl(baseUrl, '/api/mob-windows'), { kills: payload.kills });
+  } catch (error) {
+    console.error('Failed to sync mob windows to backend', error.message || error);
+  }
+}
+
 function registerIpcHandlers() {
   ipcMain.handle('ready', async () => ensureSettingsLoaded());
 
@@ -726,10 +784,23 @@ function registerIpcHandlers() {
 
   ipcMain.handle('settings:update', async (_event, partialSettings) => {
     await ensureSettingsLoaded();
+    const previousBackendUrl = settings.backendUrl || '';
     settings = {
       ...settings,
       ...partialSettings,
     };
+    const backendUrlChanged =
+      Object.prototype.hasOwnProperty.call(partialSettings || {}, 'backendUrl') &&
+      (partialSettings.backendUrl || '') !== previousBackendUrl;
+    if (backendUrlChanged) {
+      mobWindowsFetchedFromBackend = false;
+      if ((settings.backendUrl || '').trim()) {
+        const loaded = await loadMobWindowsFromBackend({ force: true });
+        if (loaded) {
+          settings.mobWindows = mobWindowManager.serializeState();
+        }
+      }
+    }
 
     if (partialSettings.triggers && logWatcher) {
       logWatcher.setTriggers(settings.triggers);
