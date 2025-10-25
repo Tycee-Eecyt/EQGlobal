@@ -4,6 +4,7 @@ const { MongoClient } = require('mongodb');
 const path = require('path');
 
 const mobWindowDefinitions = require('../src/shared/mobWindows.json');
+const MobWindowManager = require('../src/main/mobWindowManager');
 
 require('dotenv').config({
   path: path.resolve(process.cwd(), '.env'),
@@ -12,6 +13,7 @@ require('dotenv').config({
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '4mb' }));
+app.use(express.static(path.join(__dirname, '..', 'web')));
 
 const port = process.env.PORT || 4000;
 const mongoUri = process.env.MONGODB_URI;
@@ -76,6 +78,16 @@ function primeMobAliasIndex() {
 }
 
 primeMobAliasIndex();
+
+function buildSnapshotFromKills(kills = {}) {
+  const manager = new MobWindowManager(mobWindowDefinitions, { tickRateMs: 60_000 });
+  manager.loadState({ kills });
+  return manager.computeSnapshot();
+}
+
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'web', 'mob-windows.html'));
+});
 
 function findMobByAlias(text) {
   if (!text) {
@@ -261,11 +273,20 @@ app.get('/api/mob-windows', async (_req, res) => {
     const collection = db.collection('mob_windows');
     const doc = await collection.findOne({ _id: 'global' });
     if (!doc) {
-      return res.json({ kills: {}, updatedAt: null });
+      const snapshot = buildSnapshotFromKills({});
+      return res.json({
+        kills: {},
+        updatedAt: null,
+        mobs: snapshot.mobs,
+        snapshot,
+      });
     }
+    const snapshot = buildSnapshotFromKills(doc.kills || {});
     res.json({
       kills: doc.kills || {},
       updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : null,
+      mobs: snapshot.mobs,
+      snapshot,
     });
   } catch (error) {
     console.error('Failed to load mob window state', error);
@@ -300,7 +321,8 @@ app.post('/api/mob-windows', async (req, res) => {
       { $set: { kills: sanitized, updatedAt } },
       { upsert: true }
     );
-    res.json({ kills: sanitized, updatedAt: updatedAt.toISOString() });
+    const snapshot = buildSnapshotFromKills(sanitized);
+    res.json({ kills: sanitized, updatedAt: updatedAt.toISOString(), mobs: snapshot.mobs, snapshot });
   } catch (error) {
     console.error('Failed to persist mob window state', error);
     res.status(500).json({ error: 'Failed to persist mob window state.' });

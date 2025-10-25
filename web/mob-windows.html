@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EQGlobal Mob Windows</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="mob-windows.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>EQGlobal Mob Windows</h1>
+      <div class="last-updated" id="last-updated">Loading...</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel" aria-labelledby="panel-current-title">
+        <div class="panel-header">
+          <h2 id="panel-current-title">Mobs In Window</h2>
+        </div>
+        <div id="current-list" class="panel-body empty">Loading...</div>
+      </section>
+
+      <section class="panel" aria-labelledby="panel-upcoming-title">
+        <div class="panel-header">
+          <h2 id="panel-upcoming-title">Opening Within 24 Hours</h2>
+        </div>
+        <div id="upcoming-list" class="panel-body empty">Loading...</div>
+      </section>
+
+      <section class="panel" aria-labelledby="panel-future-title">
+        <div class="panel-header">
+          <h2 id="panel-future-title">Opening Later (Next 72 Hours)</h2>
+        </div>
+        <div id="future-list" class="panel-body empty">Loading...</div>
+      </section>
+
+      <section class="panel wide" aria-labelledby="panel-table-title">
+        <div class="panel-header">
+          <h2 id="panel-table-title">All Tracked Mobs</h2>
+          <button id="refresh-button" type="button">Refresh</button>
+        </div>
+        <div class="panel-body">
+          <table id="mob-table">
+            <thead>
+              <tr>
+                <th>Mob</th>
+                <th>Zone</th>
+                <th>Last Kill</th>
+                <th>Respawn</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="5" class="table-empty">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Data updates automatically every 30 seconds.</span>
+    </footer>
+
+    <script src="mob-windows.js" type="module"></script>
+  </body>
+</html>

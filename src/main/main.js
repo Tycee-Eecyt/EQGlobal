@@ -75,7 +75,7 @@ let backendFlushTimer = null;
 
 const defaultSettings = {
   logDirectory: process.env.EQ_LOG_DIR || '',
-  backendUrl: process.env.BACKEND_URL || '',
+  backendUrl: process.env.BACKEND_URL || 'http://localhost:4000',
   overlayClickThroughTimers: false,
   overlayClickThroughMobs: false,
   overlayOpacity: 0.85,
@@ -433,6 +433,9 @@ async function ensureSettingsLoaded() {
     }
     if (Object.prototype.hasOwnProperty.call(settings, 'overlayClickThrough')) {
       delete settings.overlayClickThrough;
+    }
+    if (!settings.backendUrl) {
+      settings.backendUrl = defaultSettings.backendUrl;
     }
     if (!Array.isArray(settings.categories)) {
       settings.categories = [];
