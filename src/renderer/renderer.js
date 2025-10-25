@@ -1977,6 +1977,81 @@ function unitToMillis(token) {
   return null;
 }
 
+function parseDurationToMillis(text) {
+  if (!text) {
+    return null;
+  }
+  let total = 0;
+  const regex = /(\d+(?:\.\d+)?)\s*(seconds?|second|secs?|s|minutes?|minute|mins?|m|hours?|hour|hrs?|h|days?|day|d)/gi;
+  let match;
+  while ((match = regex.exec(text))) {
+    const value = Number(match[1]);
+    const unitMs = unitToMillis(match[2]);
+    if (!Number.isFinite(value) || !unitMs) {
+      continue;
+    }
+    total += value * unitMs;
+  }
+  return total > 0 ? total : null;
+}
+
+function getMobDefinitionById(mobId) {
+  if (!mobId) {
+    return null;
+  }
+  const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+  return mobs.find((mob) => mob.id === mobId) || null;
+}
+
+function inferKillFromWindowHint({ mobId, mobName, type, durationMs, contextTime, result, lineNumber }) {
+  if (!mobId || !Number.isFinite(durationMs) || !contextTime || !result) {
+    return false;
+  }
+  const definition = getMobDefinitionById(mobId);
+  if (!definition) {
+    result.warnings.push(`Line ${lineNumber}: no mob definition found for ${mobName}.`);
+    return false;
+  }
+  const minMs = Number(definition.minRespawnMinutes || 0) * 60_000;
+  const maxMs = Number(definition.maxRespawnMinutes || 0) * 60_000;
+  if (!minMs || !maxMs) {
+    result.warnings.push(`Line ${lineNumber}: missing respawn data for ${mobName}.`);
+    return false;
+  }
+
+  let killTimestampMs = null;
+  if (type === 'window-closes' && maxMs >= durationMs) {
+    killTimestampMs = contextTime.getTime() - (maxMs - durationMs);
+  } else if (type === 'window-opens' && minMs >= durationMs) {
+    killTimestampMs = contextTime.getTime() - (minMs - durationMs);
+  } else if (type === 'window-opens' && minMs < durationMs) {
+    // If provided duration exceeds minimum, clamp to minimum to avoid future dates
+    killTimestampMs = contextTime.getTime() - Math.max(0, minMs - Math.min(durationMs, minMs));
+  }
+
+  if (killTimestampMs === null) {
+    result.warnings.push(`Line ${lineNumber}: unable to infer kill time for ${mobName}.`);
+    return false;
+  }
+
+  const killDate = new Date(killTimestampMs);
+  if (Number.isNaN(killDate.getTime())) {
+    result.warnings.push(`Line ${lineNumber}: computed invalid date for ${mobName}.`);
+    return false;
+  }
+
+  result.entries.push({
+    mobId,
+    mobName,
+    timestamp: killDate,
+    alias: mobName,
+    origin: type,
+    lineNumber,
+    rawTime: `${type === 'window-closes' ? 'window ends in' : 'opens in'} ${formatCountdown(durationMs / 1000)}`,
+  });
+  return true;
+}
+
 function applyTimeToDate(baseDate, hours, minutes, seconds, ampm) {
   if (!baseDate || !Number.isFinite(hours)) {
     return null;
@@ -2179,13 +2254,46 @@ function parseMobTodLog(rawText) {
 
   const lines = rawText.split(/\r?\n/);
   let currentTimestamp = null;
+  let section = null;
+  let sectionTimestamp = null;
+  let pendingMob = null;
+  let sectionHints = [];
   const messageTimestampRegex = /—\s*(.+)$/;
   const now = new Date();
+
+  const ensureContextTime = () => {
+    const base = sectionTimestamp || currentTimestamp || now;
+    return base ? new Date(base) : new Date();
+  };
+
+  const resetPendingMob = () => {
+    pendingMob = null;
+  };
+
+  const flushSectionHints = (explicitTime = null) => {
+    if (!sectionHints.length) {
+      return;
+    }
+    const contextTime = explicitTime || ensureContextTime();
+    sectionHints.forEach((hint) => {
+      inferKillFromWindowHint({
+        mobId: hint.mobId,
+        mobName: hint.mobName,
+        type: hint.type,
+        durationMs: hint.durationMs,
+        contextTime,
+        result,
+        lineNumber: hint.lineNumber,
+      });
+    });
+    sectionHints = [];
+  };
 
   lines.forEach((line, index) => {
     result.totalLines += 1;
     const trimmed = line.trim();
     if (!trimmed) {
+      resetPendingMob();
       return;
     }
 
@@ -2198,6 +2306,142 @@ function parseMobTodLog(rawText) {
         result.warnings.push(`Line ${index + 1}: could not parse message timestamp "${timestampMatch[1]}"`);
         currentTimestamp = null;
       }
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (/^Mobs\s+In\s+Window/i.test(trimmed)) {
+      flushSectionHints();
+      section = 'in-window';
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (/^Mobs\s+Entering\s+Window/i.test(trimmed)) {
+      flushSectionHints();
+      section = 'opening-soon';
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (/^Future\s+Windows/i.test(trimmed)) {
+      flushSectionHints();
+      section = 'future';
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (section && /These\s+are\s+currently\s+in\s+window/i.test(trimmed)) {
+      const trailingMatch = trimmed.match(/(?:•|-)\s*(.+)$/);
+      if (trailingMatch) {
+        const resolved = resolveTemporalExpression(trailingMatch[1], now, now);
+        if (resolved) {
+          sectionTimestamp = resolved;
+          currentTimestamp = resolved;
+        }
+      }
+      resetPendingMob();
+      return;
+    }
+
+    if (section && /^[🟩🟨🟧🟥⬜\s]+$/.test(trimmed.replace(/\s+/g, ''))) {
+      // Visual progress bar line - ignore
+      return;
+    }
+
+    if (section && /^window\s+ends\s+in/i.test(trimmed)) {
+      if (pendingMob) {
+        const durationMs = parseDurationToMillis(trimmed);
+        if (durationMs !== null) {
+          sectionHints.push({
+            mobId: pendingMob.mobId,
+            mobName: pendingMob.mobName,
+            type: 'window-closes',
+            durationMs,
+            lineNumber: pendingMob.lineNumber,
+          });
+        } else {
+          result.warnings.push(`Line ${index + 1}: could not parse duration from "${trimmed}".`);
+        }
+      }
+      resetPendingMob();
+      return;
+    }
+
+    if (section && /^opens\s+in/i.test(trimmed)) {
+      if (pendingMob) {
+        const durationMs = parseDurationToMillis(trimmed);
+        if (durationMs !== null) {
+          sectionHints.push({
+            mobId: pendingMob.mobId,
+            mobName: pendingMob.mobName,
+            type: 'window-opens',
+            durationMs,
+            lineNumber: pendingMob.lineNumber,
+          });
+        } else {
+          result.warnings.push(`Line ${index + 1}: could not parse duration from "${trimmed}".`);
+        }
+      }
+      resetPendingMob();
+      return;
+    }
+
+    if (section === 'future') {
+      const futureNormalized = trimmed.replace(/^[•\-]+\s*/, '');
+      const futureMatch = futureNormalized.match(/^(.+?)(?:\s*\(([^)]+)\))?\s*-\s*(.+)$/);
+      if (futureMatch) {
+        const mobText = futureMatch[1].trim();
+        const timeUntil = futureMatch[3].trim();
+        const mobMatch = findMobMatchFromText(mobText);
+        if (!mobMatch) {
+          result.unknown.push({
+            lineNumber: index + 1,
+            name: mobText,
+            raw: trimmed,
+          });
+        } else {
+          const durationMs = parseDurationToMillis(timeUntil);
+          if (durationMs !== null) {
+            sectionHints.push({
+              mobId: mobMatch.mobId,
+              mobName: mobMatch.mobName,
+              type: 'window-opens',
+              durationMs,
+              lineNumber: index + 1,
+            });
+          } else {
+            result.warnings.push(`Line ${index + 1}: could not parse future window timing "${timeUntil}".`);
+          }
+        }
+        resetPendingMob();
+        return;
+      }
+    }
+
+    if (section && !/^!?tod\b/i.test(trimmed)) {
+      const bulletNormalized = trimmed.replace(/^[•\-]+\s*/, '');
+      const mobMatch = findMobMatchFromText(bulletNormalized);
+      if (!mobMatch) {
+        if (section === 'in-window' || section === 'opening-soon') {
+          result.unknown.push({
+            lineNumber: index + 1,
+            name: bulletNormalized,
+            raw: trimmed,
+          });
+        }
+        resetPendingMob();
+      } else {
+        pendingMob = {
+          mobId: mobMatch.mobId,
+          mobName: mobMatch.mobName,
+          lineNumber: index + 1,
+        };
+      }
       return;
     }
 
@@ -2205,6 +2449,7 @@ function parseMobTodLog(rawText) {
       return;
     }
 
+    resetPendingMob();
     const body = trimmed.replace(/^!?tod\b\s*/i, '');
     if (!body) {
       result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
@@ -2251,9 +2496,11 @@ function parseMobTodLog(rawText) {
       sourceLine: trimmed,
       lineNumber: index + 1,
       rawTime: remainder,
+      origin: 'tod-command',
     });
   });
 
+  flushSectionHints();
   const deduped = new Map();
   result.entries.forEach((entry) => {
     const existing = deduped.get(entry.mobId);
@@ -2270,10 +2517,19 @@ function formatMobTodFeedback(result) {
     return { html: '', status: null };
   }
   const lines = [];
+  const originLabels = {
+    'tod-command': 'via ToD command',
+    'window-closes': 'from window closing estimate',
+    'window-opens': 'from window opening estimate',
+  };
   if (result.entries.length) {
     const list = result.entries
       .slice(0, 8)
-      .map((entry) => `${entry.mobName} (${formatAbsoluteTime(entry.timestamp)})`);
+      .map((entry) => {
+        const when = formatAbsoluteTime(entry.timestamp);
+        const originLabel = originLabels[entry.origin] || null;
+        return `${entry.mobName} (${when}${originLabel ? `, ${originLabel}` : ''})`;
+      });
     const moreCount = result.entries.length - list.length;
     lines.push(
       `${result.entries.length} mob${result.entries.length === 1 ? '' : 's'} ready for update: ${list.join(', ')}${
