@@ -1723,6 +1723,163 @@ function formatRespawnRange(mob = {}) {
   return `Respawn ${minLabel} - ${maxLabel}`;
 }
 
+// Flexible timestamp parsing for manual mob kill entry
+function parseFlexibleTimestamp(input, { now = new Date() } = {}) {
+  if (!input || typeof input !== 'string') return null;
+  let s = input.trim();
+  if (!s) return null;
+
+  // Common quick words
+  if (/^now$/i.test(s)) return new Date();
+
+  // Strip wrapping brackets often present in log lines
+  if (/^\[.*\]$/.test(s)) {
+    s = s.slice(1, -1).trim();
+  }
+
+  // P99 log format: Wed Oct 22 23:25:34 2025 (seconds optional)
+  const months = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
+  };
+  {
+    const m = /^\s*(?:mon|tue|wed|thu|fri|sat|sun)\s+([a-z]{3,4})\s+(\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{4})\s*$/i.exec(s);
+    if (m) {
+      const mon = months[m[1].toLowerCase()];
+      if (mon != null) {
+        const day = parseInt(m[2], 10);
+        const hh = parseInt(m[3], 10);
+        const mm = parseInt(m[4], 10);
+        const ss = m[5] ? parseInt(m[5], 10) : 0;
+        const yyyy = parseInt(m[6], 10);
+        const d = new Date(yyyy, mon, day, hh, mm, ss, 0);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+    }
+  }
+
+  // ISO-like: 2025-10-22 23:25(:34)?
+  {
+    const m = /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+    if (m) {
+      const yyyy = parseInt(m[1], 10);
+      const mon = parseInt(m[2], 10) - 1;
+      const day = parseInt(m[3], 10);
+      const hh = parseInt(m[4], 10);
+      const mm = parseInt(m[5], 10);
+      const ss = m[6] ? parseInt(m[6], 10) : 0;
+      const d = new Date(yyyy, mon, day, hh, mm, ss, 0);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  }
+
+  // US-style: 10/22[/2025] 11:25[:34] [am|pm]
+  {
+    const m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i.exec(s);
+    if (m) {
+      let yyyy = m[3] ? parseInt(m[3], 10) : now.getFullYear();
+      if (yyyy < 100) yyyy += 2000;
+      const mon = parseInt(m[1], 10) - 1;
+      const day = parseInt(m[2], 10);
+      let hh = parseInt(m[4], 10);
+      const mm = parseInt(m[5], 10);
+      const ss = m[6] ? parseInt(m[6], 10) : 0;
+      const suffix = (m[7] || '').toLowerCase();
+      if (suffix) {
+        if (suffix === 'pm' && hh < 12) hh += 12;
+        if (suffix === 'am' && hh === 12) hh = 0;
+      }
+      const d = new Date(yyyy, mon, day, hh, mm, ss, 0);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  }
+
+  // Words: today 11:30pm, yesterday 08:12
+  {
+    const m = /^(today|yesterday)\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i.exec(s);
+    if (m) {
+      const base = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      if (/^yesterday$/i.test(m[1])) {
+        base.setDate(base.getDate() - 1);
+      }
+      let hh = parseInt(m[2], 10);
+      const mm = parseInt(m[3], 10);
+      const ss = m[4] ? parseInt(m[4], 10) : 0;
+      const suffix = (m[5] || '').toLowerCase();
+      if (suffix) {
+        if (suffix === 'pm' && hh < 12) hh += 12;
+        if (suffix === 'am' && hh === 12) hh = 0;
+      }
+      base.setHours(hh, mm, ss, 0);
+      return Number.isNaN(base.getTime()) ? null : base;
+    }
+  }
+
+  // Time-only: 23:25[:34] [am|pm] (assume today)
+  {
+    const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i.exec(s);
+    if (m) {
+      let hh = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      const ss = m[3] ? parseInt(m[3], 10) : 0;
+      const suffix = (m[4] || '').toLowerCase();
+      if (suffix) {
+        if (suffix === 'pm' && hh < 12) hh += 12;
+        if (suffix === 'am' && hh === 12) hh = 0;
+      }
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, 0);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  }
+
+  // Relative: -30m, 2h ago, 1d 3h ago
+  {
+    const rel = s.replace(/\s+/g, ' ').trim();
+    const ago = /\bago$/i.test(rel);
+    const sign = rel.startsWith('-') || ago ? -1 : (rel.startsWith('+') ? 1 : null);
+    const m = /([+-])?\s*(\d+\s*(?:d|day|days))?\s*(\d+\s*(?:h|hr|hrs|hour|hours))?\s*(\d+\s*(?:m|min|mins|minute|minutes))?\s*(\d+\s*(?:s|sec|secs|second|seconds))?\s*(ago)?/i.exec(rel);
+    if (m && (sign !== null || m[2] || m[3] || m[4] || m[5])) {
+      const parts = [m[2], m[3], m[4], m[5]].filter(Boolean).join(' ');
+      let totalMs = 0;
+      const re = /(\d+)\s*(d|day|days|h|hr|hrs|hour|hours|m|min|mins|minute|minutes|s|sec|secs|second|seconds)/gi;
+      let t;
+      while ((t = re.exec(parts))) {
+        const v = parseInt(t[1], 10);
+        const u = t[2].toLowerCase();
+        if (u.startsWith('d')) totalMs += v * 24 * 60 * 60 * 1000;
+        else if (u.startsWith('h')) totalMs += v * 60 * 60 * 1000;
+        else if (u.startsWith('m')) totalMs += v * 60 * 1000;
+        else totalMs += v * 1000;
+      }
+      if (totalMs > 0) {
+        const direction = sign !== null ? sign : (ago ? -1 : 1);
+        return new Date(now.getTime() + direction * totalMs);
+      }
+    }
+  }
+
+  // Month name with day and optional year/time: Oct 22 2025 23:25:34
+  {
+    const m = /^([a-z]{3,})\s+(\d{1,2})(?:\s+(\d{4}))?(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/i.exec(s);
+    if (m) {
+      const mon = months[m[1].toLowerCase()];
+      if (mon != null) {
+        const yyyy = m[3] ? parseInt(m[3], 10) : now.getFullYear();
+        const day = parseInt(m[2], 10);
+        const hh = m[4] ? parseInt(m[4], 10) : 0;
+        const mm = m[5] ? parseInt(m[5], 10) : 0;
+        const ss = m[6] ? parseInt(m[6], 10) : 0;
+        const d = new Date(yyyy, mon, day, hh, mm, ss, 0);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+    }
+  }
+
+  // Fallback: try Date.parse
+  const fallback = new Date(s);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+}
+
 function categorizeMobWindows(mobs = []) {
   const current = [];
   const upcoming = [];
@@ -1862,6 +2019,7 @@ function renderMobWindowTable(snapshot) {
           <td>
             <div class="mob-window-actions">
               <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
+              <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time…</button>
               <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
             </div>
           </td>
@@ -1921,6 +2079,20 @@ async function handleMobWindowActionClick(event) {
         mobWindowSnapshot = snapshot;
         renderMobWindows(mobWindowSnapshot);
       }
+    } else if (action === 'set-custom') {
+      const value = await showTimestampPrompt();
+      if (typeof value === 'string') {
+        const parsed = parseFlexibleTimestamp(value, { now: new Date() });
+        if (!parsed) {
+          alert('Could not parse the timestamp. Try formats like:\n- [Wed Oct 22 23:25:34 2025]\n- 2025-10-22 23:25\n- 10/22/2025 11:25 PM\n- today 09:30 PM\n- -30m (for 30 minutes ago)');
+          return;
+        }
+        const snapshot = await window.eqApi.recordMobKill(mobId, parsed.toISOString());
+        if (snapshot && snapshot.mobs) {
+          mobWindowSnapshot = snapshot;
+          renderMobWindows(mobWindowSnapshot);
+        }
+      }
     } else if (action === 'clear') {
       const snapshot = await window.eqApi.clearMobKill(mobId);
       if (snapshot && snapshot.mobs) {
@@ -1931,6 +2103,81 @@ async function handleMobWindowActionClick(event) {
   } catch (error) {
     console.error('Failed to update mob window state', error);
   }
+}
+
+function showTimestampPrompt() {
+  return new Promise((resolve) => {
+    if (document.querySelector('.modal-backdrop')) {
+      resolve(null);
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-backdrop';
+
+    const card = document.createElement('div');
+    card.className = 'modal-card';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Set Kill Timestamp';
+
+    const desc = document.createElement('p');
+    desc.innerHTML = 'Enter a time/date. Examples:<br>\n<code>now</code> • <code>2025-10-22 23:25</code> • <code>10/22/2025 11:25 PM</code><br>\n<code>today 9:30pm</code> • <code>-30m</code> • <code>[Wed Oct 22 23:25:34 2025]</code>';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'e.g. [Wed Oct 22 23:25:34 2025] or 10/22 11:15pm or -30m';
+    input.autocomplete = 'off';
+
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'secondary';
+    cancelButton.textContent = 'Cancel';
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.className = 'primary';
+    confirmButton.textContent = 'Set Time';
+
+    actions.append(cancelButton, confirmButton);
+    card.append(title, desc, input, actions);
+    overlay.append(card);
+    document.body.append(overlay);
+
+    const cleanup = (value) => {
+      overlay.remove();
+      resolve(value || null);
+    };
+
+    const submit = () => {
+      const value = input.value.trim();
+      if (!value) {
+        input.focus();
+        return;
+      }
+      cleanup(value);
+    };
+
+    confirmButton.addEventListener('click', submit);
+    cancelButton.addEventListener('click', () => cleanup(null));
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) cleanup(null);
+    });
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        cleanup(null);
+      } else if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        submit();
+      }
+    });
+
+    input.focus();
+  });
 }
 
 function renderTimers(timers) {
