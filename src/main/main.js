@@ -76,7 +76,8 @@ let backendFlushTimer = null;
 const defaultSettings = {
   logDirectory: process.env.EQ_LOG_DIR || '',
   backendUrl: process.env.BACKEND_URL || '',
-  overlayClickThrough: false,
+  overlayClickThroughTimers: false,
+  overlayClickThroughMobs: false,
   overlayOpacity: 0.85,
   overlayBounds: null,
   mobOverlayBounds: null,
@@ -416,6 +417,23 @@ async function ensureSettingsLoaded() {
       ...diskSettings,
       triggers: diskSettings.triggers && diskSettings.triggers.length > 0 ? diskSettings.triggers : defaultSettings.triggers,
     };
+    if (typeof settings.overlayClickThroughTimers !== 'boolean') {
+      if (diskSettings && typeof diskSettings.overlayClickThrough === 'boolean') {
+        settings.overlayClickThroughTimers = Boolean(diskSettings.overlayClickThrough);
+      } else {
+        settings.overlayClickThroughTimers = defaultSettings.overlayClickThroughTimers;
+      }
+    }
+    if (typeof settings.overlayClickThroughMobs !== 'boolean') {
+      if (diskSettings && typeof diskSettings.overlayClickThrough === 'boolean') {
+        settings.overlayClickThroughMobs = Boolean(diskSettings.overlayClickThrough);
+      } else {
+        settings.overlayClickThroughMobs = defaultSettings.overlayClickThroughMobs;
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(settings, 'overlayClickThrough')) {
+      delete settings.overlayClickThrough;
+    }
     if (!Array.isArray(settings.categories)) {
       settings.categories = [];
     }
@@ -546,7 +564,7 @@ function createOverlayWindow() {
   });
   overlayWindow.setOpacity(settings.overlayOpacity);
   overlayWindow.setIgnoreMouseEvents(
-    overlayMoveMode ? false : Boolean(settings.overlayClickThrough),
+    overlayMoveMode ? false : Boolean(settings.overlayClickThroughTimers),
     { forward: true }
   );
 
@@ -618,7 +636,7 @@ function createMobOverlayWindow() {
   });
   mobOverlayWindow.setOpacity(settings.overlayOpacity);
   mobOverlayWindow.setIgnoreMouseEvents(
-    overlayMoveMode ? false : Boolean(settings.overlayClickThrough),
+    overlayMoveMode ? false : Boolean(settings.overlayClickThroughMobs),
     { forward: true }
   );
 
@@ -931,16 +949,42 @@ function registerIpcHandlers() {
     return { status: 'stopped' };
   });
 
-  ipcMain.handle('overlay:set-click-through', async (_event, enabled) => {
-    settings.overlayClickThrough = Boolean(enabled);
+  ipcMain.handle('overlay:set-click-through', async (_event, targetOrEnabled, maybeEnabled) => {
+    await ensureSettingsLoaded();
+
+    if (typeof maybeEnabled === 'undefined' && typeof targetOrEnabled === 'boolean') {
+      const value = Boolean(targetOrEnabled);
+      settings.overlayClickThroughTimers = value;
+      settings.overlayClickThroughMobs = value;
+    } else {
+      const target = targetOrEnabled === 'mobs' ? 'mobs' : targetOrEnabled === 'both' ? 'both' : 'timers';
+      const value = Boolean(maybeEnabled);
+      if (target === 'mobs' || target === 'both') {
+        settings.overlayClickThroughMobs = value;
+      }
+      if (target === 'timers' || target === 'both') {
+        settings.overlayClickThroughTimers = value;
+      }
+    }
+
     if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : settings.overlayClickThrough, { forward: true });
+      overlayWindow.setIgnoreMouseEvents(
+        overlayMoveMode ? false : Boolean(settings.overlayClickThroughTimers),
+        { forward: true }
+      );
     }
     if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
-      mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : settings.overlayClickThrough, { forward: true });
+      mobOverlayWindow.setIgnoreMouseEvents(
+        overlayMoveMode ? false : Boolean(settings.overlayClickThroughMobs),
+        { forward: true }
+      );
     }
+
     await saveSettings(settings);
-    return settings.overlayClickThrough;
+    return {
+      timers: settings.overlayClickThroughTimers,
+      mobs: settings.overlayClickThroughMobs,
+    };
   });
 
   ipcMain.handle('overlay:set-opacity', async (_event, opacity) => {
@@ -997,7 +1041,7 @@ function registerIpcHandlers() {
   ipcMain.handle('overlay:move-mode', async (_event, enabled) => {
     overlayMoveMode = Boolean(enabled);
     if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThroughTimers), { forward: true });
       if (typeof overlayWindow.setFocusable === 'function') {
         overlayWindow.setFocusable(overlayMoveMode);
       }
@@ -1007,7 +1051,7 @@ function registerIpcHandlers() {
       overlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
     }
     if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
-      mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThroughMobs), { forward: true });
       if (typeof mobOverlayWindow.setFocusable === 'function') {
         mobOverlayWindow.setFocusable(overlayMoveMode);
       }
