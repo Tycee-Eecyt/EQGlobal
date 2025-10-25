@@ -56,6 +56,10 @@
   {
     "id": "derakor-the-vindicator",
     "name": "Derakor the Vindicator",
+    "aliases": [
+      "Vindicator",
+      "Vindi"
+    ],
     "zone": "Kael Drakkel",
     "respawnDisplay": "8h ± 1h",
     "minRespawnHours": 7,

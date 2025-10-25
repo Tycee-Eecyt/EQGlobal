@@ -128,6 +128,39 @@ function secondsBetween(startMs, endMs) {
   return Math.round((endMs - startMs) / 1000);
 }
 
+function normalizeAliasKey(value) {
+  if (!value && value !== 0) {
+    return [];
+  }
+  const text = String(value).trim().toLowerCase();
+  if (!text) {
+    return [];
+  }
+  const collapsedWhitespace = text.replace(/\s+/g, ' ');
+  const compact = collapsedWhitespace.replace(/[^a-z0-9]+/g, '');
+  const dashed = collapsedWhitespace.replace(/[^a-z0-9]+/g, '-');
+  const spaced = collapsedWhitespace.replace(/[^a-z0-9]+/g, ' ');
+  return Array.from(new Set([collapsedWhitespace, compact, dashed, spaced.trim()])).filter(Boolean);
+}
+
+function buildAliasIndex(definitions) {
+  const index = new Map();
+  definitions.forEach((definition) => {
+    if (!definition || !definition.id) {
+      return;
+    }
+    const aliases = new Set([definition.name, ...(Array.isArray(definition.aliases) ? definition.aliases : [])]);
+    aliases.forEach((alias) => {
+      normalizeAliasKey(alias).forEach((key) => {
+        if (!index.has(key)) {
+          index.set(key, definition.id);
+        }
+      });
+    });
+  });
+  return index;
+}
+
 class MobWindowManager extends EventEmitter {
   constructor(definitions = [], options = {}) {
     super();
@@ -138,6 +171,7 @@ class MobWindowManager extends EventEmitter {
       .filter(Boolean);
 
     this.definitionMap = new Map(this.definitions.map((def) => [def.id, def]));
+    this.aliasIndex = buildAliasIndex(this.definitions);
     this.killTimestamps = new Map();
     this.tickHandle = null;
   }
@@ -207,7 +241,65 @@ class MobWindowManager extends EventEmitter {
       }
     }
 
+    const todResult = this.parseTodCommand(message, parsedTimestamp);
+    if (todResult) {
+      return this.recordKill(todResult.mobId, todResult.timestamp || parsedTimestamp);
+    }
+
     return false;
+  }
+
+  parseTodCommand(message, fallbackTimestamp = new Date()) {
+    if (!message) {
+      return null;
+    }
+    const match = message.match(/!tod\s+(.+)/i);
+    if (!match) {
+      return null;
+    }
+    let remainder = match[1].trim();
+    if (!remainder) {
+      return null;
+    }
+
+    remainder = remainder.replace(/^[`"'“”‘’]+/, '').replace(/[`"'“”‘’]+$/, '');
+    remainder = remainder.replace(/#.*$/, '').trim();
+
+    let explicitTime = null;
+    const nowMatch = remainder.match(/(?:^|[\s,|])now[.!?]?$/i);
+    if (nowMatch) {
+      explicitTime = 'now';
+      remainder = remainder.slice(0, nowMatch.index).trim();
+    }
+
+    remainder = remainder.replace(/[,|]+$/, '').trim();
+    if (!remainder) {
+      return null;
+    }
+
+    const mobId = this.lookupMobIdByAlias(remainder);
+    if (!mobId) {
+      return null;
+    }
+
+    const timestamp = explicitTime === 'now' ? fallbackTimestamp : null;
+    return {
+      mobId,
+      timestamp,
+    };
+  }
+
+  lookupMobIdByAlias(text) {
+    if (!text) {
+      return null;
+    }
+    const candidates = normalizeAliasKey(text);
+    for (const candidate of candidates) {
+      if (this.aliasIndex.has(candidate)) {
+        return this.aliasIndex.get(candidate);
+      }
+    }
+    return null;
   }
 
   recordKill(mobId, timestamp = new Date()) {
