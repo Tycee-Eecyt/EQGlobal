@@ -111,6 +111,34 @@ body {
   display: block;
 }
 
+/* Mob windows view toolbar */
+.mob-windows-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.8rem 0.2rem;
+}
+
+.mob-windows-toolbar label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06rem;
+  color: rgba(245, 247, 250, 0.7);
+}
+
+.mob-windows-toolbar select {
+  height: 2.2rem;
+  background: rgba(10, 12, 18, 0.9);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0 0.6rem;
+}
+
+.panel.hidden {
+  display: none !important;
+}
+
 .settings-layout {
   max-width: 520px;
   margin: 0 auto;

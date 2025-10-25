@@ -1,33 +1,536 @@
 [
   {
+    "id": "a-dracoliche",
+    "name": "A dracoliche",
+    "zone": "Plane of Fear",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "aaryonar",
+    "name": "Aaryonar",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "cazic-thule-god",
+    "name": "Cazic Thule (God)",
+    "zone": "Plane of Fear",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "cekenar",
+    "name": "Cekenar",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "dagarn-the-destroyer",
+    "name": "Dagarn the Destroyer",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "dain-frostreaver-iv",
+    "name": "Dain Frostreaver IV",
+    "zone": "Icewell Keep",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "dartain-the-lost",
+    "name": "Dartain the Lost",
+    "zone": "The Hole",
+    "respawnDisplay": "36h",
+    "minRespawnHours": 36,
+    "maxRespawnHours": 36,
+    "notes": ""
+  },
+  {
     "id": "derakor-the-vindicator",
     "name": "Derakor the Vindicator",
-    "aliases": [
-      "Vindicator",
-      "Vindi"
-    ],
     "zone": "Kael Drakkel",
-    "respawnDisplay": "8h \u00b1 1h",
+    "respawnDisplay": "8h ± 1h",
     "minRespawnHours": 7,
     "maxRespawnHours": 9,
     "notes": "Storm Giant warrior. Window opens roughly 7 hours after death and closes around 9 hours."
   },
   {
-    "id": "phara-dar",
-    "name": "Phara Dar",
-    "zone": "Veeshan's Peak",
+    "id": "dozekar-the-cursed",
+    "name": "Dozekar the Cursed",
+    "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
     "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "dread",
+    "name": "Dread",
+    "zone": "Plane of Fear",
+    "respawnDisplay": "80h",
+    "minRespawnHours": 80,
+    "maxRespawnHours": 80,
+    "notes": ""
+  },
+  {
+    "id": "druushk",
+    "name": "Druushk",
+    "zone": "Veeshan's Peak",
+    "respawnDisplay": "7d",
+    "minRespawnHours": 168,
+    "maxRespawnHours": 168,
+    "notes": ""
+  },
+  {
+    "id": "eashen-of-the-sky",
+    "name": "Eashen of the Sky",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "faydedar",
+    "name": "Faydedar",
+    "zone": "Timorous Deep",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "fright",
+    "name": "Fright",
+    "zone": "Plane of Fear",
+    "respawnDisplay": "80h",
+    "minRespawnHours": 80,
+    "maxRespawnHours": 80,
+    "notes": ""
+  },
+  {
+    "id": "gorenaire",
+    "name": "Gorenaire",
+    "zone": "Dreadlands",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "gozzrem",
+    "name": "Gozzrem",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "hoshkar",
+    "name": "Hoshkar",
+    "zone": "Veeshan's Peak",
+    "respawnDisplay": "7d",
+    "minRespawnHours": 168,
+    "maxRespawnHours": 168,
+    "notes": ""
+  },
+  {
+    "id": "ikatiar-the-venom",
+    "name": "Ikatiar the Venom",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "innoruuk-god",
+    "name": "Innoruuk (God)",
+    "zone": "Plane of Hate",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "jorlleag",
+    "name": "Jorlleag",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "king-tormax",
+    "name": "King Tormax",
+    "zone": "Kael Drakkel",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lady-mirenilla",
+    "name": "Lady Mirenilla",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lady-nevederia",
+    "name": "Lady Nevederia",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lady-vox",
+    "name": "Lady Vox",
+    "zone": "Permafrost",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lendiniara-the-keeper",
+    "name": "Lendiniara the Keeper",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lord-doljonijiarnimorinar",
+    "name": "Lord Doljonijiarnimorinar",
+    "aliases": [
+      "Lord Bob"
+    ],
+    "zone": "Velketor's Labyrinth",
+    "respawnDisplay": "3d ± 12h",
+    "minRespawnHours": 60,
+    "maxRespawnHours": 84,
+    "notes": ""
+  },
+  {
+    "id": "lord-feshlak",
+    "name": "Lord Feshlak",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lord-koi-doken",
+    "name": "Lord Koi'Doken",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lord-kreizenn",
+    "name": "Lord Kreizenn",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lord-nagafen",
+    "name": "Lord Nagafen",
+    "zone": "Nagafen's Lair",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lord-vyemm",
+    "name": "Lord Vyemm",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "lord-yelinak",
+    "name": "Lord Yelinak",
+    "zone": "Skyshrine",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "maestro-of-rancor",
+    "name": "Maestro of Rancor",
+    "zone": "Plane of Hate",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": ""
+  },
+  {
+    "id": "master-of-the-guard",
+    "name": "Master of the Guard",
+    "zone": "Sleeper's Tomb",
+    "respawnDisplay": "3d ± 12h",
+    "minRespawnHours": 60,
+    "maxRespawnHours": 84,
+    "notes": ""
+  },
+  {
+    "id": "master-yael",
+    "name": "Master Yael",
+    "zone": "The Hole",
+    "respawnDisplay": "3d",
+    "minRespawnHours": 72,
+    "maxRespawnHours": 72,
+    "notes": ""
+  },
+  {
+    "id": "nexona",
+    "name": "Nexona",
+    "zone": "Veeshan's Peak",
+    "respawnDisplay": "7d",
+    "minRespawnHours": 168,
+    "maxRespawnHours": 168,
+    "notes": ""
+  },
+  {
+    "id": "noble-dojorn",
+    "name": "Noble Dojorn",
+    "zone": "Plane of Sky",
+    "respawnDisplay": "10d",
+    "minRespawnHours": 240,
+    "maxRespawnHours": 240,
+    "notes": ""
+  },
+  {
+    "id": "overking-bathezid",
+    "name": "Overking Bathezid",
+    "zone": "Chardok",
+    "respawnDisplay": "2h",
+    "minRespawnHours": 2,
+    "maxRespawnHours": 2,
+    "notes": ""
+  },
+  {
+    "id": "phara-dar",
+    "name": "Phara Dar",
+    "zone": "Veeshan's Peak",
+    "respawnDisplay": "7d",
+    "minRespawnHours": 168,
+    "maxRespawnHours": 168,
     "notes": "Lava dragon cleric. Summons, enrages, immune to charm, fear, mez, and stun. Casts Stun Breath and Dragon Charm."
+  },
+  {
+    "id": "phinigel-autropos",
+    "name": "Phinigel Autropos",
+    "zone": "Kedge Keep",
+    "respawnDisplay": "12h",
+    "minRespawnHours": 12,
+    "maxRespawnHours": 12,
+    "notes": ""
+  },
+  {
+    "id": "prince-selrach-di-zok",
+    "name": "Prince Selrach Di'zok",
+    "zone": "Chardok",
+    "respawnDisplay": "2h",
+    "minRespawnHours": 2,
+    "maxRespawnHours": 2,
+    "notes": ""
+  },
+  {
+    "id": "queen-velazul-di-zok",
+    "name": "Queen Velazul Di`zok",
+    "zone": "Chardok",
+    "respawnDisplay": "2h",
+    "minRespawnHours": 2,
+    "maxRespawnHours": 2,
+    "notes": ""
+  },
+  {
+    "id": "sevalak",
+    "name": "Sevalak",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "severilous",
+    "name": "Severilous",
+    "zone": "Emerald Jungle",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "silverwing",
+    "name": "Silverwing",
+    "zone": "Veeshan's Peak",
+    "respawnDisplay": "7d",
+    "minRespawnHours": 168,
+    "maxRespawnHours": 168,
+    "notes": ""
+  },
+  {
+    "id": "talendor",
+    "name": "Talendor",
+    "zone": "Skyfire Mountains",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "telkorenar",
+    "name": "Telkorenar",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "terror",
+    "name": "Terror",
+    "zone": "Plane of Fear",
+    "respawnDisplay": "80h",
+    "minRespawnHours": 80,
+    "maxRespawnHours": 80,
+    "notes": ""
+  },
+  {
+    "id": "the-final-arbiter",
+    "name": "The Final Arbiter",
+    "zone": "Sleeper's Tomb",
+    "respawnDisplay": "3d ± 12h",
+    "minRespawnHours": 60,
+    "maxRespawnHours": 84,
+    "notes": ""
+  },
+  {
+    "id": "the-progenitor",
+    "name": "The Progenitor",
+    "zone": "Sleeper's Tomb",
+    "respawnDisplay": "3d ± 12h",
+    "minRespawnHours": 60,
+    "maxRespawnHours": 84,
+    "notes": ""
   },
   {
     "id": "statue-of-rallos-zek",
     "name": "The Statue of Rallos Zek",
     "zone": "Kael Drakkel",
-    "respawnDisplay": "5d \u00b1 8h",
-    "minRespawnHours": 112,
+    "respawnDisplay": "128h",
+    "minRespawnHours": 128,
     "maxRespawnHours": 128,
     "notes": "Rallos Zek warrior. Flurries, enrages, summons, sees invis. Immune to flee, charm, fear, snare, mez, and stun."
+  },
+  {
+    "id": "trakanon",
+    "name": "Trakanon",
+    "zone": "Old Sebilis",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": ""
+  },
+  {
+    "id": "velketor-the-sorcerer",
+    "name": "Velketor the Sorcerer",
+    "zone": "Velketor's Labyrinth",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": ""
+  },
+  {
+    "id": "venril-sathir",
+    "name": "Venril Sathir",
+    "zone": "Karnor's Castle",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": ""
+  },
+  {
+    "id": "vulak-aerr",
+    "name": "Vulak`Aerr",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "wuoshi",
+    "name": "Wuoshi",
+    "zone": "The Wakening Land",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
+  },
+  {
+    "id": "xygoz",
+    "name": "Xygoz",
+    "zone": "Veeshan's Peak",
+    "respawnDisplay": "7d",
+    "minRespawnHours": 168,
+    "maxRespawnHours": 168,
+    "notes": ""
+  },
+  {
+    "id": "zlandicar",
+    "name": "Zlandicar",
+    "zone": "Dragon Necropolis",
+    "respawnDisplay": "108h ± 8h",
+    "minRespawnHours": 100,
+    "maxRespawnHours": 116,
+    "notes": ""
+  },
+  {
+    "id": "zlexak",
+    "name": "Zlexak",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "176h",
+    "minRespawnHours": 176,
+    "maxRespawnHours": 176,
+    "notes": ""
   }
 ]

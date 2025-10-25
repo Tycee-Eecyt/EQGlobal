@@ -8,6 +8,8 @@
     "app": "electron .",
     "backend": "node backend/server.js",
     "dev": "electron .",
+    "scrape:p99": "node scripts/scrape-p99-raid-windows.js",
+    "cleanup:mob": "node scripts/cleanup-mob-windows.js",
     "convert:gtp": "powershell -ExecutionPolicy Bypass -File scripts/convert-gina-gtp.ps1",
     "test:patterns": "node scripts/test-patterns.js --triggers external/all-gina.triggers.json --lines test/log-lines-sample.txt"
   },

@@ -34,6 +34,10 @@ const showMobOverlayButton = document.getElementById('show-mob-overlay');
 const mobWindowCurrentContainer = document.getElementById('mob-window-current');
 const mobWindowUpcomingContainer = document.getElementById('mob-window-upcoming');
 const mobWindowTableContainer = document.getElementById('mob-window-table');
+const mobPanelCurrent = document.getElementById('mob-panel-current');
+const mobPanelUpcoming = document.getElementById('mob-panel-upcoming');
+const mobPanelTable = document.getElementById('mob-panel-table');
+const mobViewFilter = document.getElementById('mob-view-filter');
 let overlayMoveMode = false;
 let draggedTriggerId = null;
 let draggedCategoryId = null;
@@ -88,6 +92,14 @@ function switchView(nextView) {
       logDirectoryInput?.focus();
     }, 50);
   }
+}
+
+function applyMobViewFilter(value) {
+  const mode = (value || (mobViewFilter && mobViewFilter.value) || 'all').toLowerCase();
+  const showAll = mode === 'all';
+  if (mobPanelCurrent) mobPanelCurrent.classList.toggle('hidden', !showAll && mode !== 'current');
+  if (mobPanelUpcoming) mobPanelUpcoming.classList.toggle('hidden', !showAll && mode !== 'upcoming');
+  if (mobPanelTable) mobPanelTable.classList.toggle('hidden', !showAll && mode !== 'table');
 }
 
 function updateDirectorySummary(directory) {
@@ -2338,6 +2350,14 @@ function attachEventListeners() {
       handleCategoryFieldChange(event);
     }
   });
+
+  if (mobViewFilter) {
+    mobViewFilter.addEventListener('change', (e) => {
+      const val = e.target.value;
+      try { localStorage.setItem('mobViewFilter', val); } catch (err) {}
+      applyMobViewFilter(val);
+    });
+  }
 }
 
 function subscribeToIpc() {
@@ -2371,6 +2391,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderMobWindows(mobWindowSnapshot);
   renderRecentLines();
   updateStatus({ state: 'idle' });
+
+  // Restore saved mob window filter
+  try {
+    const saved = localStorage.getItem('mobViewFilter');
+    if (mobViewFilter && saved) {
+      mobViewFilter.value = saved;
+    }
+  } catch (err) {}
+  applyMobViewFilter(mobViewFilter ? mobViewFilter.value : 'all');
 });
 
 function updateMoveModeButton() {
