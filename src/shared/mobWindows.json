@@ -1,0 +1,33 @@
+[
+  {
+    "id": "derakor-the-vindicator",
+    "name": "Derakor the Vindicator",
+    "aliases": [
+      "Vindicator",
+      "Vindi"
+    ],
+    "zone": "Kael Drakkel",
+    "respawnDisplay": "8h \u00b1 1h",
+    "minRespawnHours": 7,
+    "maxRespawnHours": 9,
+    "notes": "Storm Giant warrior. Window opens roughly 7 hours after death and closes around 9 hours."
+  },
+  {
+    "id": "phara-dar",
+    "name": "Phara Dar",
+    "zone": "Veeshan's Peak",
+    "respawnDisplay": "7d ± 8h",
+    "minRespawnHours": 160,
+    "maxRespawnHours": 176,
+    "notes": "Lava dragon cleric. Summons, enrages, immune to charm, fear, mez, and stun. Casts Stun Breath and Dragon Charm."
+  },
+  {
+    "id": "statue-of-rallos-zek",
+    "name": "The Statue of Rallos Zek",
+    "zone": "Kael Drakkel",
+    "respawnDisplay": "5d \u00b1 8h",
+    "minRespawnHours": 112,
+    "maxRespawnHours": 128,
+    "notes": "Rallos Zek warrior. Flurries, enrages, summons, sees invis. Immune to flee, charm, fear, snare, mez, and stun."
+  }
+]

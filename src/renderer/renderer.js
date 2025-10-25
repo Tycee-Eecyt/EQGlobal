@@ -16,6 +16,7 @@ let expandedCategories = new Set([ROOT_CATEGORY_ID]);
 let activeTriggerTab = 'basic';
 let timersRaf = null;
 let recentLines = [];
+let mobWindowSnapshot = { generatedAt: null, mobs: [] };
 
 const logDirectoryInput = document.getElementById('log-directory');
 const chooseLogDirButton = document.getElementById('choose-log-dir');
@@ -29,7 +30,14 @@ const triggerDetailContainer = document.getElementById('trigger-detail');
 const activeTimersContainer = document.getElementById('active-timers');
 const recentLinesList = document.getElementById('recent-lines');
 const toggleMoveModeButton = document.getElementById('toggle-move-mode');
+const showMobOverlayButton = document.getElementById('show-mob-overlay');
+const mobWindowCurrentContainer = document.getElementById('mob-window-current');
+const mobWindowUpcomingContainer = document.getElementById('mob-window-upcoming');
+const mobWindowTableContainer = document.getElementById('mob-window-table');
 let overlayMoveMode = false;
+let draggedTriggerId = null;
+let draggedCategoryId = null;
+let currentDropTarget = null;
 
 const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
 const views = Array.from(document.querySelectorAll('.view'));
@@ -148,6 +156,12 @@ function getDescendantCategoryIds(id) {
     }
   }
   return result;
+}
+
+function isCategoryDescendant(categoryId, ancestorId) {
+  if (!categoryId || !ancestorId) return false;
+  const descendants = getDescendantCategoryIds(ancestorId);
+  return descendants.includes(categoryId);
 }
 
 function ensureCategoryPath(pathSegments = []) {
@@ -430,8 +444,20 @@ function buildCategoryTree() {
     node.children.forEach(sortChildren);
   };
 
-  sortChildren(root);
+sortChildren(root);
   return root;
+}
+
+function getDropTargetElement(element) {
+  if (!element) return null;
+  return element.closest('[data-drop-target]');
+}
+
+function clearCurrentDropTarget() {
+  if (currentDropTarget) {
+    currentDropTarget.classList.remove('drag-over');
+    currentDropTarget = null;
+  }
 }
 
 function renderTreeNode(node) {
@@ -439,7 +465,7 @@ function renderTreeNode(node) {
     const isSelected = selectedNode && selectedNode.type === 'trigger' && selectedNode.id === node.id;
     return `
       <li>
-        <div class="tree-item trigger ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="trigger" role="treeitem" aria-selected="${isSelected}">
+        <div class="tree-item trigger ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="trigger" role="treeitem" aria-selected="${isSelected}" draggable="true" data-drag-type="trigger">
           <span class="tree-toggle-placeholder"></span>
           <span class="tree-icon trigger"></span>
           <span class="tree-label">${escapeHtml(node.name)}</span>
@@ -463,7 +489,7 @@ function renderTreeNode(node) {
 
   return `
     <li>
-      <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}">
+      <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}" data-drop-target="category" data-category-id="${node.id}" draggable="true" data-drag-type="category">
         ${toggle}
         <span class="tree-icon folder"></span>
         <span class="tree-label">${escapeHtml(node.name)}</span>
@@ -498,9 +524,13 @@ function renderTriggerTree() {
     return;
   }
 
-  triggerTreeContainer.innerHTML = `<ul class="tree-root" role="tree">${root.children
-    .map((node) => renderTreeNode(node))
-    .join('')}</ul>`;
+  triggerTreeContainer.innerHTML = `
+    <div class="tree-item category root-drop" data-node-type="root" data-drop-target="root" role="treeitem" aria-label="All triggers">
+      <span class="tree-toggle-placeholder"></span>
+      <span class="tree-icon folder root"></span>
+      <span class="tree-label">All Triggers</span>
+    </div>
+    <ul class="tree-root" role="tree">${root.children.map((node) => renderTreeNode(node)).join('')}</ul>`;
 }
 
 function splitDuration(seconds = 0) {
@@ -530,9 +560,11 @@ function renderDurationInputs(parts, { targetField, minimumSeconds = 0 }) {
 }
 
 function renderSoundFilePicker(fieldPath, value, enabled) {
+  const displayText = value ? value : 'No file selected';
+  const stateClass = enabled ? '' : ' disabled';
   return `
-    <div class="input-with-button">
-      <input type="text" value="${escapeHtml(value || '')}" data-role="trigger-field" data-field="${fieldPath}" ${enabled ? '' : 'disabled'} />
+    <div class="sound-file-picker${stateClass}">
+      <span class="sound-file-display ${value ? '' : 'empty'}" title="${escapeHtml(displayText)}">${escapeHtml(displayText)}</span>
       <button type="button" class="secondary small" data-action="browse-sound-file" data-field="${fieldPath}" ${enabled ? '' : 'disabled'}>Browse…</button>
     </div>
   `;
@@ -644,6 +676,31 @@ function renderBasicTab(trigger, categoryOptions) {
     interrupt: false,
     soundFile: '',
   };
+  const audioMode = audioSettings.mode || 'none';
+  const audioFields = [];
+  if (audioMode === 'tts') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Text To Say</label>
+        <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="audio.text" />
+      </div>
+      <div class="editor-field audio-field">
+        <label class="checkbox-row">
+          <input type="checkbox" data-role="trigger-field" data-field="audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} />
+          Interrupt Speech
+        </label>
+      </div>
+    `);
+  }
+  if (audioMode === 'file') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Sound File</label>
+        ${renderSoundFilePicker('audio.soundFile', audioSettings.soundFile, true)}
+      </div>
+    `);
+  }
+  const audioFieldsMarkup = audioFields.join('');
 
   const categoryOptionsMarkup = categoryOptions
     .map(
@@ -714,29 +771,14 @@ function renderBasicTab(trigger, categoryOptions) {
             <input type="radio" name="basic-audio-${trigger.id}" data-role="trigger-field" data-field="audio.mode" value="tts" ${audioSettings.mode === 'tts' ? 'checked' : ''} />
             Use Text To Speech
           </label>
-          <label class="radio-row">
-            <input type="radio" name="basic-audio-${trigger.id}" data-role="trigger-field" data-field="audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
-            Play Sound File
-          </label>
-        </div>
-        <div class="editor-grid">
-          <div class="editor-field">
-            <label>Text To Say</label>
-            <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="audio.text" ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-          </div>
-          <div class="editor-field">
-            <label>Sound File</label>
-            ${renderSoundFilePicker('audio.soundFile', audioSettings.soundFile, audioSettings.mode === 'file')}
-          </div>
-          <div class="editor-field">
-            <label class="checkbox-row">
-              <input type="checkbox" data-role="trigger-field" data-field="audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-              Interrupt Speech
-            </label>
-          </div>
-        </div>
-      </div>
+      <label class="radio-row">
+        <input type="radio" name="basic-audio-${trigger.id}" data-role="trigger-field" data-field="audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
+        Play Sound File
+      </label>
     </div>
+    ${audioFieldsMarkup ? `<div class="editor-grid audio-grid">${audioFieldsMarkup}</div>` : ''}
+  </div>
+</div>
   `;
 }
 
@@ -813,6 +855,31 @@ function renderTimerEndingTab(trigger, thresholdParts) {
     clipboardText: '',
   };
   const audioSettings = timerEnding.audio || { mode: 'none', text: '', soundFile: '', interrupt: false };
+  const audioMode = audioSettings.mode || 'none';
+  const audioFields = [];
+  if (audioMode === 'tts') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Text To Say</label>
+        <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnding.audio.text" />
+      </div>
+      <div class="editor-field audio-field">
+        <label class="checkbox-row">
+          <input type="checkbox" data-role="trigger-field" data-field="timerEnding.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} />
+          Interrupt Speech
+        </label>
+      </div>
+    `);
+  }
+  if (audioMode === 'file') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Sound File</label>
+        ${renderSoundFilePicker('timerEnding.audio.soundFile', audioSettings.soundFile, true)}
+      </div>
+    `);
+  }
+  const audioFieldsMarkup = audioFields.join('');
 
   return `
     <div class="tab-content ${activeTriggerTab === 'timerEnding' ? 'active' : ''}" data-tab="timerEnding" role="tabpanel">
@@ -852,29 +919,14 @@ function renderTimerEndingTab(trigger, thresholdParts) {
             <input type="radio" name="timer-ending-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnding.audio.mode" value="tts" ${audioSettings.mode === 'tts' ? 'checked' : ''} />
             Use Text To Speech
           </label>
-          <label class="radio-row">
-            <input type="radio" name="timer-ending-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnding.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
-            Play Sound File
-          </label>
-        </div>
-        <div class="editor-grid">
-          <div class="editor-field">
-            <label>Text To Say</label>
-            <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnding.audio.text" ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-          </div>
-          <div class="editor-field">
-            <label>Sound File</label>
-            ${renderSoundFilePicker('timerEnding.audio.soundFile', audioSettings.soundFile, audioSettings.mode === 'file')}
-          </div>
-          <div class="editor-field">
-            <label class="checkbox-row">
-              <input type="checkbox" data-role="trigger-field" data-field="timerEnding.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-              Interrupt Speech
-            </label>
-          </div>
-        </div>
-      </div>
+      <label class="radio-row">
+        <input type="radio" name="timer-ending-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnding.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
+        Play Sound File
+      </label>
     </div>
+    ${audioFieldsMarkup ? `<div class="editor-grid audio-grid">${audioFieldsMarkup}</div>` : ''}
+  </div>
+</div>
   `;
 }
 
@@ -887,6 +939,31 @@ function renderTimerEndedTab(trigger) {
     clipboardText: '',
   };
   const audioSettings = timerEnded.audio || { mode: 'none', text: '', soundFile: '', interrupt: false };
+  const audioMode = audioSettings.mode || 'none';
+  const audioFields = [];
+  if (audioMode === 'tts') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Text To Say</label>
+        <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnded.audio.text" />
+      </div>
+      <div class="editor-field audio-field">
+        <label class="checkbox-row">
+          <input type="checkbox" data-role="trigger-field" data-field="timerEnded.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} />
+          Interrupt Speech
+        </label>
+      </div>
+    `);
+  }
+  if (audioMode === 'file') {
+    audioFields.push(`
+      <div class="editor-field audio-field">
+        <label>Sound File</label>
+        ${renderSoundFilePicker('timerEnded.audio.soundFile', audioSettings.soundFile, true)}
+      </div>
+    `);
+  }
+  const audioFieldsMarkup = audioFields.join('');
 
   return `
     <div class="tab-content ${activeTriggerTab === 'timerEnded' ? 'active' : ''}" data-tab="timerEnded" role="tabpanel">
@@ -923,29 +1000,14 @@ function renderTimerEndedTab(trigger) {
             <input type="radio" name="timer-ended-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnded.audio.mode" value="tts" ${audioSettings.mode === 'tts' ? 'checked' : ''} />
             Use Text To Speech
           </label>
-          <label class="radio-row">
-            <input type="radio" name="timer-ended-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnded.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
-            Play Sound File
-          </label>
-        </div>
-        <div class="editor-grid">
-          <div class="editor-field">
-            <label>Text To Say</label>
-            <input type="text" value="${escapeHtml(audioSettings.text || '')}" data-role="trigger-field" data-field="timerEnded.audio.text" ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-          </div>
-          <div class="editor-field">
-            <label>Sound File</label>
-            ${renderSoundFilePicker('timerEnded.audio.soundFile', audioSettings.soundFile, audioSettings.mode === 'file')}
-          </div>
-          <div class="editor-field">
-            <label class="checkbox-row">
-              <input type="checkbox" data-role="trigger-field" data-field="timerEnded.audio.interrupt" data-type="boolean" ${audioSettings.interrupt ? 'checked' : ''} ${audioSettings.mode === 'tts' ? '' : 'disabled'} />
-              Interrupt Speech
-            </label>
-          </div>
-        </div>
-      </div>
+      <label class="radio-row">
+        <input type="radio" name="timer-ended-audio-${trigger.id}" data-role="trigger-field" data-field="timerEnded.audio.mode" value="file" ${audioSettings.mode === 'file' ? 'checked' : ''} />
+        Play Sound File
+      </label>
     </div>
+    ${audioFieldsMarkup ? `<div class="editor-grid audio-grid">${audioFieldsMarkup}</div>` : ''}
+  </div>
+</div>
   `;
 }
 
@@ -1296,6 +1358,59 @@ function updateNestedField(target, path, value) {
   }
 }
 
+function moveTriggerToCategory(triggerId, categoryId) {
+  const trigger = getTriggerById(triggerId);
+  if (!trigger) {
+    return false;
+  }
+
+  const normalizedCategoryId =
+    categoryId && getCategoryById(categoryId) ? categoryId : null;
+  const currentCategoryId = trigger.categoryId || null;
+  if (currentCategoryId === normalizedCategoryId) {
+    return false;
+  }
+
+  trigger.categoryId = normalizedCategoryId;
+  updateDerivedTriggerFields(trigger);
+  expandForCategory(normalizedCategoryId);
+  setSelectedNode('trigger', trigger.id);
+  renderTriggerTree();
+  renderTriggerDetail();
+  persistSettings().catch(() => {});
+  return true;
+}
+
+function moveCategoryToParent(categoryId, parentCategoryId) {
+  const category = getCategoryById(categoryId);
+  if (!category) {
+    return false;
+  }
+
+  const normalizedParentId =
+    parentCategoryId && getCategoryById(parentCategoryId) ? parentCategoryId : null;
+
+  if (category.parentId === normalizedParentId) {
+    return false;
+  }
+
+  if (normalizedParentId) {
+    if (normalizedParentId === categoryId || isCategoryDescendant(normalizedParentId, categoryId)) {
+      return false;
+    }
+  }
+
+  category.parentId = normalizedParentId;
+  rebuildCategoryCaches();
+  updateAllDerivedTriggerFields();
+  expandForCategory(categoryId);
+  setSelectedNode('category', categoryId);
+  renderTriggerTree();
+  renderTriggerDetail();
+  persistSettings().catch(() => {});
+  return true;
+}
+
 function handleTriggerFieldChange(event) {
   if (!selectedNode || selectedNode.type !== 'trigger') return;
   const trigger = getTriggerById(selectedNode.id);
@@ -1512,6 +1627,300 @@ function cancelTimersAnimation() {
   }
 }
 
+function formatDurationShort(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return '';
+  }
+  const abs = Math.max(0, Math.round(seconds));
+  const days = Math.floor(abs / 86400);
+  const hours = Math.floor((abs % 86400) / 3600);
+  const minutes = Math.floor((abs % 3600) / 60);
+  const secs = abs % 60;
+  const parts = [];
+  if (days > 0) {
+    parts.push(`${days}d`);
+  }
+  if (parts.length < 2 && hours > 0) {
+    parts.push(`${hours}h`);
+  }
+  if (parts.length < 2 && minutes > 0) {
+    parts.push(`${minutes}m`);
+  }
+  if (parts.length === 0) {
+    parts.push(`${Math.max(1, secs)}s`);
+  }
+  return parts.join(' ');
+}
+
+function formatCountdown(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return 'Unknown';
+  }
+  if (seconds <= 0) {
+    return 'now';
+  }
+  return formatDurationShort(seconds);
+}
+
+function formatAbsoluteTime(isoString) {
+  if (!isoString) {
+    return 'Unknown';
+  }
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return 'Unknown';
+  }
+  const now = new Date();
+  const options = { hour: 'numeric', minute: '2-digit' };
+  if (date.toDateString() !== now.toDateString()) {
+    options.month = 'short';
+    options.day = 'numeric';
+  }
+  return date.toLocaleString(undefined, options);
+}
+
+function formatSince(isoString) {
+  if (!isoString) {
+    return 'Unknown';
+  }
+  const parsed = Date.parse(isoString);
+  if (Number.isNaN(parsed)) {
+    return 'Unknown';
+  }
+  const diffSeconds = Math.round((Date.now() - parsed) / 1000);
+  if (diffSeconds < 10) {
+    return 'moments ago';
+  }
+  return `${formatDurationShort(diffSeconds)} ago`;
+}
+
+function formatRespawnRange(mob = {}) {
+  if (mob.respawnDisplay) {
+    return mob.respawnDisplay;
+  }
+  const minMinutes = Number(mob.minRespawnMinutes);
+  const maxMinutes = Number(mob.maxRespawnMinutes);
+  if (!Number.isFinite(minMinutes) || !Number.isFinite(maxMinutes)) {
+    return '';
+  }
+  const minLabel = formatDurationShort(minMinutes * 60);
+  const maxLabel = formatDurationShort(maxMinutes * 60);
+  if (minLabel === maxLabel) {
+    return `Respawn ${minLabel}`;
+  }
+  return `Respawn ${minLabel} - ${maxLabel}`;
+}
+
+function categorizeMobWindows(mobs = []) {
+  const current = [];
+  const upcoming = [];
+  const future = [];
+  const unknown = [];
+
+  mobs.forEach((mob) => {
+    if (!mob || !mob.id) {
+      return;
+    }
+    if (!mob.lastKillAt) {
+      unknown.push(mob);
+      return;
+    }
+    if (mob.inWindow) {
+      current.push(mob);
+    } else if (Number.isFinite(mob.secondsUntilOpen) && mob.secondsUntilOpen > 0 && mob.secondsUntilOpen <= 86_400) {
+      upcoming.push(mob);
+    } else if (Number.isFinite(mob.secondsUntilOpen) && mob.secondsUntilOpen > 0) {
+      future.push(mob);
+    } else {
+      future.push(mob);
+    }
+  });
+
+  const sortBy = (key) => (a, b) => {
+    const av = Number.isFinite(a[key]) ? a[key] : Number.MAX_SAFE_INTEGER;
+    const bv = Number.isFinite(b[key]) ? b[key] : Number.MAX_SAFE_INTEGER;
+    return av - bv;
+  };
+
+  current.sort(sortBy('secondsUntilClose'));
+  upcoming.sort(sortBy('secondsUntilOpen'));
+  future.sort(sortBy('secondsUntilOpen'));
+
+  return { current, upcoming, future, unknown };
+}
+
+function buildMobWindowItem(mob, mode) {
+  const respawnRange = formatRespawnRange(mob);
+  const lastKillText = mob.lastKillAt ? `Last kill ${formatSince(mob.lastKillAt)}` : 'Last kill unknown';
+  const zoneParts = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
+
+  let descriptor = '';
+  let footerLeft = mob.windowOpensAt ? `${mode === 'current' ? 'Opened' : 'Earliest'}: ${formatAbsoluteTime(mob.windowOpensAt)}` : 'Earliest: Unknown';
+  let footerRight = mob.windowClosesAt ? `${mode === 'current' ? 'Ends' : 'Latest'}: ${formatAbsoluteTime(mob.windowClosesAt)}` : '';
+  let progressPct = 0;
+
+  if (mode === 'current') {
+    descriptor = `Window ends in ${formatCountdown(mob.secondsUntilClose)}`;
+    progressPct = Math.max(0, Math.min(100, Math.round((Number(mob.windowProgress) || 0) * 100)));
+  } else if (mode === 'upcoming') {
+    descriptor = `Window opens in ${formatCountdown(mob.secondsUntilOpen)}`;
+    progressPct = 0;
+  } else {
+    descriptor = respawnRange || '';
+  }
+
+  const metaParts = [];
+  if (descriptor) metaParts.push(descriptor);
+  if (respawnRange && respawnRange !== descriptor) metaParts.push(respawnRange);
+  if (lastKillText) metaParts.push(lastKillText);
+  if (zoneParts) metaParts.push(zoneParts);
+  const meta = metaParts.filter(Boolean).join(' • ');
+
+  const footerRightText = footerRight ? `<span>${escapeHtml(footerRight)}</span>` : '<span></span>';
+
+  return `
+    <article class="mob-window-item">
+      <div class="mob-window-header">
+        <span class="mob-name">${escapeHtml(mob.name || '')}</span>
+        <span class="mob-meta">${escapeHtml(meta)}</span>
+      </div>
+      <div class="mob-window-progress" style="--progress: ${progressPct}%;">
+        <span style="width: ${progressPct}%;"></span>
+      </div>
+      <div class="mob-window-footer">
+        <span>${escapeHtml(footerLeft)}</span>
+        ${footerRightText}
+      </div>
+    </article>
+  `;
+}
+
+function renderMobWindowList(container, mobs, emptyMessage, mode) {
+  if (!container) {
+    return;
+  }
+  if (!mobs || mobs.length === 0) {
+    container.innerHTML = `<div class="mob-window-empty">${escapeHtml(emptyMessage)}</div>`;
+    return;
+  }
+  container.innerHTML = mobs.map((mob) => buildMobWindowItem(mob, mode)).join('');
+}
+
+function renderMobWindowTable(snapshot) {
+  if (!mobWindowTableContainer) {
+    return;
+  }
+  const mobs = Array.isArray(snapshot?.mobs) ? snapshot.mobs : Array.isArray(snapshot) ? snapshot : [];
+  if (mobs.length === 0) {
+    mobWindowTableContainer.innerHTML = '<div class="mob-window-empty">No tracked mobs configured.</div>';
+    return;
+  }
+
+  const rowsHtml = mobs
+    .map((mob) => {
+      const respawnRange = formatRespawnRange(mob);
+      const lastKillDisplay = mob.lastKillAt
+        ? `${formatAbsoluteTime(mob.lastKillAt)} (${formatSince(mob.lastKillAt)})`
+        : 'Unknown';
+      const statusParts = [];
+      if (mob.inWindow) {
+        statusParts.push('In window');
+        if (Number.isFinite(mob.secondsUntilClose)) {
+          statusParts.push(`ends in ${formatCountdown(mob.secondsUntilClose)}`);
+        }
+      } else if (Number.isFinite(mob.secondsUntilOpen) && mob.secondsUntilOpen > 0) {
+        statusParts.push(`Opens in ${formatCountdown(mob.secondsUntilOpen)}`);
+      } else if (!mob.lastKillAt) {
+        statusParts.push('Awaiting first kill');
+      } else {
+        statusParts.push('Window closed');
+      }
+      const statusText = statusParts.join(' • ');
+      const clearDisabled = mob.lastKillAt ? '' : 'disabled';
+      const zoneText = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
+      return `
+        <tr data-mob-id="${escapeHtml(mob.id || '')}">
+          <td>
+            <div>${escapeHtml(mob.name || '')}</div>
+            ${zoneText ? `<div class="mob-window-zone">${escapeHtml(zoneText)}</div>` : ''}
+          </td>
+          <td>${escapeHtml(lastKillDisplay)}</td>
+          <td>${escapeHtml(respawnRange)}</td>
+          <td>${escapeHtml(statusText)}</td>
+          <td>
+            <div class="mob-window-actions">
+              <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
+              <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  mobWindowTableContainer.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Mob</th>
+          <th>Last Kill</th>
+          <th>Respawn</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `;
+}
+
+function renderMobWindows(snapshot) {
+  const mobs = Array.isArray(snapshot?.mobs) ? snapshot.mobs : [];
+  const categories = categorizeMobWindows(mobs);
+  renderMobWindowList(
+    mobWindowCurrentContainer,
+    categories.current,
+    'No mobs are currently in window.',
+    'current'
+  );
+  renderMobWindowList(
+    mobWindowUpcomingContainer,
+    categories.upcoming,
+    'No windows expected in the next 24 hours.',
+    'upcoming'
+  );
+  renderMobWindowTable(snapshot);
+}
+
+async function handleMobWindowActionClick(event) {
+  const button = event.target.closest('button[data-mob-id]');
+  if (!button || button.disabled) {
+    return;
+  }
+  const mobId = button.dataset.mobId;
+  const action = button.dataset.action;
+  if (!mobId || !action) {
+    return;
+  }
+  try {
+    if (action === 'set-now') {
+      const snapshot = await window.eqApi.recordMobKill(mobId, new Date().toISOString());
+      if (snapshot && snapshot.mobs) {
+        mobWindowSnapshot = snapshot;
+        renderMobWindows(mobWindowSnapshot);
+      }
+    } else if (action === 'clear') {
+      const snapshot = await window.eqApi.clearMobKill(mobId);
+      if (snapshot && snapshot.mobs) {
+        mobWindowSnapshot = snapshot;
+        renderMobWindows(mobWindowSnapshot);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to update mob window state', error);
+  }
+}
+
 function renderTimers(timers) {
   if (!timers || timers.length === 0) {
     cancelTimersAnimation();
@@ -1528,13 +1937,14 @@ function renderTimers(timers) {
       );
       const total = Math.max(timer.duration * 1000, 1);
       const progress = Math.max(0, Math.min(1, 1 - remaining / total));
+      const scaledProgress = progress <= 0 ? 0 : Math.max(0.02, progress);
       const remainingSeconds = Math.ceil(remaining / 1000);
       const minutes = Math.floor(remainingSeconds / 60);
       const seconds = remainingSeconds % 60;
       return `
         <div class="timer-pill" style="--accent: ${timer.color || '#00c9ff'}">
           <div class="timer-progress-track">
-            <div class="timer-progress-fill" style="height: ${(progress * 100).toFixed(1)}%"></div>
+            <div class="timer-progress-fill" style="transform: scaleX(${scaledProgress.toFixed(4)})"></div>
           </div>
           <div class="timer-content">
             <span>${escapeHtml(timer.label || '')}</span>
@@ -1629,6 +2039,18 @@ async function hydrate() {
   selectFirstAvailableNode();
   renderTriggerTree();
   renderTriggerDetail();
+
+  if (window.eqApi.getMobWindows) {
+    try {
+      const snapshot = await window.eqApi.getMobWindows();
+      mobWindowSnapshot = snapshot || { generatedAt: null, mobs: [] };
+    } catch (error) {
+      mobWindowSnapshot = { generatedAt: null, mobs: [] };
+    }
+    renderMobWindows(mobWindowSnapshot);
+  } else {
+    renderMobWindows(mobWindowSnapshot);
+  }
 
   try {
     overlayMoveMode = Boolean(await window.eqApi.getOverlayMoveMode());
@@ -1749,6 +2171,12 @@ function attachEventListeners() {
     window.eqApi.showOverlay();
   });
 
+  if (showMobOverlayButton) {
+    showMobOverlayButton.addEventListener('click', () => {
+      window.eqApi.showMobOverlay();
+    });
+  }
+
   toggleMoveModeButton.addEventListener('click', async () => {
     try {
       overlayMoveMode = !(overlayMoveMode === true);
@@ -1758,6 +2186,140 @@ function attachEventListeners() {
     } catch (err) {
       console.error('Failed to toggle overlay move mode', err);
     }
+  });
+
+  if (mobWindowTableContainer) {
+    mobWindowTableContainer.addEventListener('click', handleMobWindowActionClick);
+  }
+
+  triggerTreeContainer.addEventListener('dragstart', (event) => {
+    const item = event.target.closest('[data-drag-type]');
+    if (!item) return;
+    const dragType = item.dataset.dragType;
+    draggedTriggerId = null;
+    draggedCategoryId = null;
+    if (dragType === 'trigger') {
+      draggedTriggerId = item.dataset.nodeId;
+    } else if (dragType === 'category') {
+      draggedCategoryId = item.dataset.categoryId || item.dataset.nodeId;
+    }
+    if (!draggedTriggerId && !draggedCategoryId) {
+      return;
+    }
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      try {
+        event.dataTransfer.setData('text/plain', draggedTriggerId || draggedCategoryId || '');
+      } catch (err) {
+        // Ignore browsers that prevent setting data
+      }
+    }
+    item.classList.add('dragging');
+  });
+
+  triggerTreeContainer.addEventListener('dragend', () => {
+    const dragging = triggerTreeContainer.querySelector('.tree-item.dragging');
+    if (dragging) {
+      dragging.classList.remove('dragging');
+    }
+    draggedTriggerId = null;
+    draggedCategoryId = null;
+    clearCurrentDropTarget();
+  });
+
+  triggerTreeContainer.addEventListener('dragover', (event) => {
+    if (!draggedTriggerId && !draggedCategoryId) return;
+    const dropTarget = getDropTargetElement(event.target);
+    if (!dropTarget) return;
+    const targetType = dropTarget.dataset.dropTarget;
+    let allowed = false;
+
+    if (draggedTriggerId) {
+      allowed = targetType === 'category' || targetType === 'root';
+    } else if (draggedCategoryId) {
+      if (targetType === 'category') {
+        const targetCategoryId = dropTarget.dataset.categoryId;
+        if (
+          targetCategoryId &&
+          targetCategoryId !== draggedCategoryId &&
+          !isCategoryDescendant(targetCategoryId, draggedCategoryId)
+        ) {
+          allowed = true;
+        }
+      } else if (targetType === 'root') {
+        allowed = true;
+      }
+    }
+
+    if (!allowed) {
+      if (currentDropTarget === dropTarget) {
+        dropTarget.classList.remove('drag-over');
+        currentDropTarget = null;
+      }
+      return;
+    }
+
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    if (currentDropTarget !== dropTarget) {
+      clearCurrentDropTarget();
+      dropTarget.classList.add('drag-over');
+      currentDropTarget = dropTarget;
+    }
+  });
+
+  triggerTreeContainer.addEventListener('dragleave', (event) => {
+    if (!draggedTriggerId && !draggedCategoryId) return;
+    const dropTarget = getDropTargetElement(event.target);
+    if (!dropTarget) return;
+    if (event.relatedTarget && dropTarget.contains(event.relatedTarget)) {
+      return;
+    }
+    if (currentDropTarget === dropTarget) {
+      dropTarget.classList.remove('drag-over');
+      currentDropTarget = null;
+    }
+  });
+
+  triggerTreeContainer.addEventListener('drop', (event) => {
+    if (!draggedTriggerId && !draggedCategoryId) return;
+    const dropTarget = getDropTargetElement(event.target);
+    if (!dropTarget) return;
+    const targetType = dropTarget.dataset.dropTarget;
+    event.preventDefault();
+
+    if (draggedTriggerId) {
+      const categoryId =
+        targetType === 'category' ? dropTarget.dataset.categoryId || null : null;
+      moveTriggerToCategory(draggedTriggerId, categoryId);
+    } else if (draggedCategoryId) {
+      let parentId = null;
+      if (targetType === 'category') {
+        parentId = dropTarget.dataset.categoryId || null;
+        if (
+          !parentId ||
+          parentId === draggedCategoryId ||
+          isCategoryDescendant(parentId, draggedCategoryId)
+        ) {
+          draggedCategoryId = null;
+          clearCurrentDropTarget();
+          return;
+        }
+      } else if (targetType === 'root') {
+        parentId = null;
+      } else {
+        draggedCategoryId = null;
+        clearCurrentDropTarget();
+        return;
+      }
+      moveCategoryToParent(draggedCategoryId, parentId);
+    }
+
+    draggedTriggerId = null;
+    draggedCategoryId = null;
+    clearCurrentDropTarget();
   });
 
   triggerTreeContainer.addEventListener('click', handleTreeClick);
@@ -1783,6 +2345,13 @@ function subscribeToIpc() {
     renderTimers(timers);
   });
 
+  if (window.eqApi.onMobWindowsUpdate) {
+    window.eqApi.onMobWindowsUpdate((snapshot) => {
+      mobWindowSnapshot = snapshot || { generatedAt: null, mobs: [] };
+      renderMobWindows(mobWindowSnapshot);
+    });
+  }
+
   window.eqApi.onWatcherStatus((status) => {
     updateStatus(status);
   });
@@ -1799,12 +2368,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   switchView('dashboard');
   subscribeToIpc();
   renderTimers([]);
+  renderMobWindows(mobWindowSnapshot);
   renderRecentLines();
   updateStatus({ state: 'idle' });
 });
 
 function updateMoveModeButton() {
   if (!toggleMoveModeButton) return;
-  toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlay';
+  toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlays';
   toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
 }
+
+
+

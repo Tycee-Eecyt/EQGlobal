@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EQ Mob Windows Overlay</title>
+    <link rel="stylesheet" href="overlay.css" />
+  </head>
+  <body>
+    <div id="overlay-root" class="overlay-root">
+      <section id="overlay-mobs" class="overlay-section"></section>
+      <!-- Visible resize handles (shown only in move-mode via CSS) -->
+      <div class="overlay-resize-handle edge-n" data-edge="n"></div>
+      <div class="overlay-resize-handle edge-s" data-edge="s"></div>
+      <div class="overlay-resize-handle edge-e" data-edge="e"></div>
+      <div class="overlay-resize-handle edge-w" data-edge="w"></div>
+      <div class="overlay-resize-handle corner-nw" data-edge="nw"></div>
+      <div class="overlay-resize-handle corner-ne" data-edge="ne"></div>
+      <div class="overlay-resize-handle corner-sw" data-edge="sw"></div>
+      <div class="overlay-resize-handle corner-se" data-edge="se"></div>
+    </div>
+    <script src="overlay-mobs.js"></script>
+  </body>
+</html>

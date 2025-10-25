@@ -5,12 +5,43 @@ const axios = require('axios');
 const childProcess = require('child_process');
 const LogWatcher = require('./logWatcher');
 const TimerManager = require('./timerManager');
+const MobWindowManager = require('./mobWindowManager');
 const defaultTriggers = require('../shared/defaultTriggers.json');
+const mobWindowDefinitions = require('../shared/mobWindows.json');
+
+const ASSETS_DIR = path.join(__dirname, '..', '..', 'assets');
+const APP_ICON_FILENAME = 'EQ-Global-logo.png';
+const TRAY_ICON_FILENAME = 'EQ-Global-logo-transparent.png';
+
+function resolveAssetPath(fileName) {
+  return path.join(ASSETS_DIR, fileName);
+}
+
+function loadAssetImage(fileName, resize) {
+  try {
+    const fullPath = resolveAssetPath(fileName);
+    if (!fs.existsSync(fullPath)) {
+      return null;
+    }
+    let image = nativeImage.createFromPath(fullPath);
+    if (!image || image.isEmpty()) {
+      return null;
+    }
+    if (resize && resize.width && resize.height) {
+      image = image.resize({ width: resize.width, height: resize.height, quality: 'best' });
+    }
+    return image && !image.isEmpty() ? image : null;
+  } catch (error) {
+    console.error(`Failed to load asset image "${fileName}"`, error);
+    return null;
+  }
+}
 
 require('dotenv').config();
 
 let mainWindow;
 let overlayWindow;
+let mobOverlayWindow;
 let logWatcher;
 let settingsPath;
 let tray;
@@ -25,6 +56,17 @@ timerManager.on('update', (timers) => {
   }
 });
 
+const mobWindowManager = new MobWindowManager(mobWindowDefinitions, { tickRateMs: 30_000 });
+mobWindowManager.on('update', (snapshot) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('mob-windows:update', snapshot);
+  }
+  if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+    mobOverlayWindow.webContents.send('mob-windows:update', snapshot);
+  }
+});
+mobWindowManager.start();
+
 const backendQueue = {
   lines: [],
   events: [],
@@ -37,15 +79,20 @@ const defaultSettings = {
   overlayClickThrough: false,
   overlayOpacity: 0.85,
   overlayBounds: null,
+  mobOverlayBounds: null,
   categories: [],
   triggers: defaultTriggers,
+  mobWindows: {
+    kills: {},
+  },
 };
 
 let settings = { ...defaultSettings };
 let overlayBoundsSaveTimer = null;
+let mobOverlayBoundsSaveTimer = null;
 let overlayMoveMode = false;
 
-function createTrayIconImage() {
+function createFallbackTrayIconImage() {
   const logicalSize = process.platform === 'darwin' ? 22 : 16;
   const scaleFactor = 2;
   const size = logicalSize * scaleFactor;
@@ -111,6 +158,18 @@ function createTrayIconImage() {
   return image;
 }
 
+function createTrayIconImage() {
+  const size = process.platform === 'darwin' ? 22 : 18;
+  const desired = loadAssetImage(TRAY_ICON_FILENAME, { width: size, height: size });
+  if (desired) {
+    if (process.platform === 'darwin') {
+      desired.setTemplateImage(false);
+    }
+    return desired;
+  }
+  return createFallbackTrayIconImage();
+}
+
 function updateTrayMenu() {
   if (!tray) {
     return;
@@ -120,6 +179,8 @@ function updateTrayMenu() {
   const mainVisible = Boolean(mainWindowExists && mainWindow.isVisible());
   const overlayExists = overlayWindow && !overlayWindow.isDestroyed();
   const overlayVisible = Boolean(overlayExists && overlayWindow.isVisible());
+  const mobOverlayExists = mobOverlayWindow && !mobOverlayWindow.isDestroyed();
+  const mobOverlayVisible = Boolean(mobOverlayExists && mobOverlayWindow.isVisible());
 
   const template = [
     {
@@ -129,9 +190,15 @@ function updateTrayMenu() {
       },
     },
     {
-      label: overlayVisible ? 'Hide Overlay' : 'Show Overlay',
+      label: overlayVisible ? 'Hide Timer Overlay' : 'Show Timer Overlay',
       click: () => {
         toggleOverlayVisibility();
+      },
+    },
+    {
+      label: mobOverlayVisible ? 'Hide Mob Overlay' : 'Show Mob Overlay',
+      click: () => {
+        toggleMobOverlayVisibility();
       },
     },
     { type: 'separator' },
@@ -218,6 +285,39 @@ function toggleOverlayVisibility() {
     overlayWindow.hide();
   } else {
     overlayWindow.showInactive();
+  }
+  updateTrayMenu();
+}
+
+function toggleMobOverlayVisibility() {
+  if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+    createMobOverlayWindow();
+  }
+
+  if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+    updateTrayMenu();
+    return;
+  }
+
+  if (mobOverlayWindow.isVisible()) {
+    mobOverlayWindow.hide();
+  } else {
+    if (typeof mobOverlayWindow.isMinimized === 'function' && mobOverlayWindow.isMinimized()) {
+      mobOverlayWindow.restore();
+    }
+    mobOverlayWindow.showInactive();
+  }
+  updateTrayMenu();
+}
+
+function minimizeMobOverlayWindow() {
+  if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+    return;
+  }
+  if (typeof mobOverlayWindow.minimize === 'function' && !mobOverlayWindow.isMinimized()) {
+    mobOverlayWindow.minimize();
+  } else {
+    mobOverlayWindow.hide();
   }
   updateTrayMenu();
 }
@@ -319,6 +419,20 @@ async function ensureSettingsLoaded() {
     if (!Array.isArray(settings.categories)) {
       settings.categories = [];
     }
+    if (!settings.mobOverlayBounds || typeof settings.mobOverlayBounds !== 'object') {
+      settings.mobOverlayBounds = null;
+    }
+    if (!settings.mobWindows || typeof settings.mobWindows !== 'object') {
+      settings.mobWindows = { kills: {} };
+    } else if (!settings.mobWindows.kills || typeof settings.mobWindows.kills !== 'object') {
+      settings.mobWindows.kills = {};
+    }
+    mobWindowManager.loadState(settings.mobWindows);
+    const loadedRemote = await loadMobWindowsFromBackend();
+    if (loadedRemote) {
+      settings.mobWindows = mobWindowManager.serializeState();
+      await saveSettings(settings);
+    }
   }
 
   return settings;
@@ -339,7 +453,15 @@ async function saveSettings(updatedSettings = settings) {
   }
 
   try {
-    await fs.promises.writeFile(settingsPath, JSON.stringify(updatedSettings, null, 2), 'utf8');
+    const serializedMobWindows = mobWindowManager.serializeState();
+    settings.mobWindows = serializedMobWindows;
+    const payload = {
+      ...updatedSettings,
+      mobWindows: serializedMobWindows,
+      mobOverlayBounds: settings.mobOverlayBounds,
+    };
+    await fs.promises.writeFile(settingsPath, JSON.stringify(payload, null, 2), 'utf8');
+    await syncMobWindowsToBackend(serializedMobWindows);
   } catch (error) {
     console.error('Failed to persist settings', error);
   }
@@ -350,17 +472,24 @@ function createMainWindow() {
     return mainWindow;
   }
 
+  const iconPath = resolveAssetPath(APP_ICON_FILENAME);
+  const hasIcon = fs.existsSync(iconPath);
+
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 720,
     minWidth: 820,
     minHeight: 640,
+    icon: hasIcon ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
 
   mainWindow.loadFile(resolveRendererPath('index.html'));
+  mainWindow.webContents.once('did-finish-load', () => {
+    mainWindow.webContents.send('mob-windows:update', mobWindowManager.computeSnapshot());
+  });
 
   mainWindow.on('show', updateTrayMenu);
   mainWindow.on('hide', updateTrayMenu);
@@ -380,6 +509,9 @@ function createOverlayWindow() {
     return overlayWindow;
   }
 
+  const iconPath = resolveAssetPath(APP_ICON_FILENAME);
+  const hasIcon = fs.existsSync(iconPath);
+
   const baseBounds = { width: 320, height: 360 };
   const saved = settings.overlayBounds || {};
   const windowOptions = {
@@ -391,6 +523,7 @@ function createOverlayWindow() {
     alwaysOnTop: true,
     focusable: false,
     skipTaskbar: true,
+    icon: hasIcon ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -406,7 +539,11 @@ function createOverlayWindow() {
   overlayWindow = new BrowserWindow(windowOptions);
 
   overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-  overlayWindow.loadFile(resolveRendererPath('overlay.html'));
+  overlayWindow.loadFile(resolveRendererPath('overlay-timers.html'));
+  overlayWindow.webContents.once('did-finish-load', () => {
+    overlayWindow.webContents.send('timers:update', timerManager.getTimers());
+    overlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
+  });
   overlayWindow.setOpacity(settings.overlayOpacity);
   overlayWindow.setIgnoreMouseEvents(
     overlayMoveMode ? false : Boolean(settings.overlayClickThrough),
@@ -439,6 +576,77 @@ function createOverlayWindow() {
 
   updateTrayMenu();
   return overlayWindow;
+}
+
+function createMobOverlayWindow() {
+  if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+    return mobOverlayWindow;
+  }
+
+  const iconPath = resolveAssetPath(APP_ICON_FILENAME);
+  const hasIcon = fs.existsSync(iconPath);
+
+  const baseBounds = { width: 320, height: 360 };
+  const saved = settings.mobOverlayBounds || {};
+  const windowOptions = {
+    width: Number(saved.width) || baseBounds.width,
+    height: Number(saved.height) || baseBounds.height,
+    frame: false,
+    transparent: true,
+    resizable: true,
+    alwaysOnTop: true,
+    focusable: false,
+    skipTaskbar: true,
+    icon: hasIcon ? iconPath : undefined,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
+    backgroundColor: '#00000000',
+  };
+
+  if (typeof saved.x === 'number' && typeof saved.y === 'number') {
+    windowOptions.x = saved.x;
+    windowOptions.y = saved.y;
+  }
+
+  mobOverlayWindow = new BrowserWindow(windowOptions);
+  mobOverlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  mobOverlayWindow.loadFile(resolveRendererPath('overlay-mobs.html'));
+  mobOverlayWindow.webContents.once('did-finish-load', () => {
+    mobOverlayWindow.webContents.send('mob-windows:update', mobWindowManager.computeSnapshot());
+    mobOverlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
+  });
+  mobOverlayWindow.setOpacity(settings.overlayOpacity);
+  mobOverlayWindow.setIgnoreMouseEvents(
+    overlayMoveMode ? false : Boolean(settings.overlayClickThrough),
+    { forward: true }
+  );
+
+  const scheduleSaveMobOverlayBounds = () => {
+    if (mobOverlayBoundsSaveTimer) {
+      clearTimeout(mobOverlayBoundsSaveTimer);
+    }
+    mobOverlayBoundsSaveTimer = setTimeout(async () => {
+      mobOverlayBoundsSaveTimer = null;
+      if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+        const b = mobOverlayWindow.getBounds();
+        settings.mobOverlayBounds = { x: b.x, y: b.y, width: b.width, height: b.height };
+        await saveSettings(settings);
+      }
+    }, 300);
+  };
+
+  mobOverlayWindow.on('move', scheduleSaveMobOverlayBounds);
+  mobOverlayWindow.on('resize', scheduleSaveMobOverlayBounds);
+  mobOverlayWindow.on('show', updateTrayMenu);
+  mobOverlayWindow.on('hide', updateTrayMenu);
+  mobOverlayWindow.on('closed', () => {
+    mobOverlayWindow = null;
+    updateTrayMenu();
+  });
+
+  updateTrayMenu();
+  return mobOverlayWindow;
 }
 
 function sendStatus(status) {
@@ -488,7 +696,7 @@ function handleTriggerMatch(payload) {
   queueBackendEvent(payload, timer);
 }
 
-function handleNewLines({ filePath, lines }) {
+async function handleNewLines({ filePath, lines }) {
   const decoratedLines = lines.map((line) => {
     const timestampMatch = line.match(/^\[(.+?)\]/);
     const timestamp = timestampMatch ? new Date(timestampMatch[1]) : new Date();
@@ -505,6 +713,11 @@ function handleNewLines({ filePath, lines }) {
 
   backendQueue.lines.push(...decoratedLines);
   scheduleBackendFlush();
+
+  const mobUpdated = mobWindowManager.ingestLines(decoratedLines);
+  if (mobUpdated) {
+    await saveSettings(settings);
+  }
 }
 
 function queueBackendEvent(payload, timer) {
@@ -580,6 +793,58 @@ function joinBackendUrl(base, suffix) {
   }
 }
 
+let mobWindowsFetchedFromBackend = false;
+
+async function fetchMobWindowsFromBackend() {
+  const baseUrl = (settings.backendUrl || '').trim();
+  if (!baseUrl) {
+    return null;
+  }
+
+  try {
+    const response = await axios.get(joinBackendUrl(baseUrl, '/api/mob-windows'));
+    const data = response?.data;
+    if (!data || typeof data.kills !== 'object' || !data.kills) {
+      return null;
+    }
+    return { kills: data.kills };
+  } catch (error) {
+    console.error('Failed to fetch mob windows from backend', error.message || error);
+    return null;
+  }
+}
+
+async function loadMobWindowsFromBackend({ force = false } = {}) {
+  if (mobWindowsFetchedFromBackend && !force) {
+    return false;
+  }
+
+  const remote = await fetchMobWindowsFromBackend();
+  if (!remote) {
+    return false;
+  }
+
+  mobWindowManager.loadState(remote);
+  mobWindowsFetchedFromBackend = true;
+  return true;
+}
+
+async function syncMobWindowsToBackend(state) {
+  const baseUrl = (settings.backendUrl || '').trim();
+  if (!baseUrl) {
+    return;
+  }
+  const payload = state && typeof state === 'object' ? state : mobWindowManager.serializeState();
+  if (!payload || typeof payload.kills !== 'object') {
+    return;
+  }
+  try {
+    await axios.post(joinBackendUrl(baseUrl, '/api/mob-windows'), { kills: payload.kills });
+  } catch (error) {
+    console.error('Failed to sync mob windows to backend', error.message || error);
+  }
+}
+
 function registerIpcHandlers() {
   ipcMain.handle('ready', async () => ensureSettingsLoaded());
 
@@ -587,10 +852,23 @@ function registerIpcHandlers() {
 
   ipcMain.handle('settings:update', async (_event, partialSettings) => {
     await ensureSettingsLoaded();
+    const previousBackendUrl = settings.backendUrl || '';
     settings = {
       ...settings,
       ...partialSettings,
     };
+    const backendUrlChanged =
+      Object.prototype.hasOwnProperty.call(partialSettings || {}, 'backendUrl') &&
+      (partialSettings.backendUrl || '') !== previousBackendUrl;
+    if (backendUrlChanged) {
+      mobWindowsFetchedFromBackend = false;
+      if ((settings.backendUrl || '').trim()) {
+        const loaded = await loadMobWindowsFromBackend({ force: true });
+        if (loaded) {
+          settings.mobWindows = mobWindowManager.serializeState();
+        }
+      }
+    }
 
     if (partialSettings.triggers && logWatcher) {
       logWatcher.setTriggers(settings.triggers);
@@ -658,6 +936,9 @@ function registerIpcHandlers() {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : settings.overlayClickThrough, { forward: true });
     }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : settings.overlayClickThrough, { forward: true });
+    }
     await saveSettings(settings);
     return settings.overlayClickThrough;
   });
@@ -667,6 +948,9 @@ function registerIpcHandlers() {
     settings.overlayOpacity = nextOpacity;
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setOpacity(nextOpacity);
+    }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.setOpacity(nextOpacity);
     }
     await saveSettings(settings);
     return nextOpacity;
@@ -688,21 +972,128 @@ function registerIpcHandlers() {
     return true;
   });
 
+  ipcMain.handle('overlay:show-mobs', () => {
+    if (!mobOverlayWindow || mobOverlayWindow.isDestroyed()) {
+      createMobOverlayWindow();
+    }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      if (typeof mobOverlayWindow.isMinimized === 'function' && mobOverlayWindow.isMinimized()) {
+        mobOverlayWindow.restore();
+      }
+      mobOverlayWindow.showInactive();
+    }
+    updateTrayMenu();
+    return true;
+  });
+
+  ipcMain.handle('overlay:hide-mobs', () => {
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.hide();
+    }
+    updateTrayMenu();
+    return true;
+  });
+
   ipcMain.handle('overlay:move-mode', async (_event, enabled) => {
     overlayMoveMode = Boolean(enabled);
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      if (typeof overlayWindow.setFocusable === 'function') {
+        overlayWindow.setFocusable(overlayMoveMode);
+      }
       if (overlayMoveMode) {
         overlayWindow.showInactive();
       }
       overlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
+    }
+    if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
+      mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      if (typeof mobOverlayWindow.setFocusable === 'function') {
+        mobOverlayWindow.setFocusable(overlayMoveMode);
+      }
+      if (overlayMoveMode) {
+        mobOverlayWindow.showInactive();
+      }
+      mobOverlayWindow.webContents.send('overlay:move-mode', overlayMoveMode);
     }
     return overlayMoveMode;
   });
 
   ipcMain.handle('overlay:get-move-mode', () => overlayMoveMode);
 
+  ipcMain.handle('overlay:resize', (_event, payload) => {
+    try {
+      if (!overlayMoveMode) return false;
+      const sender = _event?.sender;
+      if (!sender) return false;
+      const win = BrowserWindow.fromWebContents(sender);
+      if (!win || win.isDestroyed()) return false;
+
+      const { edge, dx = 0, dy = 0 } = payload || {};
+      if (typeof edge !== 'string') return false;
+
+      const minW = 220;
+      const minH = 160;
+      const bounds = win.getBounds();
+      let { x, y, width, height } = bounds;
+
+      const applyWest = (delta) => {
+        const desired = width - delta;
+        const clampDelta = Math.min(delta, width - minW);
+        width = Math.max(minW, desired);
+        x = x + clampDelta;
+      };
+      const applyEast = (delta) => {
+        width = Math.max(minW, width + delta);
+      };
+      const applyNorth = (delta) => {
+        const desired = height - delta;
+        const clampDelta = Math.min(delta, height - minH);
+        height = Math.max(minH, desired);
+        y = y + clampDelta;
+      };
+      const applySouth = (delta) => {
+        height = Math.max(minH, height + delta);
+      };
+
+      const e = edge.toLowerCase();
+      if (e.includes('w')) applyWest(dx || 0);
+      if (e.includes('e')) applyEast(dx || 0);
+      if (e.includes('n')) applyNorth(dy || 0);
+      if (e.includes('s')) applySouth(dy || 0);
+
+      // Final clamp
+      width = Math.max(minW, Math.round(width));
+      height = Math.max(minH, Math.round(height));
+      x = Math.round(x);
+      y = Math.round(y);
+
+      win.setBounds({ x, y, width, height }, false);
+      return { x, y, width, height };
+    } catch (err) {
+      console.error('overlay:resize failed', err);
+      return false;
+    }
+  });
+
   ipcMain.handle('triggers:default', () => defaultTriggers);
+
+  ipcMain.handle('mob-windows:get', () => mobWindowManager.computeSnapshot());
+  ipcMain.handle('mob-windows:definitions', () => mobWindowManager.getDefinitions());
+  ipcMain.handle('mob-windows:record-kill', async (_event, mobId, timestamp) => {
+    const updated = mobWindowManager.recordKill(mobId, timestamp ? new Date(timestamp) : new Date());
+    if (updated) {
+      await saveSettings(settings);
+    }
+    return mobWindowManager.computeSnapshot();
+  });
+  ipcMain.handle('mob-windows:clear', async (_event, mobId) => {
+    const cleared = mobWindowManager.clearKill(mobId);
+    if (cleared) {
+      await saveSettings(settings);
+    }
+    return mobWindowManager.computeSnapshot();
+  });
 
   ipcMain.handle('triggers:import-gtp', async () => {
     // Ask user for a .gtp file
@@ -772,8 +1163,17 @@ function registerIpcHandlers() {
 
 app.whenReady().then(async () => {
   await ensureSettingsLoaded();
+
+  if (process.platform === 'darwin' && app.dock && typeof app.dock.setIcon === 'function') {
+    const dockIcon = loadAssetImage(APP_ICON_FILENAME, { width: 256, height: 256 });
+    if (dockIcon) {
+      app.dock.setIcon(dockIcon);
+    }
+  }
+
   createMainWindow();
   createOverlayWindow();
+  createMobOverlayWindow();
   ensureTray();
   registerIpcHandlers();
 
@@ -789,6 +1189,9 @@ app.whenReady().then(async () => {
       createMainWindow();
       if (!overlayWindow) {
         createOverlayWindow();
+      }
+      if (!mobOverlayWindow) {
+        createMobOverlayWindow();
       }
     }
   });

@@ -11,6 +11,7 @@
         <h1>EQGlobal Log Timers</h1>
         <nav class="app-nav" aria-label="Primary">
           <button type="button" class="nav-button active" data-view-target="dashboard">Dashboard</button>
+          <button type="button" class="nav-button" data-view-target="mob-windows">Mob Windows</button>
           <button type="button" class="nav-button" data-view-target="settings">Settings</button>
         </nav>
       </div>
@@ -55,8 +56,9 @@
             <div class="panel-header">
               <h2>Active Timers</h2>
               <div>
-                <button id="toggle-move-mode" class="secondary small" title="Temporarily disable click-through to move the overlay">Move Overlay</button>
-                <button id="show-overlay" class="secondary small">Focus Overlay</button>
+                <button id="toggle-move-mode" class="secondary small" title="Temporarily disable click-through to move the overlays">Move Overlays</button>
+                <button id="show-overlay" class="secondary small">Focus Timer Overlay</button>
+                <button id="show-mob-overlay" class="secondary small">Focus Mob Overlay</button>
               </div>
             </div>
             <div id="active-timers" class="timers"></div>
@@ -64,6 +66,32 @@
               <h2>Recent Log Lines</h2>
             </div>
             <ul id="recent-lines" class="recent-lines"></ul>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" data-view="mob-windows" aria-labelledby="mob-windows-title">
+        <h2 id="mob-windows-title" class="sr-only">Mob Windows</h2>
+        <div class="mob-windows-layout">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Mobs In Window</h2>
+            </div>
+            <div id="mob-window-current" class="mob-window-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Upcoming Windows (Next 24h)</h2>
+            </div>
+            <div id="mob-window-upcoming" class="mob-window-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>All Tracked Mobs</h2>
+            </div>
+            <div id="mob-window-table" class="mob-window-table"></div>
           </section>
         </div>
       </section>

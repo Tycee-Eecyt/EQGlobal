@@ -118,8 +118,9 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: minmax(560px, 2.3fr) minmax(320px, 1fr);
   gap: 1.6rem;
+  align-items: start;
 }
 
 .panel {
@@ -131,6 +132,7 @@ body {
   gap: 1.2rem;
   border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow: 0 18px 28px rgba(0, 0, 0, 0.35);
+  min-width: 0;
 }
 
 .panel h2 {
@@ -212,6 +214,41 @@ body {
   white-space: nowrap;
 }
 
+.sound-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.sound-file-picker.disabled .sound-file-display {
+  opacity: 0.45;
+}
+
+.sound-file-display {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(18, 21, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.9rem;
+  color: rgba(245, 247, 250, 0.8);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sound-file-display.empty {
+  color: rgba(245, 247, 250, 0.45);
+  font-style: italic;
+}
+
+.sound-file-picker button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -265,6 +302,32 @@ body {
 
 .modal-actions button {
   min-width: 88px;
+}
+
+@media (max-width: 1400px) {
+  .layout {
+    grid-template-columns: minmax(480px, 1.8fr) minmax(280px, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel.triggers-panel {
+    order: 1;
+  }
+}
+
+@media (max-width: 960px) {
+  .trigger-manager {
+    grid-template-columns: minmax(220px, 1fr);
+  }
+
+  .trigger-tree-panel {
+    max-height: 280px;
+  }
 }
 
 .watcher-summary {
@@ -365,6 +428,7 @@ button:active {
   gap: 1rem;
   grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr);
   min-height: 440px;
+  align-items: stretch;
 }
 
 .trigger-tree-panel {
@@ -452,6 +516,28 @@ button:active {
   box-shadow: inset 0 0 0 1px rgba(73, 209, 164, 0.3);
 }
 
+.tree-item.dragging {
+  opacity: 0.45;
+}
+
+.tree-item.drag-over {
+  background: rgba(73, 209, 164, 0.25);
+  color: #f5f7fa;
+  box-shadow: inset 0 0 0 1px rgba(73, 209, 164, 0.35);
+}
+
+.tree-item.root-drop {
+  margin-bottom: 0.75rem;
+  cursor: default;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.tree-item.root-drop.drag-over {
+  background: rgba(73, 209, 164, 0.18);
+  color: #f5f7fa;
+  box-shadow: inset 0 0 0 1px rgba(73, 209, 164, 0.25);
+}
+
 .tree-toggle {
   background: none;
   border: none;
@@ -511,6 +597,7 @@ button:active {
   padding: 1rem 1.2rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   display: flex;
+  min-width: 0;
 }
 
 .trigger-detail {
@@ -754,24 +841,26 @@ button:active {
 
 .timer-progress-track {
   position: absolute;
-  left: 8px;
-  top: 6px;
-  bottom: 6px;
-  width: 8px;
-  border-radius: 8px;
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
+  height: 6px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 }
 
 .timer-progress-fill {
   position: absolute;
-  left: 0;
-  right: 0;
+  top: 0;
   bottom: 0;
-  height: 100%;
+  left: 0;
+  width: 100%;
   background: var(--accent, #3a86ff);
-  border-radius: 8px;
-  transition: height 0.25s ease-out;
+  border-radius: 999px;
+  transform-origin: left center;
+  transform: scaleX(1);
+  transition: transform 0.25s ease-out;
 }
 
 .timer-pill .remaining {
@@ -797,6 +886,142 @@ button:active {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.04);
   word-break: break-word;
+}
+
+.mob-windows-layout {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  align-items: start;
+}
+
+.mob-window-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-height: 140px;
+}
+
+.mob-window-item {
+  background: rgba(31, 37, 50, 0.85);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.mob-window-item .mob-window-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mob-window-item .mob-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f5f7fa;
+}
+
+.mob-window-item .mob-meta {
+  font-size: 0.85rem;
+  color: rgba(245, 247, 250, 0.65);
+}
+
+.mob-window-progress {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.mob-window-progress span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #49d1a4, #14c3ff);
+  width: var(--progress, 0%);
+  transition: width 0.4s ease-out;
+}
+
+.mob-window-item .mob-window-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: rgba(245, 247, 250, 0.8);
+}
+
+.mob-window-empty {
+  font-size: 0.9rem;
+  color: rgba(245, 247, 250, 0.55);
+  padding: 0.6rem 0.2rem;
+}
+
+.mob-window-table {
+  overflow-x: auto;
+}
+
+.mob-window-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.mob-window-zone {
+  font-size: 0.75rem;
+  color: rgba(245, 247, 250, 0.55);
+}
+
+.mob-window-table th,
+.mob-window-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.mob-window-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(245, 247, 250, 0.6);
+}
+
+.mob-window-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.mob-window-actions button {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(73, 209, 164, 0.08);
+  color: #9be7d3;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.mob-window-actions button:hover {
+  background: rgba(73, 209, 164, 0.15);
+}
+
+.mob-window-actions button.danger {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ffc9c9;
+  border-color: rgba(255, 107, 107, 0.25);
+}
+
+.mob-window-actions button.danger:hover {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ffe3e3;
 }
 
 @keyframes fadeIn {

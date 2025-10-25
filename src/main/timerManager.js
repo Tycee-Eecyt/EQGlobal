@@ -30,10 +30,47 @@ class TimerManager extends EventEmitter {
       return null;
     }
 
-    const id = `${trigger.id || trigger.label}-${Date.now()}`;
+    const restartMode = trigger?.timer?.restartMode || 'restart-current';
+    const triggerKey = trigger.id || trigger.label || trigger.pattern;
+    const timerName =
+      (trigger.timer && trigger.timer.name) || trigger.label || trigger.id || trigger.pattern;
+    const timerType = trigger?.timer?.type || 'countdown';
+
+    const existingTimers = [];
+    for (const timer of this.timers.values()) {
+      if (timer.triggerId === triggerKey) {
+        existingTimers.push(timer);
+      }
+    }
+
+    if (restartMode === 'ignore' && existingTimers.length > 0) {
+      return existingTimers[0];
+    }
+
     const startsAt = timestamp instanceof Date ? timestamp : new Date(timestamp);
     const expiresAt = new Date(startsAt.getTime() + trigger.duration * 1000);
 
+    if (restartMode === 'restart-current' && existingTimers.length > 0) {
+      const current = existingTimers[0];
+      const updated = {
+        ...current,
+        duration: trigger.duration,
+        startsAt: startsAt.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+        timerType,
+        timerName,
+        restartMode,
+      };
+      this.timers.set(current.id, updated);
+      for (let i = 1; i < existingTimers.length; i += 1) {
+        this.timers.delete(existingTimers[i].id);
+      }
+      this.emitUpdate();
+      this.start();
+      return updated;
+    }
+
+    const id = `${triggerKey}-${Date.now()}`;
     const timer = {
       id,
       label: trigger.label || trigger.id || trigger.pattern,
@@ -41,8 +78,11 @@ class TimerManager extends EventEmitter {
       duration: trigger.duration,
       startsAt: startsAt.toISOString(),
       expiresAt: expiresAt.toISOString(),
-      triggerId: trigger.id,
+      triggerId: triggerKey,
       triggerPattern: trigger.pattern,
+      timerName,
+      timerType,
+      restartMode,
     };
 
     this.timers.set(id, timer);

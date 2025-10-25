@@ -108,6 +108,58 @@ app.post('/api/log-events', async (req, res) => {
   }
 });
 
+app.get('/api/mob-windows', async (_req, res) => {
+  try {
+    const db = await ensureMongoConnection();
+    const collection = db.collection('mob_windows');
+    const doc = await collection.findOne({ _id: 'global' });
+    if (!doc) {
+      return res.json({ kills: {}, updatedAt: null });
+    }
+    res.json({
+      kills: doc.kills || {},
+      updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : null,
+    });
+  } catch (error) {
+    console.error('Failed to load mob window state', error);
+    res.status(500).json({ error: 'Failed to load mob window state.' });
+  }
+});
+
+app.post('/api/mob-windows', async (req, res) => {
+  const { kills } = req.body || {};
+  if (!kills || typeof kills !== 'object') {
+    return res.status(400).json({ error: 'Expected "kills" to be an object.' });
+  }
+
+  const sanitized = {};
+  for (const [mobId, timestamp] of Object.entries(kills)) {
+    if (typeof mobId !== 'string' || !mobId.trim()) {
+      continue;
+    }
+    const iso = typeof timestamp === 'string' ? timestamp : new Date(timestamp).toISOString();
+    if (!iso || Number.isNaN(Date.parse(iso))) {
+      continue;
+    }
+    sanitized[mobId] = new Date(iso).toISOString();
+  }
+
+  try {
+    const db = await ensureMongoConnection();
+    const collection = db.collection('mob_windows');
+    const updatedAt = new Date();
+    await collection.updateOne(
+      { _id: 'global' },
+      { $set: { kills: sanitized, updatedAt } },
+      { upsert: true }
+    );
+    res.json({ kills: sanitized, updatedAt: updatedAt.toISOString() });
+  } catch (error) {
+    console.error('Failed to persist mob window state', error);
+    res.status(500).json({ error: 'Failed to persist mob window state.' });
+  }
+});
+
 app.listen(port, async () => {
   console.log(`EQGlobal backend listening on http://localhost:${port}`);
   if (!mongoUri) {
