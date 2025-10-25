@@ -1,4 +1,4 @@
-const { EventEmitter } = require('events');
+﻿const { EventEmitter } = require('events');
 
 function escapeRegex(text = '') {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -161,6 +161,8 @@ function buildAliasIndex(definitions) {
   return index;
 }
 
+const QUAKE_PATTERN = /^\^?you feel the (?:need to get somewhere safe quickly|sudden urge to seek a safe location)\.$/i;
+
 class MobWindowManager extends EventEmitter {
   constructor(definitions = [], options = {}) {
     super();
@@ -229,7 +231,12 @@ class MobWindowManager extends EventEmitter {
 
     const parsedTimestamp = asDate(timestamp) || new Date();
     const message = String(line).replace(/^\[[^\]]+\]\s*/, '');
-    const lowered = message.toLowerCase();
+    const trimmedMessage = message.trim();
+    const lowered = trimmedMessage.toLowerCase();
+
+    if (QUAKE_PATTERN.test(trimmedMessage)) {
+      return this.resetAllKills(parsedTimestamp);
+    }
 
     for (const definition of this.definitions) {
       if (!definition.killMatchers || definition.killMatchers.length === 0) {
@@ -241,7 +248,7 @@ class MobWindowManager extends EventEmitter {
       }
     }
 
-    const todResult = this.parseTodCommand(message, parsedTimestamp);
+    const todResult = this.parseTodCommand(trimmedMessage, parsedTimestamp);
     if (todResult) {
       return this.recordKill(todResult.mobId, todResult.timestamp || parsedTimestamp);
     }
@@ -262,7 +269,7 @@ class MobWindowManager extends EventEmitter {
       return null;
     }
 
-    remainder = remainder.replace(/^[`"'“”‘’]+/, '').replace(/[`"'“”‘’]+$/, '');
+    remainder = remainder.replace(/^[`"'â€œâ€â€˜â€™]+/, '').replace(/[`"'â€œâ€â€˜â€™]+$/, '');
     remainder = remainder.replace(/#.*$/, '').trim();
 
     let explicitTime = null;
@@ -325,6 +332,26 @@ class MobWindowManager extends EventEmitter {
     return true;
   }
 
+  resetAllKills(timestamp = new Date()) {
+    const parsed = asDate(timestamp);
+    if (!parsed) {
+      return false;
+    }
+    const targetMs = parsed.getTime();
+    let changed = false;
+    for (const definition of this.definitions) {
+      const existing = this.killTimestamps.get(definition.id);
+      if (existing !== targetMs) {
+        this.killTimestamps.set(definition.id, targetMs);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.emit('quake', { timestamp: parsed.toISOString() });
+      this.emitUpdate();
+    }
+    return changed;
+  }
   clearKill(mobId) {
     const existed = this.killTimestamps.delete(mobId);
     if (existed) {
