@@ -30,7 +30,6 @@ const triggerDetailContainer = document.getElementById('trigger-detail');
 const activeTimersContainer = document.getElementById('active-timers');
 const recentLinesList = document.getElementById('recent-lines');
 const toggleMoveModeButton = document.getElementById('toggle-move-mode');
-const showMobOverlayButton = document.getElementById('show-mob-overlay');
 const mobWindowCurrentContainer = document.getElementById('mob-window-current');
 const mobWindowUpcomingContainer = document.getElementById('mob-window-upcoming');
 const mobWindowTableContainer = document.getElementById('mob-window-table');
@@ -2178,16 +2177,6 @@ function attachEventListeners() {
     await window.eqApi.setOverlayClickThrough(event.target.checked);
     await persistSettings();
   });
-
-  document.getElementById('show-overlay').addEventListener('click', () => {
-    window.eqApi.showOverlay();
-  });
-
-  if (showMobOverlayButton) {
-    showMobOverlayButton.addEventListener('click', () => {
-      window.eqApi.showMobOverlay();
-    });
-  }
 
   toggleMoveModeButton.addEventListener('click', async () => {
     try {
