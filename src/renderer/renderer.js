@@ -23,7 +23,8 @@ const chooseLogDirButton = document.getElementById('choose-log-dir');
 const backendUrlInput = document.getElementById('backend-url');
 const overlayOpacityInput = document.getElementById('overlay-opacity');
 const overlayOpacityValue = document.getElementById('overlay-opacity-value');
-const overlayClickThroughInput = document.getElementById('overlay-clickthrough');
+const overlayClickThroughTimersInput = document.getElementById('overlay-clickthrough-timers');
+const overlayClickThroughMobsInput = document.getElementById('overlay-clickthrough-mobs');
 const watcherStatus = document.getElementById('watcher-status');
 const triggerTreeContainer = document.getElementById('trigger-tree');
 const triggerDetailContainer = document.getElementById('trigger-detail');
@@ -2956,7 +2957,8 @@ async function persistSettings() {
     logDirectory: logDirectoryInput.value.trim(),
     backendUrl: backendUrlInput.value.trim(),
     overlayOpacity: Number(overlayOpacityInput.value),
-    overlayClickThrough: overlayClickThroughInput.checked,
+    overlayClickThroughTimers: Boolean(overlayClickThroughTimersInput?.checked),
+    overlayClickThroughMobs: Boolean(overlayClickThroughMobsInput?.checked),
     categories: serializeCategories(),
     triggers: serializeTriggers(),
   };
@@ -2971,7 +2973,21 @@ async function hydrate() {
   logDirectoryInput.value = stored.logDirectory || '';
   backendUrlInput.value = stored.backendUrl || '';
   overlayOpacityInput.value = stored.overlayOpacity || 0.85;
-  overlayClickThroughInput.checked = Boolean(stored.overlayClickThrough);
+  const legacyClickThrough = typeof stored.overlayClickThrough === 'boolean' ? stored.overlayClickThrough : false;
+  if (overlayClickThroughTimersInput) {
+    if (typeof stored.overlayClickThroughTimers === 'boolean') {
+      overlayClickThroughTimersInput.checked = stored.overlayClickThroughTimers;
+    } else {
+      overlayClickThroughTimersInput.checked = legacyClickThrough;
+    }
+  }
+  if (overlayClickThroughMobsInput) {
+    if (typeof stored.overlayClickThroughMobs === 'boolean') {
+      overlayClickThroughMobsInput.checked = stored.overlayClickThroughMobs;
+    } else {
+      overlayClickThroughMobsInput.checked = legacyClickThrough;
+    }
+  }
   overlayOpacityValue.textContent = Number(overlayOpacityInput.value).toFixed(2);
   updateDirectorySummary(logDirectoryInput.value);
 
@@ -3207,10 +3223,19 @@ function attachEventListeners() {
     await persistSettings();
   });
 
-  overlayClickThroughInput.addEventListener('change', async (event) => {
-    await window.eqApi.setOverlayClickThrough(event.target.checked);
-    await persistSettings();
-  });
+  if (overlayClickThroughTimersInput) {
+    overlayClickThroughTimersInput.addEventListener('change', async (event) => {
+      await window.eqApi.setOverlayClickThrough('timers', event.target.checked);
+      await persistSettings();
+    });
+  }
+
+  if (overlayClickThroughMobsInput) {
+    overlayClickThroughMobsInput.addEventListener('change', async (event) => {
+      await window.eqApi.setOverlayClickThrough('mobs', event.target.checked);
+      await persistSettings();
+    });
+  }
 
   toggleMoveModeButton.addEventListener('click', async () => {
     try {

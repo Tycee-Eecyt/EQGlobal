@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('eqApi', {
   selectLogDirectory: () => ipcRenderer.invoke('dialog:select-log-dir'),
   startWatcher: () => ipcRenderer.invoke('watcher:start'),
   stopWatcher: () => ipcRenderer.invoke('watcher:stop'),
-  setOverlayClickThrough: (enabled) => ipcRenderer.invoke('overlay:set-click-through', enabled),
+  setOverlayClickThrough: (target, enabled) => ipcRenderer.invoke('overlay:set-click-through', target, enabled),
   setOverlayOpacity: (opacity) => ipcRenderer.invoke('overlay:set-opacity', opacity),
   showOverlay: () => ipcRenderer.invoke('overlay:show'),
   hideOverlay: () => ipcRenderer.invoke('overlay:hide'),
