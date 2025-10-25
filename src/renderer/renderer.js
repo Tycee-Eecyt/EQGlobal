@@ -30,10 +30,14 @@ const triggerDetailContainer = document.getElementById('trigger-detail');
 const activeTimersContainer = document.getElementById('active-timers');
 const recentLinesList = document.getElementById('recent-lines');
 const toggleMoveModeButton = document.getElementById('toggle-move-mode');
-const showMobOverlayButton = document.getElementById('show-mob-overlay');
 const mobWindowCurrentContainer = document.getElementById('mob-window-current');
 const mobWindowUpcomingContainer = document.getElementById('mob-window-upcoming');
 const mobWindowTableContainer = document.getElementById('mob-window-table');
+const mobTodInput = document.getElementById('mob-tod-input');
+const mobTodPreviewButton = document.getElementById('mob-tod-preview');
+const mobTodApplyButton = document.getElementById('mob-tod-apply');
+const mobTodClearButton = document.getElementById('mob-tod-clear');
+const mobTodFeedback = document.getElementById('mob-tod-feedback');
 const mobPanelCurrent = document.getElementById('mob-panel-current');
 const mobPanelUpcoming = document.getElementById('mob-panel-upcoming');
 const mobPanelTable = document.getElementById('mob-panel-table');
@@ -50,6 +54,8 @@ const headerStartStopButton = document.getElementById('header-start-stop');
 let currentView = 'dashboard';
 
 let categoryMap = new Map();
+let mobAliasMatchers = [];
+let lastMobTodParse = null;
 
 function escapeHtml(value) {
   if (typeof value !== 'string') {
@@ -61,6 +67,10 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function escapeRegex(value = '') {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function createId(prefix = 'id') {
@@ -2044,8 +2054,684 @@ function renderMobWindowTable(snapshot) {
   `;
 }
 
+function buildMobAliasMatchers(mobs) {
+  if (!Array.isArray(mobs) || mobs.length === 0) {
+    mobAliasMatchers = [];
+    return;
+  }
+  const matchers = [];
+  const seen = new Set();
+  mobs.forEach((mob) => {
+    if (!mob || !mob.id) {
+      return;
+    }
+    const canonicalName = typeof mob.name === 'string' ? mob.name.trim() : '';
+    const aliasList = Array.isArray(mob.aliases) ? mob.aliases : [];
+    const candidates = new Set();
+    if (canonicalName) {
+      candidates.add(canonicalName);
+    }
+    aliasList.forEach((alias) => {
+      if (typeof alias === 'string' && alias.trim()) {
+        candidates.add(alias.trim());
+      }
+    });
+    candidates.forEach((name) => {
+      const key = `${mob.id}::${name.toLowerCase()}`;
+      if (seen.has(key)) {
+        return;
+      }
+      seen.add(key);
+      const spaced = name
+        .split(/\s+/)
+        .map((segment) => escapeRegex(segment))
+        .join('\\s+');
+      const pattern = `^${spaced}(?=$|\\s|,|\\||\\-|!|\\.)`;
+      matchers.push({
+        mobId: mob.id,
+        mobName: canonicalName || name,
+        alias: name,
+        regex: new RegExp(pattern, 'i'),
+        priority: name.replace(/\s+/g, '').length,
+      });
+    });
+  });
+  matchers.sort((a, b) => b.priority - a.priority);
+  mobAliasMatchers = matchers;
+}
+
+function findMobMatchFromText(text) {
+  if (!text || mobAliasMatchers.length === 0) {
+    return null;
+  }
+  for (const matcher of mobAliasMatchers) {
+    const match = matcher.regex.exec(text);
+    if (match) {
+      return {
+        mobId: matcher.mobId,
+        mobName: matcher.mobName,
+        alias: matcher.alias,
+        matchedText: match[0],
+      };
+    }
+  }
+  return null;
+}
+
+function unitToMillis(token) {
+  if (!token) {
+    return null;
+  }
+  const normalized = token.toLowerCase();
+  if (['m', 'min', 'mins', 'minute', 'minutes'].includes(normalized)) {
+    return 60_000;
+  }
+  if (['h', 'hr', 'hrs', 'hour', 'hours'].includes(normalized)) {
+    return 3_600_000;
+  }
+  if (['d', 'day', 'days'].includes(normalized)) {
+    return 86_400_000;
+  }
+  return null;
+}
+
+function parseDurationToMillis(text) {
+  if (!text) {
+    return null;
+  }
+  let total = 0;
+  const regex = /(\d+(?:\.\d+)?)\s*(seconds?|second|secs?|s|minutes?|minute|mins?|m|hours?|hour|hrs?|h|days?|day|d)/gi;
+  let match;
+  while ((match = regex.exec(text))) {
+    const value = Number(match[1]);
+    const unitMs = unitToMillis(match[2]);
+    if (!Number.isFinite(value) || !unitMs) {
+      continue;
+    }
+    total += value * unitMs;
+  }
+  return total > 0 ? total : null;
+}
+
+function getMobDefinitionById(mobId) {
+  if (!mobId) {
+    return null;
+  }
+  const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+  return mobs.find((mob) => mob.id === mobId) || null;
+}
+
+function inferKillFromWindowHint({ mobId, mobName, type, durationMs, contextTime, result, lineNumber }) {
+  if (!mobId || !Number.isFinite(durationMs) || !contextTime || !result) {
+    return false;
+  }
+  const definition = getMobDefinitionById(mobId);
+  if (!definition) {
+    result.warnings.push(`Line ${lineNumber}: no mob definition found for ${mobName}.`);
+    return false;
+  }
+  const minMs = Number(definition.minRespawnMinutes || 0) * 60_000;
+  const maxMs = Number(definition.maxRespawnMinutes || 0) * 60_000;
+  if (!minMs || !maxMs) {
+    result.warnings.push(`Line ${lineNumber}: missing respawn data for ${mobName}.`);
+    return false;
+  }
+
+  let killTimestampMs = null;
+  if (type === 'window-closes' && maxMs >= durationMs) {
+    killTimestampMs = contextTime.getTime() - (maxMs - durationMs);
+  } else if (type === 'window-opens' && minMs >= durationMs) {
+    killTimestampMs = contextTime.getTime() - (minMs - durationMs);
+  } else if (type === 'window-opens' && minMs < durationMs) {
+    // If provided duration exceeds minimum, clamp to minimum to avoid future dates
+    killTimestampMs = contextTime.getTime() - Math.max(0, minMs - Math.min(durationMs, minMs));
+  }
+
+  if (killTimestampMs === null) {
+    result.warnings.push(`Line ${lineNumber}: unable to infer kill time for ${mobName}.`);
+    return false;
+  }
+
+  const killDate = new Date(killTimestampMs);
+  if (Number.isNaN(killDate.getTime())) {
+    result.warnings.push(`Line ${lineNumber}: computed invalid date for ${mobName}.`);
+    return false;
+  }
+
+  result.entries.push({
+    mobId,
+    mobName,
+    timestamp: killDate,
+    alias: mobName,
+    origin: type,
+    lineNumber,
+    rawTime: `${type === 'window-closes' ? 'window ends in' : 'opens in'} ${formatCountdown(durationMs / 1000)}`,
+  });
+  return true;
+}
+
+function applyTimeToDate(baseDate, hours, minutes, seconds, ampm) {
+  if (!baseDate || !Number.isFinite(hours)) {
+    return null;
+  }
+  const result = new Date(baseDate.getTime());
+  let adjustedHours = hours;
+  if (ampm) {
+    const marker = ampm.toLowerCase();
+    adjustedHours = adjustedHours % 12;
+    if (marker === 'pm') {
+      adjustedHours += 12;
+    }
+  }
+  result.setHours(adjustedHours, minutes || 0, seconds || 0, 0);
+  return result;
+}
+
+function parseTimeOnlyExpression(value, contextDate) {
+  if (!value || !contextDate) {
+    return null;
+  }
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!match) {
+    return null;
+  }
+  const hours = Number(match[1]);
+  const minutes = match[2] ? Number(match[2]) : 0;
+  const seconds = match[3] ? Number(match[3]) : 0;
+  const marker = match[4] ? match[4].toLowerCase() : null;
+  let adjustedHours = hours;
+  if (marker) {
+    adjustedHours = adjustedHours % 12;
+    if (marker === 'pm') {
+      adjustedHours += 12;
+    }
+  }
+  if (!marker && adjustedHours === 24) {
+    adjustedHours = 0;
+  }
+  return applyTimeToDate(contextDate, adjustedHours, minutes, seconds, null);
+}
+
+function resolveTemporalExpression(rawValue, contextDate, now = new Date()) {
+  const base = contextDate ? new Date(contextDate) : null;
+  const fallbackBase = base || (now ? new Date(now) : null);
+  if (rawValue === null || rawValue === undefined) {
+    return fallbackBase ? new Date(fallbackBase) : null;
+  }
+  let value = String(rawValue).trim();
+  if (!value) {
+    return fallbackBase ? new Date(fallbackBase) : null;
+  }
+
+  const lower = value.toLowerCase();
+
+  if (lower === 'now' || lower === 'now!' || lower === 'now.') {
+    return fallbackBase ? new Date(fallbackBase) : new Date();
+  }
+
+  const dashMatch = lower.match(/^-(\d+(?:\.\d+)?)(?:\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days))?$/);
+  if (dashMatch) {
+    const amount = Number(dashMatch[1]);
+    const unitMs = unitToMillis(dashMatch[2]) || 60_000;
+    if (fallbackBase) {
+      return new Date(fallbackBase.getTime() - amount * unitMs);
+    }
+    return null;
+  }
+
+  const agoMatch = lower.match(
+    /^(\d+(?:\.\d+)?)\s*(minutes?|minute|min|mins|hours?|hour|hrs|h|days?|day|d)\s+ago$/
+  );
+  if (agoMatch) {
+    const amount = Number(agoMatch[1]);
+    const unitMs = unitToMillis(agoMatch[2]);
+    if (fallbackBase && unitMs) {
+      return new Date(fallbackBase.getTime() - amount * unitMs);
+    }
+    return null;
+  }
+
+  const relativeMatch = lower.match(/^(yesterday|today|tomorrow)(?:\s+at\s+(.+))?$/);
+  if (relativeMatch) {
+    const keyword = relativeMatch[1];
+    const timePart = relativeMatch[2];
+    const reference = fallbackBase ? new Date(fallbackBase) : new Date(now);
+    reference.setHours(0, 0, 0, 0);
+    if (keyword === 'yesterday') {
+      reference.setDate(reference.getDate() - 1);
+    } else if (keyword === 'tomorrow') {
+      reference.setDate(reference.getDate() + 1);
+    }
+    if (timePart) {
+      const timeResolved = parseTimeOnlyExpression(timePart, reference);
+      if (timeResolved) {
+        return timeResolved;
+      }
+    }
+    return reference;
+  }
+
+  let candidate = value
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/\b(about|approximately|approx|ish)\b/gi, '')
+    .replace(/\b(st|nd|rd|th)\b/gi, '')
+    .replace(/\b(EST|EDT|CST|CDT|PST|PDT|UTC|GMT)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .replace(/,\s*/g, ' ')
+    .trim();
+
+  candidate = candidate.replace(/(\d)(am|pm)\b/gi, '$1 $2');
+
+  candidate = candidate.replace(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)\b/gi, (match, h, m, s, marker) => {
+    let hours = Number(h);
+    const minutes = m;
+    const seconds = s ? `:${s}` : '';
+    const suffix = marker.toUpperCase();
+    if (hours > 12) {
+      hours = ((hours % 12) || 12);
+    }
+    const normalizedHours = hours.toString().padStart(2, '0');
+    return `${normalizedHours}:${minutes}${seconds} ${suffix}`;
+  });
+
+  candidate = candidate.replace(/(\d{4})-(\d{2})-(\d{2})/, (match, year, part2, part3) => {
+    const monthLike = Number(part2);
+    const dayLike = Number(part3);
+    if (monthLike > 12 && dayLike <= 12) {
+      return `${year}-${String(dayLike).padStart(2, '0')}-${String(monthLike).padStart(2, '0')}`;
+    }
+    return match;
+  });
+
+  let parsed = Date.parse(candidate);
+  if (!Number.isNaN(parsed)) {
+    return new Date(parsed);
+  }
+
+  const isoMatch = candidate.match(
+    /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s+(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i
+  );
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    let month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    let hour = Number(isoMatch[4]);
+    const minute = isoMatch[5] ? Number(isoMatch[5]) : 0;
+    const second = isoMatch[6] ? Number(isoMatch[6]) : 0;
+    const marker = isoMatch[7] ? isoMatch[7].toLowerCase() : null;
+    if (marker) {
+      hour = hour % 12;
+      if (marker === 'pm') {
+        hour += 12;
+      }
+    }
+    return new Date(year, month, day, hour, minute, second, 0);
+  }
+
+  const slashMatch = candidate.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i
+  );
+  if (slashMatch) {
+    let month = Number(slashMatch[1]) - 1;
+    const day = Number(slashMatch[2]);
+    const year = Number(slashMatch[3]);
+    let hour = Number(slashMatch[4]);
+    const minute = slashMatch[5] ? Number(slashMatch[5]) : 0;
+    const second = slashMatch[6] ? Number(slashMatch[6]) : 0;
+    const marker = slashMatch[7] ? slashMatch[7].toLowerCase() : null;
+    if (marker) {
+      hour = hour % 12;
+      if (marker === 'pm') {
+        hour += 12;
+      }
+    }
+    return new Date(year, month, day, hour, minute, second, 0);
+  }
+
+  const timeOnly = parseTimeOnlyExpression(candidate, fallbackBase);
+  if (timeOnly) {
+    return timeOnly;
+  }
+
+  return null;
+}
+
+function parseMobTodLog(rawText) {
+  const result = {
+    entries: [],
+    warnings: [],
+    errors: [],
+    unknown: [],
+    totalLines: 0,
+  };
+
+  if (!rawText || !rawText.trim()) {
+    return result;
+  }
+
+  const lines = rawText.split(/\r?\n/);
+  let currentTimestamp = null;
+  let section = null;
+  let sectionTimestamp = null;
+  let pendingMob = null;
+  let sectionHints = [];
+  const messageTimestampRegex = /—\s*(.+)$/;
+  const now = new Date();
+
+  const ensureContextTime = () => {
+    const base = sectionTimestamp || currentTimestamp || now;
+    return base ? new Date(base) : new Date();
+  };
+
+  const resetPendingMob = () => {
+    pendingMob = null;
+  };
+
+  const flushSectionHints = (explicitTime = null) => {
+    if (!sectionHints.length) {
+      return;
+    }
+    const contextTime = explicitTime || ensureContextTime();
+    sectionHints.forEach((hint) => {
+      inferKillFromWindowHint({
+        mobId: hint.mobId,
+        mobName: hint.mobName,
+        type: hint.type,
+        durationMs: hint.durationMs,
+        contextTime,
+        result,
+        lineNumber: hint.lineNumber,
+      });
+    });
+    sectionHints = [];
+  };
+
+  lines.forEach((line, index) => {
+    result.totalLines += 1;
+    const trimmed = line.trim();
+    if (!trimmed) {
+      resetPendingMob();
+      return;
+    }
+
+    const timestampMatch = messageTimestampRegex.exec(trimmed);
+    if (timestampMatch) {
+      const resolved = resolveTemporalExpression(timestampMatch[1], now, now);
+      if (resolved) {
+        currentTimestamp = resolved;
+      } else {
+        result.warnings.push(`Line ${index + 1}: could not parse message timestamp "${timestampMatch[1]}"`);
+        currentTimestamp = null;
+      }
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (/^Mobs\s+In\s+Window/i.test(trimmed)) {
+      flushSectionHints();
+      section = 'in-window';
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (/^Mobs\s+Entering\s+Window/i.test(trimmed)) {
+      flushSectionHints();
+      section = 'opening-soon';
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (/^Future\s+Windows/i.test(trimmed)) {
+      flushSectionHints();
+      section = 'future';
+      sectionTimestamp = currentTimestamp;
+      resetPendingMob();
+      return;
+    }
+
+    if (section && /These\s+are\s+currently\s+in\s+window/i.test(trimmed)) {
+      const trailingMatch = trimmed.match(/(?:•|-)\s*(.+)$/);
+      if (trailingMatch) {
+        const resolved = resolveTemporalExpression(trailingMatch[1], now, now);
+        if (resolved) {
+          sectionTimestamp = resolved;
+          currentTimestamp = resolved;
+        }
+      }
+      resetPendingMob();
+      return;
+    }
+
+    if (section && /^[🟩🟨🟧🟥⬜\s]+$/.test(trimmed.replace(/\s+/g, ''))) {
+      // Visual progress bar line - ignore
+      return;
+    }
+
+    if (section && /^window\s+ends\s+in/i.test(trimmed)) {
+      if (pendingMob) {
+        const durationMs = parseDurationToMillis(trimmed);
+        if (durationMs !== null) {
+          sectionHints.push({
+            mobId: pendingMob.mobId,
+            mobName: pendingMob.mobName,
+            type: 'window-closes',
+            durationMs,
+            lineNumber: pendingMob.lineNumber,
+          });
+        } else {
+          result.warnings.push(`Line ${index + 1}: could not parse duration from "${trimmed}".`);
+        }
+      }
+      resetPendingMob();
+      return;
+    }
+
+    if (section && /^opens\s+in/i.test(trimmed)) {
+      if (pendingMob) {
+        const durationMs = parseDurationToMillis(trimmed);
+        if (durationMs !== null) {
+          sectionHints.push({
+            mobId: pendingMob.mobId,
+            mobName: pendingMob.mobName,
+            type: 'window-opens',
+            durationMs,
+            lineNumber: pendingMob.lineNumber,
+          });
+        } else {
+          result.warnings.push(`Line ${index + 1}: could not parse duration from "${trimmed}".`);
+        }
+      }
+      resetPendingMob();
+      return;
+    }
+
+    if (section === 'future') {
+      const futureNormalized = trimmed.replace(/^[•\-]+\s*/, '');
+      const futureMatch = futureNormalized.match(/^(.+?)(?:\s*\(([^)]+)\))?\s*-\s*(.+)$/);
+      if (futureMatch) {
+        const mobText = futureMatch[1].trim();
+        const timeUntil = futureMatch[3].trim();
+        const mobMatch = findMobMatchFromText(mobText);
+        if (!mobMatch) {
+          result.unknown.push({
+            lineNumber: index + 1,
+            name: mobText,
+            raw: trimmed,
+          });
+        } else {
+          const durationMs = parseDurationToMillis(timeUntil);
+          if (durationMs !== null) {
+            sectionHints.push({
+              mobId: mobMatch.mobId,
+              mobName: mobMatch.mobName,
+              type: 'window-opens',
+              durationMs,
+              lineNumber: index + 1,
+            });
+          } else {
+            result.warnings.push(`Line ${index + 1}: could not parse future window timing "${timeUntil}".`);
+          }
+        }
+        resetPendingMob();
+        return;
+      }
+    }
+
+    if (section && !/^!?tod\b/i.test(trimmed)) {
+      const bulletNormalized = trimmed.replace(/^[•\-]+\s*/, '');
+      const mobMatch = findMobMatchFromText(bulletNormalized);
+      if (!mobMatch) {
+        if (section === 'in-window' || section === 'opening-soon') {
+          result.unknown.push({
+            lineNumber: index + 1,
+            name: bulletNormalized,
+            raw: trimmed,
+          });
+        }
+        resetPendingMob();
+      } else {
+        pendingMob = {
+          mobId: mobMatch.mobId,
+          mobName: mobMatch.mobName,
+          lineNumber: index + 1,
+        };
+      }
+      return;
+    }
+
+    if (!/^!?tod\b/i.test(trimmed)) {
+      return;
+    }
+
+    resetPendingMob();
+    const body = trimmed.replace(/^!?tod\b\s*/i, '');
+    if (!body) {
+      result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
+      return;
+    }
+
+    const mobMatch = findMobMatchFromText(body);
+    if (!mobMatch) {
+      const candidateName = body.split(/[|,]/)[0].trim();
+      result.unknown.push({
+        lineNumber: index + 1,
+        name: candidateName || body,
+        raw: trimmed,
+      });
+      return;
+    }
+
+    let remainder = body.slice(mobMatch.matchedText.length).trim();
+    if (remainder.startsWith('|') || remainder.startsWith(',')) {
+      remainder = remainder.slice(1).trim();
+    }
+    const hashIndex = remainder.indexOf('#');
+    if (hashIndex >= 0) {
+      remainder = remainder.slice(0, hashIndex).trim();
+    }
+    remainder = remainder.replace(/\(.*?\)/g, (match) =>
+      /ish/i.test(match) ? '' : match
+    );
+    remainder = remainder.trim();
+
+    const timestamp = resolveTemporalExpression(remainder, currentTimestamp, now);
+    if (!timestamp) {
+      result.warnings.push(
+        `Line ${index + 1}: could not understand time "${remainder || 'message time'}" for ${mobMatch.mobName}.`
+      );
+      return;
+    }
+
+    result.entries.push({
+      mobId: mobMatch.mobId,
+      mobName: mobMatch.mobName,
+      alias: mobMatch.alias,
+      timestamp,
+      sourceLine: trimmed,
+      lineNumber: index + 1,
+      rawTime: remainder,
+      origin: 'tod-command',
+    });
+  });
+
+  flushSectionHints();
+  const deduped = new Map();
+  result.entries.forEach((entry) => {
+    const existing = deduped.get(entry.mobId);
+    if (!existing || entry.timestamp > existing.timestamp) {
+      deduped.set(entry.mobId, entry);
+    }
+  });
+  result.entries = Array.from(deduped.values()).sort((a, b) => b.timestamp - a.timestamp);
+  return result;
+}
+
+function formatMobTodFeedback(result) {
+  if (!result || (!result.entries.length && !result.warnings.length && !result.unknown.length)) {
+    return { html: '', status: null };
+  }
+  const lines = [];
+  const originLabels = {
+    'tod-command': 'via ToD command',
+    'window-closes': 'from window closing estimate',
+    'window-opens': 'from window opening estimate',
+  };
+  if (result.entries.length) {
+    const list = result.entries
+      .slice(0, 8)
+      .map((entry) => {
+        const when = formatAbsoluteTime(entry.timestamp);
+        const originLabel = originLabels[entry.origin] || null;
+        return `${entry.mobName} (${when}${originLabel ? `, ${originLabel}` : ''})`;
+      });
+    const moreCount = result.entries.length - list.length;
+    lines.push(
+      `${result.entries.length} mob${result.entries.length === 1 ? '' : 's'} ready for update: ${list.join(', ')}${
+        moreCount > 0 ? `, and ${moreCount} more` : ''
+      }.`
+    );
+  }
+  if (result.unknown.length) {
+    const sample = result.unknown.slice(0, 5).map((item) => item.name);
+    const more = result.unknown.length - sample.length;
+    lines.push(
+      `Could not match ${result.unknown.length} mob${result.unknown.length === 1 ? '' : 's'}: ${sample.join(', ')}${
+        more > 0 ? `, and ${more} more` : ''
+      }.`
+    );
+  }
+  if (result.warnings.length) {
+    const sampleWarnings = result.warnings.slice(0, 3);
+    lines.push(...sampleWarnings);
+    if (result.warnings.length > sampleWarnings.length) {
+      lines.push(`+ ${result.warnings.length - sampleWarnings.length} additional warning(s).`);
+    }
+  }
+  return {
+    html: lines.map((line) => `<div>${escapeHtml(line)}</div>`).join(''),
+    status: result.entries.length ? (result.warnings.length || result.unknown.length ? 'warning' : 'success') : 'error',
+  };
+}
+
+function updateMobTodFeedback(result) {
+  if (!mobTodFeedback) {
+    return;
+  }
+  mobTodFeedback.classList.remove('success', 'warning', 'error');
+  const { html, status } = formatMobTodFeedback(result);
+  mobTodFeedback.innerHTML = html || '';
+  if (status) {
+    mobTodFeedback.classList.add(status);
+  }
+}
+
 function renderMobWindows(snapshot) {
   const mobs = Array.isArray(snapshot?.mobs) ? snapshot.mobs : [];
+  buildMobAliasMatchers(mobs);
   const categories = categorizeMobWindows(mobs);
   renderMobWindowList(
     mobWindowCurrentContainer,
@@ -2344,6 +3030,106 @@ function attachEventListeners() {
     });
   }
 
+  if (mobTodInput) {
+    mobTodInput.addEventListener('input', () => {
+      lastMobTodParse = null;
+      if (mobTodApplyButton) {
+        mobTodApplyButton.disabled = true;
+      }
+      updateMobTodFeedback(null);
+    });
+  }
+
+  if (mobTodPreviewButton) {
+    mobTodPreviewButton.addEventListener('click', () => {
+      const text = mobTodInput ? mobTodInput.value : '';
+      const parsed = parseMobTodLog(text || '');
+      lastMobTodParse = parsed;
+      updateMobTodFeedback(parsed);
+      if (mobTodApplyButton) {
+        mobTodApplyButton.disabled = parsed.entries.length === 0;
+      }
+    });
+  }
+
+  if (mobTodApplyButton) {
+    mobTodApplyButton.addEventListener('click', async () => {
+      const text = mobTodInput ? mobTodInput.value : '';
+      const parsed = parseMobTodLog(text || '');
+      lastMobTodParse = parsed;
+      const hadEntries = parsed.entries.length > 0;
+      if (mobTodPreviewButton) {
+        mobTodPreviewButton.disabled = true;
+      }
+      mobTodApplyButton.disabled = true;
+      if (mobTodClearButton) {
+        mobTodClearButton.disabled = true;
+      }
+      if (!hadEntries) {
+        updateMobTodFeedback(parsed);
+        if (mobTodPreviewButton) {
+          mobTodPreviewButton.disabled = false;
+        }
+        if (mobTodClearButton) {
+          mobTodClearButton.disabled = false;
+        }
+        return;
+      }
+      let applySucceeded = false;
+      try {
+        let snapshot = mobWindowSnapshot;
+        for (const entry of parsed.entries) {
+          snapshot = await window.eqApi.recordMobKill(entry.mobId, entry.timestamp.toISOString());
+        }
+        if (snapshot && snapshot.mobs) {
+          mobWindowSnapshot = snapshot;
+          renderMobWindows(mobWindowSnapshot);
+        }
+        const summaryLine = `<div>Applied updates to ${parsed.entries.length} mob${
+          parsed.entries.length === 1 ? '' : 's'
+        }.</div>`;
+        const formatted = formatMobTodFeedback(parsed);
+        mobTodFeedback.classList.remove('success', 'warning', 'error');
+        mobTodFeedback.innerHTML = summaryLine + formatted.html;
+        const status = parsed.warnings.length || parsed.unknown.length ? 'warning' : 'success';
+        if (status) {
+          mobTodFeedback.classList.add(status);
+        }
+        applySucceeded = true;
+      } catch (error) {
+        console.error('Failed to apply ToD log updates', error);
+        mobTodFeedback.classList.remove('success', 'warning', 'error');
+        mobTodFeedback.classList.add('error');
+        mobTodFeedback.textContent = 'Failed to apply ToD updates. Check the log for details and try again.';
+      } finally {
+        if (mobTodPreviewButton) {
+          mobTodPreviewButton.disabled = false;
+        }
+        if (mobTodClearButton) {
+          mobTodClearButton.disabled = false;
+        }
+        if (!applySucceeded && hadEntries) {
+          mobTodApplyButton.disabled = false;
+        } else {
+          lastMobTodParse = null;
+        }
+      }
+    });
+  }
+
+  if (mobTodClearButton) {
+    mobTodClearButton.addEventListener('click', () => {
+      if (mobTodInput) {
+        mobTodInput.value = '';
+      }
+      lastMobTodParse = null;
+      if (mobTodApplyButton) {
+        mobTodApplyButton.disabled = true;
+      }
+      updateMobTodFeedback(null);
+    });
+  }
+
   chooseLogDirButton.addEventListener('click', async () => {
     const directory = await window.eqApi.selectLogDirectory();
     if (directory) {
@@ -2425,16 +3211,6 @@ function attachEventListeners() {
     await window.eqApi.setOverlayClickThrough(event.target.checked);
     await persistSettings();
   });
-
-  document.getElementById('show-overlay').addEventListener('click', () => {
-    window.eqApi.showOverlay();
-  });
-
-  if (showMobOverlayButton) {
-    showMobOverlayButton.addEventListener('click', () => {
-      window.eqApi.showMobOverlay();
-    });
-  }
 
   toggleMoveModeButton.addEventListener('click', async () => {
     try {

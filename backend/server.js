@@ -3,6 +3,8 @@ const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const path = require('path');
 
+const mobWindowDefinitions = require('../src/shared/mobWindows.json');
+
 require('dotenv').config({
   path: path.resolve(process.cwd(), '.env'),
 });
@@ -34,6 +36,125 @@ async function ensureMongoConnection() {
   return mongoDb;
 }
 
+const mobAliasIndex = new Map();
+const mobDefinitionsById = new Map();
+
+function normalizeAliasKey(value) {
+  if (!value) {
+    return [];
+  }
+  const trimmed = String(value).trim().toLowerCase();
+  if (!trimmed) {
+    return [];
+  }
+  const collapsedWhitespace = trimmed.replace(/\s+/g, ' ');
+  const alphanumeric = collapsedWhitespace.replace(/[^a-z0-9]+/g, '');
+  const hyphenated = collapsedWhitespace.replace(/[^a-z0-9]+/g, '-');
+  return Array.from(
+    new Set([collapsedWhitespace, alphanumeric, hyphenated, collapsedWhitespace.replace(/[^a-z0-9]+/g, ' ')])
+  ).filter(Boolean);
+}
+
+function primeMobAliasIndex() {
+  if (!Array.isArray(mobWindowDefinitions)) {
+    return;
+  }
+  mobWindowDefinitions.forEach((definition) => {
+    if (!definition || !definition.id) {
+      return;
+    }
+    mobDefinitionsById.set(definition.id, definition);
+    const aliases = new Set([definition.name, ...(Array.isArray(definition.aliases) ? definition.aliases : [])]);
+    aliases.forEach((alias) => {
+      normalizeAliasKey(alias).forEach((key) => {
+        if (!mobAliasIndex.has(key)) {
+          mobAliasIndex.set(key, definition.id);
+        }
+      });
+    });
+  });
+}
+
+primeMobAliasIndex();
+
+function findMobByAlias(text) {
+  if (!text) {
+    return null;
+  }
+  const candidates = normalizeAliasKey(text);
+  for (const key of candidates) {
+    if (mobAliasIndex.has(key)) {
+      const mobId = mobAliasIndex.get(key);
+      return {
+        id: mobId,
+        definition: mobDefinitionsById.get(mobId),
+      };
+    }
+  }
+  return null;
+}
+
+function extractTodCommandFromLine(line) {
+  if (!line || typeof line !== 'string') {
+    return null;
+  }
+  const match = line.match(/!tod\s+([^\r\n]+)/i);
+  if (!match) {
+    return null;
+  }
+  let remainder = match[1].trim();
+  if (!remainder) {
+    return null;
+  }
+  remainder = remainder.replace(/^["']+/, '').replace(/["']+$/, '').trim();
+  let explicitTime = null;
+  const nowMatch = remainder.match(/\bnow\b/i);
+  if (nowMatch) {
+    explicitTime = 'now';
+    remainder = remainder.slice(0, nowMatch.index).trim();
+  }
+  remainder = remainder.replace(/[\s\-\|,;]+$/g, '').trim();
+  if (!remainder) {
+    return null;
+  }
+  return {
+    target: remainder,
+    explicitTime,
+  };
+}
+
+async function applyMobKillUpdates(db, updates) {
+  if (!updates || updates.size === 0) {
+    return null;
+  }
+  const collection = db.collection('mob_windows');
+  const existing = await collection.findOne({ _id: 'global' });
+  const kills = existing && existing.kills ? { ...existing.kills } : {};
+  let changed = false;
+  updates.forEach((isoTimestamp, mobId) => {
+    if (!kills[mobId] || isoTimestamp > kills[mobId]) {
+      kills[mobId] = isoTimestamp;
+      changed = true;
+    }
+  });
+  if (!changed) {
+    return null;
+  }
+  const updatedAt = new Date();
+  await collection.updateOne(
+    { _id: 'global' },
+    { $set: { kills, updatedAt } },
+    { upsert: true }
+  );
+  console.log(
+    '[mob-windows] Updated via ToD commands:',
+    Array.from(updates.keys()).join(', '),
+    'at',
+    updatedAt.toISOString()
+  );
+  return { kills, updatedAt };
+}
+
 app.get('/health', async (_req, res) => {
   try {
     await ensureMongoConnection();
@@ -61,11 +182,37 @@ app.post('/api/log-lines', async (req, res) => {
       }))
       .filter((doc) => doc.line);
 
+    const mobUpdates = new Map();
+    documents.forEach((doc) => {
+      const parsed = extractTodCommandFromLine(doc.line);
+      if (!parsed) {
+        return;
+      }
+      const mob = findMobByAlias(parsed.target);
+      if (!mob) {
+        return;
+      }
+      const timestamp = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+      const iso = timestamp.toISOString();
+      const prev = mobUpdates.get(mob.id);
+      if (!prev || iso > prev) {
+        mobUpdates.set(mob.id, iso);
+      }
+    });
+
     if (documents.length === 0) {
+      if (mobUpdates.size > 0) {
+        await applyMobKillUpdates(db, mobUpdates);
+      }
       return res.json({ inserted: 0 });
     }
 
     const result = await collection.insertMany(documents, { ordered: false });
+
+    if (mobUpdates.size > 0) {
+      await applyMobKillUpdates(db, mobUpdates);
+    }
+
     res.json({ inserted: result.insertedCount || documents.length });
   } catch (error) {
     console.error('Failed to persist log lines', error);

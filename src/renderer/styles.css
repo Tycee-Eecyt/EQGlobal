@@ -135,6 +135,68 @@ body {
   padding: 0 0.6rem;
 }
 
+.mob-tod-panel {
+  gap: 0.9rem;
+}
+
+.mob-tod-help {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: rgba(245, 247, 250, 0.7);
+}
+
+.mob-tod-help code {
+  font-family: 'Fira Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.05rem 0.35rem;
+  border-radius: 6px;
+  color: #f5f7fa;
+}
+
+.mob-tod-input {
+  width: 100%;
+  min-height: 8rem;
+  resize: vertical;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 14, 20, 0.85);
+  color: inherit;
+  font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.mob-tod-input::placeholder {
+  color: rgba(245, 247, 250, 0.35);
+}
+
+.mob-tod-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.mob-tod-feedback {
+  min-height: 1.4rem;
+  font-size: 0.85rem;
+  color: rgba(245, 247, 250, 0.8);
+}
+
+.mob-tod-feedback.success {
+  color: #49d1a4;
+}
+
+.mob-tod-feedback.warning {
+  color: #ff9f43;
+}
+
+.mob-tod-feedback.error {
+  color: #ff6b6b;
+}
+
 .panel.hidden {
   display: none !important;
 }
@@ -412,6 +474,25 @@ button.secondary {
 button.small {
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
+}
+
+button.link {
+  background: transparent;
+  color: rgba(245, 247, 250, 0.75);
+  border: none;
+  padding: 0.3rem 0.35rem;
+  box-shadow: none;
+}
+
+button.link:hover {
+  color: #49d1a4;
+  transform: none;
+  box-shadow: none;
+  text-decoration: underline;
+}
+
+button.link:active {
+  color: #14c3ff;
 }
 
 button:hover {
