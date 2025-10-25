@@ -151,11 +151,11 @@ function renderMobWindows() {
   const { current, upcoming } = categorizeMobs(mobs);
   const currentMarkup =
     current.length > 0
-      ? current.slice(0, 6).map((mob) => buildMobItem(mob, 'current')).join('')
+      ? current.map((mob) => buildMobItem(mob, 'current')).join('')
       : '<div class="empty-state">No mobs are currently in window.</div>';
   const upcomingMarkup =
     upcoming.length > 0
-      ? upcoming.slice(0, 6).map((mob) => buildMobItem(mob, 'upcoming')).join('')
+      ? upcoming.map((mob) => buildMobItem(mob, 'upcoming')).join('')
       : '<div class="empty-state">No windows in the next 24 hours.</div>';
 
   mobsContainer.innerHTML = `
@@ -198,3 +198,47 @@ if (window.eqApi.onOverlayMoveMode) {
 }
 
 renderMobWindows();
+
+// Install resize handles for move-mode
+(function installResizeHandles() {
+  const handles = document.querySelectorAll('.overlay-resize-handle[data-edge]');
+  if (!handles || handles.length === 0 || !window.eqApi || !window.eqApi.resizeOverlay) return;
+
+  let dragging = false;
+  let edge = null;
+  let prevScreenX = 0;
+  let prevScreenY = 0;
+
+  function onMove(e) {
+    if (!dragging) return;
+    const dx = (e.screenX || 0) - prevScreenX;
+    const dy = (e.screenY || 0) - prevScreenY;
+    prevScreenX = e.screenX || 0;
+    prevScreenY = e.screenY || 0;
+    if (dx !== 0 || dy !== 0) {
+      window.eqApi.resizeOverlay(edge, dx, dy);
+    }
+    e.preventDefault();
+  }
+
+  function onUp(e) {
+    dragging = false;
+    edge = null;
+    window.removeEventListener('mousemove', onMove, true);
+    window.removeEventListener('mouseup', onUp, true);
+    e.preventDefault();
+  }
+
+  handles.forEach((el) => {
+    el.addEventListener('mousedown', (e) => {
+      dragging = true;
+      edge = String(el.dataset.edge || '').toLowerCase();
+      prevScreenX = e.screenX || 0;
+      prevScreenY = e.screenY || 0;
+      window.addEventListener('mousemove', onMove, true);
+      window.addEventListener('mouseup', onUp, true);
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+})();

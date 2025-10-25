@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('eqApi', {
   hideMobOverlay: () => ipcRenderer.invoke('overlay:hide-mobs'),
   setOverlayMoveMode: (enabled) => ipcRenderer.invoke('overlay:move-mode', enabled),
   getOverlayMoveMode: () => ipcRenderer.invoke('overlay:get-move-mode'),
+  resizeOverlay: (edge, dx, dy) => ipcRenderer.invoke('overlay:resize', { edge, dx, dy }),
   loadDefaultTriggers: () => ipcRenderer.invoke('triggers:default'),
   importGinaGtp: () => ipcRenderer.invoke('triggers:import-gtp'),
   exportTriggers: (triggers) => ipcRenderer.invoke('triggers:export', triggers),

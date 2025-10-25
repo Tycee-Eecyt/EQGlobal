@@ -26,6 +26,11 @@
   padding: 0.85rem 1rem;
   box-shadow: 0 12px 28px rgba(6, 10, 18, 0.45);
   -webkit-app-region: no-drag;
+  /* Let the section grow/shrink within the overlay and scroll when needed */
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
 }
 
 .overlay-root.move-mode .overlay-section {
@@ -220,4 +225,67 @@
   display: flex;
   justify-content: space-between;
   gap: 0.6rem;
+}
+.overlay-root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+  box-sizing: border-box;
+  /* Default to no-drag so OS edge resize works; enable drag on inner sections in move-mode */
+  -webkit-app-region: no-drag;
+  user-select: none;
+}
+
+/* Fill the overlay window and enable responsive sizing */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Scale overlay typography a bit with window size while keeping bounds */
+:root, .overlay-root {
+  font-size: clamp(12px, 1.8vmin, 16px);
+}
+
+.overlay-root {
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+/* Visible resize handles in move-mode */
+.overlay-resize-handle {
+  position: absolute;
+  z-index: 9999;
+  background: rgba(0, 234, 255, 0.25);
+  border: 1px solid rgba(0, 234, 255, 0.6);
+  border-radius: 6px;
+  display: none;
+  -webkit-app-region: no-drag;
+}
+
+.overlay-root.move-mode .overlay-resize-handle {
+  display: block;
+}
+
+/* Edges */
+.overlay-resize-handle.edge-n { top: 2px; left: 50%; transform: translateX(-50%); height: 8px; width: 40%; cursor: ns-resize; }
+.overlay-resize-handle.edge-s { bottom: 2px; left: 50%; transform: translateX(-50%); height: 8px; width: 40%; cursor: ns-resize; }
+.overlay-resize-handle.edge-e { right: 2px; top: 50%; transform: translateY(-50%); width: 8px; height: 40%; cursor: ew-resize; }
+.overlay-resize-handle.edge-w { left: 2px; top: 50%; transform: translateY(-50%); width: 8px; height: 40%; cursor: ew-resize; }
+
+/* Corners */
+.overlay-resize-handle.corner-nw { top: 2px; left: 2px; width: 14px; height: 14px; cursor: nwse-resize; }
+.overlay-resize-handle.corner-ne { top: 2px; right: 2px; width: 14px; height: 14px; cursor: nesw-resize; }
+.overlay-resize-handle.corner-sw { bottom: 2px; left: 2px; width: 14px; height: 14px; cursor: nesw-resize; }
+.overlay-resize-handle.corner-se { bottom: 2px; right: 2px; width: 14px; height: 14px; cursor: nwse-resize; }
+
+.overlay-resize-handle:hover {
+  background: rgba(0, 234, 255, 0.4);
 }

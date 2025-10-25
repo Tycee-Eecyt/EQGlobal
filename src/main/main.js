@@ -998,6 +998,9 @@ function registerIpcHandlers() {
     overlayMoveMode = Boolean(enabled);
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      if (typeof overlayWindow.setFocusable === 'function') {
+        overlayWindow.setFocusable(overlayMoveMode);
+      }
       if (overlayMoveMode) {
         overlayWindow.showInactive();
       }
@@ -1005,6 +1008,9 @@ function registerIpcHandlers() {
     }
     if (mobOverlayWindow && !mobOverlayWindow.isDestroyed()) {
       mobOverlayWindow.setIgnoreMouseEvents(overlayMoveMode ? false : Boolean(settings.overlayClickThrough), { forward: true });
+      if (typeof mobOverlayWindow.setFocusable === 'function') {
+        mobOverlayWindow.setFocusable(overlayMoveMode);
+      }
       if (overlayMoveMode) {
         mobOverlayWindow.showInactive();
       }
@@ -1014,6 +1020,61 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle('overlay:get-move-mode', () => overlayMoveMode);
+
+  ipcMain.handle('overlay:resize', (_event, payload) => {
+    try {
+      if (!overlayMoveMode) return false;
+      const sender = _event?.sender;
+      if (!sender) return false;
+      const win = BrowserWindow.fromWebContents(sender);
+      if (!win || win.isDestroyed()) return false;
+
+      const { edge, dx = 0, dy = 0 } = payload || {};
+      if (typeof edge !== 'string') return false;
+
+      const minW = 220;
+      const minH = 160;
+      const bounds = win.getBounds();
+      let { x, y, width, height } = bounds;
+
+      const applyWest = (delta) => {
+        const desired = width - delta;
+        const clampDelta = Math.min(delta, width - minW);
+        width = Math.max(minW, desired);
+        x = x + clampDelta;
+      };
+      const applyEast = (delta) => {
+        width = Math.max(minW, width + delta);
+      };
+      const applyNorth = (delta) => {
+        const desired = height - delta;
+        const clampDelta = Math.min(delta, height - minH);
+        height = Math.max(minH, desired);
+        y = y + clampDelta;
+      };
+      const applySouth = (delta) => {
+        height = Math.max(minH, height + delta);
+      };
+
+      const e = edge.toLowerCase();
+      if (e.includes('w')) applyWest(dx || 0);
+      if (e.includes('e')) applyEast(dx || 0);
+      if (e.includes('n')) applyNorth(dy || 0);
+      if (e.includes('s')) applySouth(dy || 0);
+
+      // Final clamp
+      width = Math.max(minW, Math.round(width));
+      height = Math.max(minH, Math.round(height));
+      x = Math.round(x);
+      y = Math.round(y);
+
+      win.setBounds({ x, y, width, height }, false);
+      return { x, y, width, height };
+    } catch (err) {
+      console.error('overlay:resize failed', err);
+      return false;
+    }
+  });
 
   ipcMain.handle('triggers:default', () => defaultTriggers);
 
