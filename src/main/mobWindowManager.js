@@ -1,4 +1,4 @@
-const { EventEmitter } = require('events');
+﻿const { EventEmitter } = require('events');
 
 function escapeRegex(text = '') {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -128,6 +128,41 @@ function secondsBetween(startMs, endMs) {
   return Math.round((endMs - startMs) / 1000);
 }
 
+function normalizeAliasKey(value) {
+  if (!value && value !== 0) {
+    return [];
+  }
+  const text = String(value).trim().toLowerCase();
+  if (!text) {
+    return [];
+  }
+  const collapsedWhitespace = text.replace(/\s+/g, ' ');
+  const compact = collapsedWhitespace.replace(/[^a-z0-9]+/g, '');
+  const dashed = collapsedWhitespace.replace(/[^a-z0-9]+/g, '-');
+  const spaced = collapsedWhitespace.replace(/[^a-z0-9]+/g, ' ');
+  return Array.from(new Set([collapsedWhitespace, compact, dashed, spaced.trim()])).filter(Boolean);
+}
+
+function buildAliasIndex(definitions) {
+  const index = new Map();
+  definitions.forEach((definition) => {
+    if (!definition || !definition.id) {
+      return;
+    }
+    const aliases = new Set([definition.name, ...(Array.isArray(definition.aliases) ? definition.aliases : [])]);
+    aliases.forEach((alias) => {
+      normalizeAliasKey(alias).forEach((key) => {
+        if (!index.has(key)) {
+          index.set(key, definition.id);
+        }
+      });
+    });
+  });
+  return index;
+}
+
+const QUAKE_PATTERN = /^\^?you feel the (?:need to get somewhere safe quickly|sudden urge to seek a safe location)\.$/i;
+
 class MobWindowManager extends EventEmitter {
   constructor(definitions = [], options = {}) {
     super();
@@ -138,6 +173,7 @@ class MobWindowManager extends EventEmitter {
       .filter(Boolean);
 
     this.definitionMap = new Map(this.definitions.map((def) => [def.id, def]));
+    this.aliasIndex = buildAliasIndex(this.definitions);
     this.killTimestamps = new Map();
     this.tickHandle = null;
   }
@@ -195,7 +231,12 @@ class MobWindowManager extends EventEmitter {
 
     const parsedTimestamp = asDate(timestamp) || new Date();
     const message = String(line).replace(/^\[[^\]]+\]\s*/, '');
-    const lowered = message.toLowerCase();
+    const trimmedMessage = message.trim();
+    const lowered = trimmedMessage.toLowerCase();
+
+    if (QUAKE_PATTERN.test(trimmedMessage)) {
+      return this.resetAllKills(parsedTimestamp);
+    }
 
     for (const definition of this.definitions) {
       if (!definition.killMatchers || definition.killMatchers.length === 0) {
@@ -207,7 +248,65 @@ class MobWindowManager extends EventEmitter {
       }
     }
 
+    const todResult = this.parseTodCommand(trimmedMessage, parsedTimestamp);
+    if (todResult) {
+      return this.recordKill(todResult.mobId, todResult.timestamp || parsedTimestamp);
+    }
+
     return false;
+  }
+
+  parseTodCommand(message, fallbackTimestamp = new Date()) {
+    if (!message) {
+      return null;
+    }
+    const match = message.match(/!tod\s+(.+)/i);
+    if (!match) {
+      return null;
+    }
+    let remainder = match[1].trim();
+    if (!remainder) {
+      return null;
+    }
+
+    remainder = remainder.replace(/^[`"'â€œâ€â€˜â€™]+/, '').replace(/[`"'â€œâ€â€˜â€™]+$/, '');
+    remainder = remainder.replace(/#.*$/, '').trim();
+
+    let explicitTime = null;
+    const nowMatch = remainder.match(/(?:^|[\s,|])now[.!?]?$/i);
+    if (nowMatch) {
+      explicitTime = 'now';
+      remainder = remainder.slice(0, nowMatch.index).trim();
+    }
+
+    remainder = remainder.replace(/[,|]+$/, '').trim();
+    if (!remainder) {
+      return null;
+    }
+
+    const mobId = this.lookupMobIdByAlias(remainder);
+    if (!mobId) {
+      return null;
+    }
+
+    const timestamp = explicitTime === 'now' ? fallbackTimestamp : null;
+    return {
+      mobId,
+      timestamp,
+    };
+  }
+
+  lookupMobIdByAlias(text) {
+    if (!text) {
+      return null;
+    }
+    const candidates = normalizeAliasKey(text);
+    for (const candidate of candidates) {
+      if (this.aliasIndex.has(candidate)) {
+        return this.aliasIndex.get(candidate);
+      }
+    }
+    return null;
   }
 
   recordKill(mobId, timestamp = new Date()) {
@@ -233,6 +332,26 @@ class MobWindowManager extends EventEmitter {
     return true;
   }
 
+  resetAllKills(timestamp = new Date()) {
+    const parsed = asDate(timestamp);
+    if (!parsed) {
+      return false;
+    }
+    const targetMs = parsed.getTime();
+    let changed = false;
+    for (const definition of this.definitions) {
+      const existing = this.killTimestamps.get(definition.id);
+      if (existing !== targetMs) {
+        this.killTimestamps.set(definition.id, targetMs);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.emit('quake', { timestamp: parsed.toISOString() });
+      this.emitUpdate();
+    }
+    return changed;
+  }
   clearKill(mobId) {
     const existed = this.killTimestamps.delete(mobId);
     if (existed) {

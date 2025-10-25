@@ -57,8 +57,6 @@
               <h2>Active Timers</h2>
               <div>
                 <button id="toggle-move-mode" class="secondary small" title="Temporarily disable click-through to move the overlays">Move Overlays</button>
-                <button id="show-overlay" class="secondary small">Focus Timer Overlay</button>
-                <button id="show-mob-overlay" class="secondary small">Focus Mob Overlay</button>
               </div>
             </div>
             <div id="active-timers" class="timers"></div>
@@ -81,6 +79,23 @@
             <option value="table">All Tracked Mobs</option>
           </select>
         </div>
+        <section class="panel mob-tod-panel" aria-label="Bulk ToD paste area">
+          <div class="panel-header">
+            <h2>Bulk ToD Import</h2>
+          </div>
+          <p class="mob-tod-help">
+            Paste Discord ToD chatter below. Lines beginning with <code>!tod</code> or <code>tod</code> will be parsed
+            and matched against the tracked mob list so you can apply the latest kill times in one step.
+          </p>
+          <label class="sr-only" for="mob-tod-input">Paste ToD log text</label>
+          <textarea id="mob-tod-input" class="mob-tod-input" rows="8" placeholder="Paste ToD log text here..."></textarea>
+          <div class="mob-tod-actions">
+            <button type="button" id="mob-tod-preview" class="secondary small">Preview Updates</button>
+            <button type="button" id="mob-tod-apply" class="primary small" disabled>Apply Updates</button>
+            <button type="button" id="mob-tod-clear" class="link small">Clear</button>
+          </div>
+          <div id="mob-tod-feedback" class="mob-tod-feedback" aria-live="polite"></div>
+        </section>
         <div class="mob-windows-layout">
           <section class="panel" id="mob-panel-current" data-mob-panel="current">
             <div class="panel-header">
@@ -129,8 +144,13 @@
             </div>
 
             <div class="field checkbox">
-              <input id="overlay-clickthrough" type="checkbox" />
-              <label for="overlay-clickthrough">Allow game clicks through overlay</label>
+              <input id="overlay-clickthrough-timers" type="checkbox" />
+              <label for="overlay-clickthrough-timers">Allow game clicks through timer overlay</label>
+            </div>
+
+            <div class="field checkbox">
+              <input id="overlay-clickthrough-mobs" type="checkbox" />
+              <label for="overlay-clickthrough-mobs">Allow game clicks through mob overlay</label>
             </div>
 
             <div class="watcher-summary">
