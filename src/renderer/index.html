@@ -72,22 +72,31 @@
 
       <section class="view" data-view="mob-windows" aria-labelledby="mob-windows-title">
         <h2 id="mob-windows-title" class="sr-only">Mob Windows</h2>
+        <div class="mob-windows-toolbar" role="region" aria-label="Mob windows filter">
+          <label for="mob-view-filter">Show</label>
+          <select id="mob-view-filter">
+            <option value="all" selected>All Sections</option>
+            <option value="current">Mobs In Window</option>
+            <option value="upcoming">Upcoming Windows</option>
+            <option value="table">All Tracked Mobs</option>
+          </select>
+        </div>
         <div class="mob-windows-layout">
-          <section class="panel">
+          <section class="panel" id="mob-panel-current" data-mob-panel="current">
             <div class="panel-header">
               <h2>Mobs In Window</h2>
             </div>
             <div id="mob-window-current" class="mob-window-list"></div>
           </section>
 
-          <section class="panel">
+          <section class="panel" id="mob-panel-upcoming" data-mob-panel="upcoming">
             <div class="panel-header">
               <h2>Upcoming Windows (Next 24h)</h2>
             </div>
             <div id="mob-window-upcoming" class="mob-window-list"></div>
           </section>
 
-          <section class="panel">
+          <section class="panel" id="mob-panel-table" data-mob-panel="table">
             <div class="panel-header">
               <h2>All Tracked Mobs</h2>
             </div>
