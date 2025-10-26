@@ -11,6 +11,9 @@
   {
     "id": "aaryonar",
     "name": "Aaryonar",
+    "aliases": [
+      "Aary"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -69,6 +72,9 @@
   {
     "id": "dozekar-the-cursed",
     "name": "Dozekar the Cursed",
+    "aliases": [
+      "Dozekar"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -96,6 +102,9 @@
   {
     "id": "eashen-of-the-sky",
     "name": "Eashen of the Sky",
+    "aliases": [
+      "Eashen"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -123,6 +132,9 @@
   {
     "id": "gorenaire",
     "name": "Gorenaire",
+    "aliases": [
+      "Gore"
+    ],
     "zone": "Dreadlands",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -150,6 +162,9 @@
   {
     "id": "ikatiar-the-venom",
     "name": "Ikatiar the Venom",
+    "aliases": [
+      "Ikatiar"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -177,6 +192,11 @@
   {
     "id": "king-tormax",
     "name": "King Tormax",
+    "aliases": [
+      "KT",
+      "K T",
+      "Tormax"
+    ],
     "zone": "Kael Drakkel",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -195,6 +215,9 @@
   {
     "id": "lady-nevederia",
     "name": "Lady Nevederia",
+    "aliases": [
+      "Nevederia"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -204,6 +227,9 @@
   {
     "id": "lady-vox",
     "name": "Lady Vox",
+    "aliases": [
+      "Vox"
+    ],
     "zone": "Permafrost",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -243,6 +269,9 @@
   {
     "id": "lord-koi-doken",
     "name": "Lord Koi'Doken",
+    "aliases": [
+      "Koi"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -252,6 +281,10 @@
   {
     "id": "lord-kreizenn",
     "name": "Lord Kreizenn",
+    "aliases": [
+      "Kreizen",
+      "Kreiz"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -261,6 +294,10 @@
   {
     "id": "lord-nagafen",
     "name": "Lord Nagafen",
+    "aliases": [
+      "Naggy",
+      "Nagafen"
+    ],
     "zone": "Nagafen's Lair",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -270,6 +307,9 @@
   {
     "id": "lord-vyemm",
     "name": "Lord Vyemm",
+    "aliases": [
+      "Vyemm"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -279,6 +319,10 @@
   {
     "id": "lord-yelinak",
     "name": "Lord Yelinak",
+    "aliases": [
+      "Yeli",
+      "Yelinak"
+    ],
     "zone": "Skyshrine",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -306,6 +350,9 @@
   {
     "id": "master-yael",
     "name": "Master Yael",
+    "aliases": [
+      "Yael"
+    ],
     "zone": "The Hole",
     "respawnDisplay": "3d ± 8h",
     "minRespawnHours": 64,
@@ -333,6 +380,10 @@
   {
     "id": "phara-dar",
     "name": "Phara Dar",
+    "aliases": [
+      "PD",
+      "Phara"
+    ],
     "zone": "Veeshan's Peak",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -378,6 +429,9 @@
   {
     "id": "severilous",
     "name": "Severilous",
+    "aliases": [
+      "Sev"
+    ],
     "zone": "Emerald Jungle",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -405,6 +459,9 @@
   {
     "id": "telkorenar",
     "name": "Telkorenar",
+    "aliases": [
+      "Telk"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -423,6 +480,10 @@
   {
     "id": "the-final-arbiter",
     "name": "The Final Arbiter",
+    "aliases": [
+      "TFA",
+      "Final Arbiter"
+    ],
     "zone": "Sleeper's Tomb",
     "respawnDisplay": "3d ± 12h",
     "minRespawnHours": 60,
@@ -441,6 +502,10 @@
   {
     "id": "statue-of-rallos-zek",
     "name": "The Statue of Rallos Zek",
+    "aliases": [
+      "Statue",
+      "Statue of Rallos Zek"
+    ],
     "zone": "Kael Drakkel",
     "respawnDisplay": "5d ± 8h",
     "minRespawnHours": 112,
@@ -450,6 +515,9 @@
   {
     "id": "trakanon",
     "name": "Trakanon",
+    "aliases": [
+      "Trak"
+    ],
     "zone": "Old Sebilis",
     "respawnDisplay": "3d ± 8h",
     "minRespawnHours": 64,
@@ -477,6 +545,9 @@
   {
     "id": "vulak-aerr",
     "name": "Vulak`Aerr",
+    "aliases": [
+      "Vulak"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -486,6 +557,9 @@
   {
     "id": "wuoshi",
     "name": "Wuoshi",
+    "aliases": [
+      "Wuoshi"
+    ],
     "zone": "The Wakening Land",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -504,6 +578,9 @@
   {
     "id": "zlandicar",
     "name": "Zlandicar",
+    "aliases": [
+      "Zlandi"
+    ],
     "zone": "Dragon Necropolis",
     "respawnDisplay": "4.5 Days (+/- 8 Hours Variance)",
     "minRespawnHours": 100,
@@ -513,10 +590,99 @@
   {
     "id": "zlexak",
     "name": "Zlexak",
+    "aliases": [
+      "Zlex"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
     "maxRespawnHours": 176,
     "notes": ""
+  },
+  {
+    "id": "casalen",
+    "name": "Casalen",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "essedera",
+    "name": "Essedera",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "grozzmel",
+    "name": "Grozzmel",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Casts Complete Heal and Gate; mana sieve recommended. Slow it."
+  },
+  {
+    "id": "krigara",
+    "name": "Krigara",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "lepethida",
+    "name": "Lepethida",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. CH + Gate; casts Thunder Blast on tank; mana sieve. Slow it."
+  },
+  {
+    "id": "midayor",
+    "name": "Midayor",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "tavekalem",
+    "name": "Tavekalem",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "ymmeln",
+    "name": "Ymmeln",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "an-angry-goblin",
+    "name": "An angry goblin",
+    "aliases": [
+      "Angry",
+      "Angry Goblin",
+      "an angry goblin"
+    ],
+    "zone": "Temple of Droga",
+    "respawnDisplay": "3d + 7h12m window",
+    "minRespawnHours": 72,
+    "maxRespawnHours": 79.2,
+    "notes": "Turn-in spawn. Window starts 3 days from turn-in and lasts 7 hours 12 minutes."
   }
 ]

@@ -1,4 +1,4 @@
-
+﻿
 const STATUS_COLORS = {
   watching: '#49d1a4',
   stopped: '#ff6b6b',
@@ -2404,6 +2404,7 @@ function parseMobTodLog(rawText) {
     warnings: [],
     errors: [],
     unknown: [],
+    aliasChanges: [],
     totalLines: 0,
   };
 
@@ -2417,6 +2418,8 @@ function parseMobTodLog(rawText) {
   let sectionTimestamp = null;
   let pendingMob = null;
   let sectionHints = [];
+  // Session alias overrides added via !alias commands within this paste
+  const sessionAliasMap = new Map(); // mobId -> Set<string>
   const messageTimestampRegex = /—\s*(.+)$/;
   const now = new Date();
 
@@ -2446,6 +2449,51 @@ function parseMobTodLog(rawText) {
       });
     });
     sectionHints = [];
+  };
+
+  const buildSessionMatchers = () => {
+    const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+    const matchers = [];
+    sessionAliasMap.forEach((aliases, mobId) => {
+      const mob = mobs.find((m) => m.id === mobId);
+      const mobName = mob?.name || '';
+      aliases.forEach((alias) => {
+        if (!alias) return;
+        const spaced = String(alias)
+          .split(/\s+/)
+          .map((segment) => escapeRegex(segment))
+          .join('\\s+');
+        const pattern = `^${spaced}(?=$|\\s|,|\\||\\-|!|\\.)`;
+        matchers.push({
+          mobId,
+          mobName: mobName || alias,
+          alias,
+          regex: new RegExp(pattern, 'i'),
+          priority: String(alias).replace(/\s+/g, '').length,
+        });
+      });
+    });
+    matchers.sort((a, b) => b.priority - a.priority);
+    return matchers;
+  };
+
+  const resolveMobByText = (text) => {
+    if (!text) return null;
+    const base = findMobMatchFromText(text);
+    if (base) return base;
+    const sessionMatchers = buildSessionMatchers();
+    for (const matcher of sessionMatchers) {
+      const m = matcher.regex.exec(text);
+      if (m) {
+        return {
+          mobId: matcher.mobId,
+          mobName: matcher.mobName,
+          alias: matcher.alias,
+          matchedText: m[0],
+        };
+      }
+    }
+    return null;
   };
 
   lines.forEach((line, index) => {
@@ -2507,7 +2555,7 @@ function parseMobTodLog(rawText) {
       return;
     }
 
-    if (section && /^[🟩🟨🟧🟥⬜\s]+$/.test(trimmed.replace(/\s+/g, ''))) {
+    if (section && /^[ðŸŸ©ðŸŸ¨ðŸŸ§ðŸŸ¥â¬œ\s]+$/.test(trimmed.replace(/\s+/g, ''))) {
       // Visual progress bar line - ignore
       return;
     }
@@ -2556,7 +2604,7 @@ function parseMobTodLog(rawText) {
       if (futureMatch) {
         const mobText = futureMatch[1].trim();
         const timeUntil = futureMatch[3].trim();
-        const mobMatch = findMobMatchFromText(mobText);
+        const mobMatch = resolveMobByText(mobText);
         if (!mobMatch) {
           result.unknown.push({
             lineNumber: index + 1,
@@ -2582,9 +2630,9 @@ function parseMobTodLog(rawText) {
       }
     }
 
-    if (section && !/^!?tod\b/i.test(trimmed)) {
+  if (section && !/^!?tod\b/i.test(trimmed)) {
       const bulletNormalized = trimmed.replace(/^[•\-]+\s*/, '');
-      const mobMatch = findMobMatchFromText(bulletNormalized);
+      const mobMatch = resolveMobByText(bulletNormalized);
       if (!mobMatch) {
         if (section === 'in-window' || section === 'opening-soon') {
           result.unknown.push({
@@ -2602,23 +2650,142 @@ function parseMobTodLog(rawText) {
         };
       }
       return;
-    }
+  }
 
-    if (!/^!?tod\b/i.test(trimmed)) {
+    // Handle direct quake command: !quake [time]
+    const quakeCmd = trimmed.match(/^!?quake\b\s*(.*)$/i);
+    if (quakeCmd) {
+      const timeText = (quakeCmd[1] || '').trim();
+      const timestamp = resolveTemporalExpression(timeText, currentTimestamp, now);
+      if (!timestamp) {
+        result.warnings.push(
+          `Line ${index + 1}: could not understand quake time "${timeText || 'message time'}".`
+        );
+      } else {
+        const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+        mobs.forEach((mob) => {
+          if (!mob || !mob.id) return;
+          result.entries.push({
+            mobId: mob.id,
+            mobName: mob.name || mob.id,
+            alias: mob.name || mob.id,
+            timestamp,
+            sourceLine: trimmed,
+            lineNumber: index + 1,
+            rawTime: timeText,
+            origin: 'tod-command',
+          });
+        });
+      }
+      resetPendingMob();
       return;
     }
 
-    resetPendingMob();
-    const body = trimmed.replace(/^!?tod\b\s*/i, '');
-    if (!body) {
-      result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
+    // Handle alias command: !alias <mob> add|remove <alias>
+    const aliasCmd = trimmed.match(/^!?alias\s+(.+?)\s+(add|remove)\s+(.+)$/i);
+    if (aliasCmd) {
+      const mobText = aliasCmd[1].trim();
+      const op = aliasCmd[2].toLowerCase();
+      const aliasText = aliasCmd[3].trim();
+      const mobMatch = resolveMobByText(mobText);
+      if (!mobMatch) {
+        result.unknown.push({ lineNumber: index + 1, name: mobText, raw: trimmed });
+      } else {
+        const set = sessionAliasMap.get(mobMatch.mobId) || new Set();
+        if (op === 'add') {
+          set.add(aliasText);
+          sessionAliasMap.set(mobMatch.mobId, set);
+          result.aliasChanges.push({ type: 'add', mobId: mobMatch.mobId, mobName: mobMatch.mobName, alias: aliasText });
+        } else {
+          set.delete(aliasText);
+          if (set.size > 0) sessionAliasMap.set(mobMatch.mobId, set);
+          else sessionAliasMap.delete(mobMatch.mobId);
+          result.aliasChanges.push({ type: 'remove', mobId: mobMatch.mobId, mobName: mobMatch.mobName, alias: aliasText });
+        }
+      }
+      resetPendingMob();
       return;
     }
 
-    const mobMatch = findMobMatchFromText(body);
-    if (!mobMatch) {
-      const candidateName = body.split(/[|,]/)[0].trim();
-      result.unknown.push({
+    // Handle ToD removal: !todremove <mob>
+    const todRemoveCmd = trimmed.match(/^!?todremove\s+(.+)$/i);
+    if (todRemoveCmd) {
+      const mobText = todRemoveCmd[1].trim();
+      const mobMatch = resolveMobByText(mobText);
+      if (!mobMatch) {
+        result.unknown.push({ lineNumber: index + 1, name: mobText, raw: trimmed });
+      } else {
+        result.entries.push({
+          mobId: mobMatch.mobId,
+          mobName: mobMatch.mobName,
+          alias: mobMatch.alias,
+          timestamp: null,
+          clear: true,
+          sourceLine: trimmed,
+          lineNumber: index + 1,
+          rawTime: 'clear',
+          origin: 'tod-remove',
+        });
+      }
+      resetPendingMob();
+      return;
+    }
+
+    // Ignore unsupported bot commands
+    if (/^!\s*(register|unregister|show|rename|register_link|register_clear|set_warn_time|autotod|skip|unskip|timers|schedule|leaderboard|todhistory)\b/i.test(trimmed)) {
+      resetPendingMob();
+      return;
+    }
+  if (!/^!?tod\b/i.test(trimmed)) {
+    return;
+  }
+
+  resetPendingMob();
+  const body = trimmed.replace(/^!?tod\b\s*/i, '');
+  if (!body) {
+    result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
+    return;
+  }
+
+  // Support quake command: !tod quake [time]
+  const quakeMatch = body.match(/^quake\b/i);
+  if (quakeMatch) {
+    let remainder = body.slice(quakeMatch[0].length).trim();
+    if (remainder.startsWith('|') || remainder.startsWith(',')) {
+      remainder = remainder.slice(1).trim();
+    }
+    const timestamp = resolveTemporalExpression(remainder, currentTimestamp, now);
+    if (!timestamp) {
+      result.warnings.push(
+        `Line ${index + 1}: could not understand quake time "${remainder || 'message time'}".`
+      );
+      return;
+    }
+    const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+    if (!mobs.length) {
+      result.warnings.push(`Line ${index + 1}: no tracked mobs available to apply quake.`);
+      return;
+    }
+    for (const mob of mobs) {
+      if (!mob || !mob.id) continue;
+      result.entries.push({
+        mobId: mob.id,
+        mobName: mob.name || mob.id,
+        alias: mob.name || mob.id,
+        timestamp,
+        sourceLine: trimmed,
+        lineNumber: index + 1,
+        rawTime: remainder,
+        origin: 'tod-command',
+      });
+    }
+    return;
+  }
+
+  const mobMatch = resolveMobByText(body);
+  if (!mobMatch) {
+    const candidateName = body.split(/[|,]/)[0].trim();
+    result.unknown.push({
         lineNumber: index + 1,
         name: candidateName || body,
         raw: trimmed,
@@ -2660,14 +2827,18 @@ function parseMobTodLog(rawText) {
   });
 
   flushSectionHints();
+  // Keep clear actions and dedupe timed entries by latest timestamp
+  const clears = result.entries.filter((e) => e && e.clear === true);
+  const timed = result.entries.filter((e) => e && !e.clear && e.timestamp);
   const deduped = new Map();
-  result.entries.forEach((entry) => {
+  timed.forEach((entry) => {
     const existing = deduped.get(entry.mobId);
     if (!existing || entry.timestamp > existing.timestamp) {
       deduped.set(entry.mobId, entry);
     }
   });
-  result.entries = Array.from(deduped.values()).sort((a, b) => b.timestamp - a.timestamp);
+  const orderedTimed = Array.from(deduped.values()).sort((a, b) => b.timestamp - a.timestamp);
+  result.entries = clears.concat(orderedTimed);
   return result;
 }
 
@@ -2682,19 +2853,24 @@ function formatMobTodFeedback(result) {
     'window-opens': 'from window opening estimate',
   };
   if (result.entries.length) {
-    const list = result.entries
+    const clearCount = (result.entries || []).filter((e) => e && e.clear === true).length;
+    const setEntries = (result.entries || []).filter((e) => e && !e.clear);
+    const list = setEntries
       .slice(0, 8)
       .map((entry) => {
         const when = formatAbsoluteTime(entry.timestamp);
         const originLabel = originLabels[entry.origin] || null;
         return `${entry.mobName} (${when}${originLabel ? `, ${originLabel}` : ''})`;
       });
-    const moreCount = result.entries.length - list.length;
-    lines.push(
-      `${result.entries.length} mob${result.entries.length === 1 ? '' : 's'} ready for update: ${list.join(', ')}${
-        moreCount > 0 ? `, and ${moreCount} more` : ''
-      }.`
-    );
+    const moreCount = setEntries.length - list.length;
+    if (setEntries.length) {
+      lines.push(
+        `${setEntries.length} mob${setEntries.length === 1 ? '' : 's'} ready for update: ${list.join(', ')}${moreCount > 0 ? `, and ${moreCount} more` : ''}.`
+      );
+    }
+    if (clearCount) {
+      lines.push(`${clearCount} mob${clearCount === 1 ? '' : 's'} to clear.`);
+    }
   }
   if (result.unknown.length) {
     const sample = result.unknown.slice(0, 5).map((item) => item.name);
@@ -3095,15 +3271,21 @@ function attachEventListeners() {
       try {
         let snapshot = mobWindowSnapshot;
         for (const entry of parsed.entries) {
-          snapshot = await window.eqApi.recordMobKill(entry.mobId, entry.timestamp.toISOString());
+          if (entry.clear === true) {
+            snapshot = await window.eqApi.clearMobKill(entry.mobId);
+          } else {
+            snapshot = await window.eqApi.recordMobKill(entry.mobId, entry.timestamp.toISOString());
+          }
         }
         if (snapshot && snapshot.mobs) {
           mobWindowSnapshot = snapshot;
-          renderMobWindows(mobWindowSnapshot);
         }
-        const summaryLine = `<div>Applied updates to ${parsed.entries.length} mob${
-          parsed.entries.length === 1 ? '' : 's'
-        }.</div>`;
+        const setCount = parsed.entries.filter((e) => !e.clear).length;
+        const clearCount = parsed.entries.filter((e) => e.clear).length;
+        let summary = "";
+        if (setCount) summary += "Applied updates to " + setCount + " mob" + (setCount === 1 ? "" : "s");
+        if (clearCount) summary += (summary ? "; " : "") + "cleared " + clearCount + " mob" + (clearCount === 1 ? "" : "s");
+        const summaryLine = "<div>" + summary + ".</div>";
         const formatted = formatMobTodFeedback(parsed);
         mobTodFeedback.classList.remove('success', 'warning', 'error');
         mobTodFeedback.innerHTML = summaryLine + formatted.html;
@@ -3455,6 +3637,9 @@ function updateMoveModeButton() {
   toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlays';
   toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
 }
+
+
+
 
 
 

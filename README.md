@@ -167,6 +167,18 @@ Notes:
 - Enable **Allow game clicks through overlay** to make the window click-through while keeping timers visible.
 - Press **Focus Overlay** if the overlay window gets hidden behind other apps.
 
+## Bulk ToD Import
+
+- In the Mob Windows view, paste Discord chatter with lines beginning with `!tod` or `tod` and click Preview/Apply.
+- Supports explicit timestamps for both individual mobs and quake resets.
+- Examples:
+  - `!tod Trakanon now`
+  - `!tod Trakanon 10/25/2025 6:48 PM`
+  - `!tod quake now`
+  - `!tod quake 2025-10-25 18:48`
+- Time parsing accepts formats like `now`, `M/D/YYYY HH:MM [AM/PM]`, `YYYY-MM-DD HH:MM[:SS]`, or time-only (anchored to the message timestamp).
+- A quake command applies the same timestamp to all tracked mobs.
+
 ## Next Steps
 
 - Expand trigger configuration UI (import/export, categories).
