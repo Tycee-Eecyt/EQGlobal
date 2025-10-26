@@ -215,7 +215,7 @@ function updateTrayMenu() {
     // Update controls
     {
       label: updateDownloaded ? 'Restart to Update' : 'Check for Updates…',
-      enabled: process.env.NODE_ENV !== 'development',
+      enabled: Boolean(updateDownloaded || (app.isPackaged && autoUpdater)),
       click: () => {
         if (updateDownloaded) {
           try {
