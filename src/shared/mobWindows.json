@@ -11,6 +11,9 @@
   {
     "id": "aaryonar",
     "name": "Aaryonar",
+    "aliases": [
+      "Aary"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -69,6 +72,9 @@
   {
     "id": "dozekar-the-cursed",
     "name": "Dozekar the Cursed",
+    "aliases": [
+      "Dozekar"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -96,6 +102,9 @@
   {
     "id": "eashen-of-the-sky",
     "name": "Eashen of the Sky",
+    "aliases": [
+      "Eashen"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -123,6 +132,9 @@
   {
     "id": "gorenaire",
     "name": "Gorenaire",
+    "aliases": [
+      "Gore"
+    ],
     "zone": "Dreadlands",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -150,6 +162,9 @@
   {
     "id": "ikatiar-the-venom",
     "name": "Ikatiar the Venom",
+    "aliases": [
+      "Ikatiar"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -177,6 +192,11 @@
   {
     "id": "king-tormax",
     "name": "King Tormax",
+    "aliases": [
+      "KT",
+      "K T",
+      "Tormax"
+    ],
     "zone": "Kael Drakkel",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -195,6 +215,9 @@
   {
     "id": "lady-nevederia",
     "name": "Lady Nevederia",
+    "aliases": [
+      "Nevederia"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -204,6 +227,9 @@
   {
     "id": "lady-vox",
     "name": "Lady Vox",
+    "aliases": [
+      "Vox"
+    ],
     "zone": "Permafrost",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -252,6 +278,10 @@
   {
     "id": "lord-kreizenn",
     "name": "Lord Kreizenn",
+    "aliases": [
+      "Kreizen",
+      "Kreiz"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -270,6 +300,9 @@
   {
     "id": "lord-vyemm",
     "name": "Lord Vyemm",
+    "aliases": [
+      "Vyemm"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -279,6 +312,10 @@
   {
     "id": "lord-yelinak",
     "name": "Lord Yelinak",
+    "aliases": [
+      "Yeli",
+      "Yelinak"
+    ],
     "zone": "Skyshrine",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -306,6 +343,9 @@
   {
     "id": "master-yael",
     "name": "Master Yael",
+    "aliases": [
+      "Yael"
+    ],
     "zone": "The Hole",
     "respawnDisplay": "3d ± 8h",
     "minRespawnHours": 64,
@@ -378,6 +418,9 @@
   {
     "id": "severilous",
     "name": "Severilous",
+    "aliases": [
+      "Sev"
+    ],
     "zone": "Emerald Jungle",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -423,6 +466,10 @@
   {
     "id": "the-final-arbiter",
     "name": "The Final Arbiter",
+    "aliases": [
+      "TFA",
+      "Final Arbiter"
+    ],
     "zone": "Sleeper's Tomb",
     "respawnDisplay": "3d ± 12h",
     "minRespawnHours": 60,
@@ -441,6 +488,10 @@
   {
     "id": "statue-of-rallos-zek",
     "name": "The Statue of Rallos Zek",
+    "aliases": [
+      "Statue",
+      "Statue of Rallos Zek"
+    ],
     "zone": "Kael Drakkel",
     "respawnDisplay": "5d ± 8h",
     "minRespawnHours": 112,
@@ -477,6 +528,9 @@
   {
     "id": "vulak-aerr",
     "name": "Vulak`Aerr",
+    "aliases": [
+      "Vulak"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -486,6 +540,9 @@
   {
     "id": "wuoshi",
     "name": "Wuoshi",
+    "aliases": [
+      "Wuoshi"
+    ],
     "zone": "The Wakening Land",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -504,6 +561,9 @@
   {
     "id": "zlandicar",
     "name": "Zlandicar",
+    "aliases": [
+      "Zlandi"
+    ],
     "zone": "Dragon Necropolis",
     "respawnDisplay": "4.5 Days (+/- 8 Hours Variance)",
     "minRespawnHours": 100,
