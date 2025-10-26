@@ -2,6 +2,17 @@
 
 Electron-based overlay that watches EverQuest log files, surfaces configurable timers similar to Gina, and forwards log data to a MongoDB Atlas–backed backend service.
 
+## Downloads
+
+- Latest Windows installer: visit Releases and download the newest tag.
+  https://github.com/Tycee-Eecyt/EQGlobal/releases
+
+## Auto-Update
+
+- Packaged builds auto-check for updates on startup and every few hours.
+- System tray includes “Check for Updates…”. After an update downloads it becomes “Restart to Update”.
+- Updates are delivered via GitHub Releases.
+
 ## Prerequisites
 
 - Node.js 18+ and npm
@@ -44,6 +55,14 @@ Electron-based overlay that watches EverQuest log files, surfaces configurable t
 - Transparent overlay stays on top; optionally allows clicks to pass through to the game.
 - Control panel lists active timers, shows recent log lines, and manages triggers.
 - Forwards raw log lines and trigger events to the backend in small batches.
+
+## Screenshots
+
+Timers Overlay
+![Timers Overlay](docs/screenshots/overlay-timers.png)
+
+Mob Windows
+![Mob Windows](docs/screenshots/mob-windows.png)
 
 ### Configuring Triggers
 
