@@ -128,6 +128,39 @@ Notes:
 
 Data is stored in `log_lines` and `log_events` collections. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
 
+## Bulk ToD Import
+
+You can bulk-import log lines containing ToD commands via the backend. POST to `/api/log-lines` with a JSON body:
+
+Example:
+
+```
+POST /api/log-lines
+{
+  "lines": [
+    { "filePath": "Bulk", "line": "!tod quake 10/25/2025 6:48 PM" },
+    { "filePath": "Bulk", "line": "!tod Trakanon 10/25/2025 7:05 PM" },
+    { "filePath": "Bulk", "line": "!tod Lord Nagafen 2025-10-25 18:55" },
+    { "filePath": "Bulk", "line": "!tod Venril Sathir now" }
+  ]
+}
+```
+
+Supported formats:
+
+- Quake reset: `!tod quake` optionally with an explicit time
+  - US: `!tod quake 10/25/2025 6:48 PM`
+  - ISO-like: `!tod quake 2025-10-25 18:48`
+- Per-mob ToD with explicit time
+  - US: `!tod Trakanon 10/25/2025 7:05 PM`
+  - ISO-like: `!tod Lord Nagafen 2025-10-25 18:55`
+- Use `now` to stamp the current time: `!tod Venril Sathir now`
+
+Notes:
+
+- When multiple entries target the same mob, the latest timestamp wins.
+- A quake entry applies to all mobs; per‑mob times in the same import still win if later than the quake time.
+
 ## Overlay Tips
 
 - **Overlay opacity** slider adjusts transparency live.
