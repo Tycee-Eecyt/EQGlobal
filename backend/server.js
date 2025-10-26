@@ -195,11 +195,22 @@ app.post('/api/log-lines', async (req, res) => {
       .filter((doc) => doc.line);
 
     const mobUpdates = new Map();
+    let quakeIso = null;
     documents.forEach((doc) => {
       const parsed = extractTodCommandFromLine(doc.line);
       if (!parsed) {
         return;
       }
+      // Special handling for quake reset: !tod quake
+      if (String(parsed.target || '').trim().toLowerCase() === 'quake') {
+        const timestamp = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+        const iso = timestamp.toISOString();
+        if (!quakeIso || iso > quakeIso) {
+          quakeIso = iso;
+        }
+        return;
+      }
+
       const mob = findMobByAlias(parsed.target);
       if (!mob) {
         return;
@@ -211,6 +222,16 @@ app.post('/api/log-lines', async (req, res) => {
         mobUpdates.set(mob.id, iso);
       }
     });
+
+    // If a quake command was observed, set all known mobs to that timestamp
+    if (quakeIso) {
+      mobDefinitionsById.forEach((_def, mobId) => {
+        const prev = mobUpdates.get(mobId);
+        if (!prev || quakeIso > prev) {
+          mobUpdates.set(mobId, quakeIso);
+        }
+      });
+    }
 
     if (documents.length === 0) {
       if (mobUpdates.size > 0) {
