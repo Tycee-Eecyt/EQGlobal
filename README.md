@@ -64,6 +64,14 @@ Timers Overlay
 Mob Windows
 ![Mob Windows](docs/screenshots/mob-windows.png)
 
+## System Tray
+
+- Show/Hide EQGlobal: toggles the main control window.
+- Show/Hide Timer Overlay: toggles the timers overlay window.
+- Show/Hide Mob Overlay: toggles the mob windows overlay.
+- Check for Updates…: manually checks for new releases (packaged builds). When an update is downloaded, this becomes Restart to Update.
+- Quit EQGlobal: exits the application.
+
 ### Configuring Triggers
 
 Use the **Triggers** section in the control panel to add or edit entries. Each trigger supports:
