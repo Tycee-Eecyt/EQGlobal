@@ -1932,7 +1932,7 @@ function categorizeMobWindows(mobs = []) {
 function buildMobWindowItem(mob, mode) {
   const respawnRange = formatRespawnRange(mob);
   const lastKillText = mob.lastKillAt ? `Last kill ${formatSince(mob.lastKillAt)}` : 'Last kill unknown';
-  const zoneParts = [mob.zone, mob.expansion].filter(Boolean).join(' â€¢ ');
+  const zoneParts = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
 
   let descriptor = '';
   let footerLeft = mob.windowOpensAt ? `${mode === 'current' ? 'Opened' : 'Earliest'}: ${formatAbsoluteTime(mob.windowOpensAt)}` : 'Earliest: Unknown';
@@ -1954,7 +1954,7 @@ function buildMobWindowItem(mob, mode) {
   if (respawnRange && respawnRange !== descriptor) metaParts.push(respawnRange);
   if (lastKillText) metaParts.push(lastKillText);
   if (zoneParts) metaParts.push(zoneParts);
-  const meta = metaParts.filter(Boolean).join(' â€¢ ');
+  const meta = metaParts.filter(Boolean).join(' • ');
 
   const footerRightText = footerRight ? `<span>${escapeHtml(footerRight)}</span>` : '<span></span>';
 
@@ -2015,9 +2015,9 @@ function renderMobWindowTable(snapshot) {
       } else {
         statusParts.push('Window closed');
       }
-      const statusText = statusParts.join(' â€¢ ');
+      const statusText = statusParts.join(' • ');
       const clearDisabled = mob.lastKillAt ? '' : 'disabled';
-      const zoneText = [mob.zone, mob.expansion].filter(Boolean).join(' â€¢ ');
+      const zoneText = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
       return `
         <tr data-mob-id="${escapeHtml(mob.id || '')}">
           <td>
@@ -2543,7 +2543,7 @@ function parseMobTodLog(rawText) {
     }
 
     if (section && /These\s+are\s+currently\s+in\s+window/i.test(trimmed)) {
-      const trailingMatch = trimmed.match(/(?:â€¢|-)\s*(.+)$/);
+      const trailingMatch = trimmed.match(/(?:•|-)\s*(.+)$/);
       if (trailingMatch) {
         const resolved = resolveTemporalExpression(trailingMatch[1], now, now);
         if (resolved) {
@@ -2599,7 +2599,7 @@ function parseMobTodLog(rawText) {
     }
 
     if (section === 'future') {
-      const futureNormalized = trimmed.replace(/^[â€¢\-]+\s*/, '');
+      const futureNormalized = trimmed.replace(/^[•\-]+\s*/, '');
       const futureMatch = futureNormalized.match(/^(.+?)(?:\s*\(([^)]+)\))?\s*-\s*(.+)$/);
       if (futureMatch) {
         const mobText = futureMatch[1].trim();
@@ -2631,7 +2631,7 @@ function parseMobTodLog(rawText) {
     }
 
   if (section && !/^!?tod\b/i.test(trimmed)) {
-      const bulletNormalized = trimmed.replace(/^[â€¢\-]+\s*/, '');
+      const bulletNormalized = trimmed.replace(/^[•\-]+\s*/, '');
       const mobMatch = resolveMobByText(bulletNormalized);
       if (!mobMatch) {
         if (section === 'in-window' || section === 'opening-soon') {
@@ -2985,7 +2985,7 @@ function showTimestampPrompt() {
     title.textContent = 'Set Kill Timestamp';
 
     const desc = document.createElement('p');
-    desc.innerHTML = 'Enter a time/date. Examples:<br>\n<code>now</code> â€¢ <code>2025-10-22 23:25</code> â€¢ <code>10/22/2025 11:25 PM</code><br>\n<code>today 9:30pm</code> â€¢ <code>-30m</code> â€¢ <code>[Wed Oct 22 23:25:34 2025]</code>';
+    desc.innerHTML = 'Enter a time/date. Examples:<br>\n<code>now</code> • <code>2025-10-22 23:25</code> • <code>10/22/2025 11:25 PM</code><br>\n<code>today 9:30pm</code> • <code>-30m</code> • <code>[Wed Oct 22 23:25:34 2025]</code>';
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -3637,6 +3637,7 @@ function updateMoveModeButton() {
   toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlays';
   toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
 }
+
 
 
 
