@@ -40,6 +40,7 @@ async function ensureMongoConnection() {
 
 const mobAliasIndex = new Map();
 const mobDefinitionsById = new Map();
+let aliasOverridesByMobId = new Map();
 
 function normalizeAliasKey(value) {
   if (!value) {
@@ -57,10 +58,12 @@ function normalizeAliasKey(value) {
   ).filter(Boolean);
 }
 
-function primeMobAliasIndex() {
+function rebuildAliasIndex() {
   if (!Array.isArray(mobWindowDefinitions)) {
     return;
   }
+  mobAliasIndex.clear();
+  mobDefinitionsById.clear();
   mobWindowDefinitions.forEach((definition) => {
     if (!definition || !definition.id) {
       return;
@@ -75,9 +78,23 @@ function primeMobAliasIndex() {
       });
     });
   });
+
+  // Apply alias overrides from DB
+  if (aliasOverridesByMobId && aliasOverridesByMobId.size > 0) {
+    aliasOverridesByMobId.forEach((aliases, mobId) => {
+      if (!aliases || !Array.isArray(aliases)) return;
+      aliases.forEach((alias) => {
+        normalizeAliasKey(alias).forEach((key) => {
+          if (!mobAliasIndex.has(key)) {
+            mobAliasIndex.set(key, mobId);
+          }
+        });
+      });
+    });
+  }
 }
 
-primeMobAliasIndex();
+rebuildAliasIndex();
 
 function buildSnapshotFromKills(kills = {}) {
   const manager = new MobWindowManager(mobWindowDefinitions, { tickRateMs: 60_000 });
@@ -240,6 +257,31 @@ function resolveTemporalExpression(rawValue, contextDate, now = new Date()) {
   return null;
 }
 
+async function loadAliasOverrides(db) {
+  try {
+    const collection = db.collection('mob_alias_overrides');
+    const doc = await collection.findOne({ _id: 'global' });
+    aliasOverridesByMobId = new Map();
+    if (doc && doc.aliases && typeof doc.aliases === 'object') {
+      for (const [mobId, arr] of Object.entries(doc.aliases)) {
+        aliasOverridesByMobId.set(mobId, Array.isArray(arr) ? arr.filter(Boolean) : []);
+      }
+    }
+    rebuildAliasIndex();
+  } catch (err) {
+    console.warn('Failed to load alias overrides:', err.message);
+  }
+}
+
+async function persistAliasOverrides(db) {
+  const obj = {};
+  aliasOverridesByMobId.forEach((arr, mobId) => {
+    obj[mobId] = Array.isArray(arr) ? arr.filter(Boolean) : [];
+  });
+  const collection = db.collection('mob_alias_overrides');
+  await collection.updateOne({ _id: 'global' }, { $set: { aliases: obj, updatedAt: new Date() } }, { upsert: true });
+}
+
 function extractTodCommandFromLine(line) {
   if (!line || typeof line !== 'string') {
     return null;
@@ -333,6 +375,7 @@ async function applyMobKillUpdates(db, updates) {
 app.get('/health', async (_req, res) => {
   try {
     await ensureMongoConnection();
+    await loadAliasOverrides(mongoDb);
     res.json({ status: 'ok' });
   } catch (error) {
     res.status(503).json({ status: 'error', message: error.message });
@@ -441,6 +484,38 @@ app.post('/api/log-lines', async (req, res) => {
   }
 });
 
+// Return last N ToD records for a mob, inferred from ingested log lines
+app.get('/api/tod-history/:mobId', async (req, res) => {
+  const mobId = String(req.params.mobId || '').trim();
+  if (!mobId || !mobDefinitionsById.has(mobId)) {
+    return res.status(400).json({ error: 'Unknown mobId.' });
+  }
+  try {
+    const db = await ensureMongoConnection();
+    const collection = db.collection('log_lines');
+    const cursor = collection.find({ line: { $regex: /^!?tod\s+/i } }).sort({ timestamp: -1 }).limit(2000);
+    const history = [];
+    for await (const doc of cursor) {
+      const parsed = extractTodCommandFromLineV2(doc.line);
+      if (!parsed || parsed.kind !== 'mob') continue;
+      const mob = findMobByAlias(parsed.target);
+      if (!mob || mob.id !== mobId) continue;
+      const ts = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp);
+      history.push({
+        mobId,
+        line: doc.line,
+        timestamp: ts.toISOString(),
+        filePath: doc.filePath || null,
+      });
+      if (history.length >= 10) break;
+    }
+    res.json({ mobId, entries: history });
+  } catch (err) {
+    console.error('Failed to fetch ToD history', err);
+    res.status(500).json({ error: 'Failed to fetch ToD history.' });
+  }
+});
+
 app.post('/api/log-events', async (req, res) => {
   const { events } = req.body || {};
   if (!Array.isArray(events)) {
@@ -479,6 +554,7 @@ app.post('/api/log-events', async (req, res) => {
 app.get('/api/mob-windows', async (_req, res) => {
   try {
     const db = await ensureMongoConnection();
+    await loadAliasOverrides(db);
     const collection = db.collection('mob_windows');
     const doc = await collection.findOne({ _id: 'global' });
     if (!doc) {
@@ -538,6 +614,114 @@ app.post('/api/mob-windows', async (req, res) => {
   }
 });
 
+// Clear a specific mob kill timestamp
+app.post('/api/mob-windows/clear', async (req, res) => {
+  const { mobId, mob } = req.body || {};
+  let targetMobId = null;
+  if (mobId && mobDefinitionsById.has(mobId)) {
+    targetMobId = mobId;
+  } else if (mob) {
+    const hit = findMobByAlias(mob);
+    if (hit) targetMobId = hit.id;
+  }
+  if (!targetMobId) {
+    return res.status(400).json({ error: 'Unknown mob. Provide mobId or recognizable name.' });
+  }
+  try {
+    const db = await ensureMongoConnection();
+    const collection = db.collection('mob_windows');
+    const doc = await collection.findOne({ _id: 'global' });
+    const kills = doc && doc.kills ? { ...doc.kills } : {};
+    if (Object.prototype.hasOwnProperty.call(kills, targetMobId)) {
+      delete kills[targetMobId];
+    }
+    const updatedAt = new Date();
+    await collection.updateOne({ _id: 'global' }, { $set: { kills, updatedAt } }, { upsert: true });
+    const snapshot = buildSnapshotFromKills(kills);
+    res.json({ kills, updatedAt: updatedAt.toISOString(), mobs: snapshot.mobs, snapshot });
+  } catch (err) {
+    console.error('Failed to clear mob kill', err);
+    res.status(500).json({ error: 'Failed to clear mob kill.' });
+  }
+});
+
+// Add an alias mapping to an existing mob
+app.post('/api/mobs/alias', async (req, res) => {
+  const { mob, mobId, alias } = req.body || {};
+  const aliasText = String(alias || '').trim();
+  if (!aliasText) return res.status(400).json({ error: 'Alias is required.' });
+  let targetMobId = null;
+  if (mobId && mobDefinitionsById.has(mobId)) {
+    targetMobId = mobId;
+  } else if (mob) {
+    const hit = findMobByAlias(mob);
+    if (hit) targetMobId = hit.id;
+    else if (mobDefinitionsById.has(String(mob))) targetMobId = String(mob);
+  }
+  if (!targetMobId) return res.status(400).json({ error: 'Unknown mob. Provide mobId or recognizable name.' });
+  try {
+    const db = await ensureMongoConnection();
+    await loadAliasOverrides(db);
+    const list = aliasOverridesByMobId.get(targetMobId) || [];
+    if (!list.includes(aliasText)) list.push(aliasText);
+    aliasOverridesByMobId.set(targetMobId, list);
+    await persistAliasOverrides(db);
+    rebuildAliasIndex();
+    res.json({ ok: true, mobId: targetMobId, alias: aliasText });
+  } catch (err) {
+    console.error('Failed to add alias', err);
+    res.status(500).json({ error: 'Failed to add alias.' });
+  }
+});
+
+// Remove an alias mapping previously added
+app.delete('/api/mobs/alias', async (req, res) => {
+  const { mob, mobId, alias } = req.body || {};
+  const aliasText = String(alias || '').trim();
+  if (!aliasText) return res.status(400).json({ error: 'Alias is required.' });
+  let targetMobId = null;
+  if (mobId && mobDefinitionsById.has(mobId)) {
+    targetMobId = mobId;
+  } else if (mob) {
+    const hit = findMobByAlias(mob);
+    if (hit) targetMobId = hit.id;
+    else if (mobDefinitionsById.has(String(mob))) targetMobId = String(mob);
+  }
+  if (!targetMobId) return res.status(400).json({ error: 'Unknown mob. Provide mobId or recognizable name.' });
+  try {
+    const db = await ensureMongoConnection();
+    await loadAliasOverrides(db);
+    const list = aliasOverridesByMobId.get(targetMobId) || [];
+    const filtered = list.filter((a) => a.toLowerCase() !== aliasText.toLowerCase());
+    aliasOverridesByMobId.set(targetMobId, filtered);
+    await persistAliasOverrides(db);
+    rebuildAliasIndex();
+    res.json({ ok: true, mobId: targetMobId, alias: aliasText });
+  } catch (err) {
+    console.error('Failed to remove alias', err);
+    res.status(500).json({ error: 'Failed to remove alias.' });
+  }
+});
+
+// List all known mobs (id, name, zone)
+app.get('/api/mobs', (_req, res) => {
+  const defs = [];
+  mobDefinitionsById.forEach((def) => {
+    defs.push({ id: def.id, name: def.name, zone: def.zone || '' });
+  });
+  defs.sort((a, b) => a.name.localeCompare(b.name));
+  res.json(defs);
+});
+
+// Resolve free-text to a mob by alias
+app.get('/api/mobs/resolve', (req, res) => {
+  const text = String(req.query.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'text is required' });
+  const hit = findMobByAlias(text);
+  if (!hit) return res.status(404).json({ error: 'No match' });
+  res.json({ id: hit.id, name: hit.definition?.name || hit.id });
+});
+
 app.listen(port, async () => {
   console.log(`EQGlobal backend listening on http://localhost:${port}`);
   if (!mongoUri) {
@@ -545,6 +729,7 @@ app.listen(port, async () => {
   } else {
     try {
       await ensureMongoConnection();
+      await loadAliasOverrides(mongoDb);
     } catch (error) {
       console.error('Unable to connect to MongoDB on startup:', error.message);
     }
