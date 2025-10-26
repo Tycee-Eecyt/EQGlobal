@@ -269,6 +269,9 @@
   {
     "id": "lord-koi-doken",
     "name": "Lord Koi'Doken",
+    "aliases": [
+      "Koi"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -291,6 +294,10 @@
   {
     "id": "lord-nagafen",
     "name": "Lord Nagafen",
+    "aliases": [
+      "Naggy",
+      "Nagafen"
+    ],
     "zone": "Nagafen's Lair",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -373,6 +380,10 @@
   {
     "id": "phara-dar",
     "name": "Phara Dar",
+    "aliases": [
+      "PD",
+      "Phara"
+    ],
     "zone": "Veeshan's Peak",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -448,6 +459,9 @@
   {
     "id": "telkorenar",
     "name": "Telkorenar",
+    "aliases": [
+      "Telk"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -501,6 +515,9 @@
   {
     "id": "trakanon",
     "name": "Trakanon",
+    "aliases": [
+      "Trak"
+    ],
     "zone": "Old Sebilis",
     "respawnDisplay": "3d ± 8h",
     "minRespawnHours": 64,
@@ -573,10 +590,99 @@
   {
     "id": "zlexak",
     "name": "Zlexak",
+    "aliases": [
+      "Zlex"
+    ],
     "zone": "Temple of Veeshan",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
     "maxRespawnHours": 176,
     "notes": ""
+  },
+  {
+    "id": "casalen",
+    "name": "Casalen",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "essedera",
+    "name": "Essedera",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "grozzmel",
+    "name": "Grozzmel",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Casts Complete Heal and Gate; mana sieve recommended. Slow it."
+  },
+  {
+    "id": "krigara",
+    "name": "Krigara",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "lepethida",
+    "name": "Lepethida",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. CH + Gate; casts Thunder Blast on tank; mana sieve. Slow it."
+  },
+  {
+    "id": "midayor",
+    "name": "Midayor",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "tavekalem",
+    "name": "Tavekalem",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "ymmeln",
+    "name": "Ymmeln",
+    "zone": "Temple of Veeshan",
+    "respawnDisplay": "3d ± 8h",
+    "minRespawnHours": 64,
+    "maxRespawnHours": 80,
+    "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
+  },
+  {
+    "id": "an-angry-goblin",
+    "name": "An angry goblin",
+    "aliases": [
+      "Angry",
+      "Angry Goblin",
+      "an angry goblin"
+    ],
+    "zone": "Temple of Droga",
+    "respawnDisplay": "3d + 7h12m window",
+    "minRespawnHours": 72,
+    "maxRespawnHours": 79.2,
+    "notes": "Turn-in spawn. Window starts 3 days from turn-in and lasts 7 hours 12 minutes."
   }
 ]
