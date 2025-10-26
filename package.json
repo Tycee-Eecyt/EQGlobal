@@ -50,6 +50,11 @@
       "!scripts/**/*"
     ],
     "asar": true,
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.utilities",
+      "artifactName": "EQGlobal-${version}-${arch}.${ext}"
+    },
     "win": {
       "icon": "assets/icon.ico",
       "target": [
@@ -59,6 +64,11 @@
         }
       ],
       "artifactName": "EQGlobal-Setup-${version}-${arch}.exe"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Utility",
+      "artifactName": "EQGlobal-${version}-${arch}.${ext}"
     },
     "publish": [
       {
