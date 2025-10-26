@@ -153,6 +153,9 @@
   {
     "id": "hoshkar",
     "name": "Hoshkar",
+    "aliases": [
+      "Hosh"
+    ],
     "zone": "Veeshan's Peak",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,

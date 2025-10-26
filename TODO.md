@@ -24,3 +24,12 @@ EQGlobal TODOs
   - Keep emitting UI updates every tick (fixed): ensure smooth countdowns even without new triggers
   - Optional global tick rate setting (250–1000ms)
 
+- Data minimization & role-based access
+  - Only send select commands (e.g., `!tod` / `tod`) to the backend; keep constant local scanning for regular GINA triggers.
+  - Add per-trigger option to "Share to backend" so only chosen triggers post events to DB.
+  - Provide an Admin tab to manage global GINA-like triggers (create/edit shared triggers) — admin-only.
+  - Roles: `admin` (manage global triggers, can submit updates), `officer` (can submit `!tod`/`tod` updates), `viewer` (read-only: view windows).
+  - Protect write APIs: `POST /api/log-lines`, `POST /api/log-events` (officer/admin), `POST /api/global-triggers` (admin), while allowing public reads where appropriate.
+  - Persist auth in the app and include Bearer token on backend requests.
+  - Evaluate auth stack: Passport.js vs lightweight JWT/HMAC; document choice and flows.
+
