@@ -201,9 +201,29 @@ app.post('/api/log-lines', async (req, res) => {
       if (!parsed) {
         return;
       }
-      // Special handling for quake reset: !tod quake
-      if (String(parsed.target || '').trim().toLowerCase() === 'quake') {
-        const timestamp = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+      // Special handling for quake reset: !tod quake [<explicit time>]
+      const rawTarget = String(parsed.target || '').trim();
+      const quakeMatch = rawTarget.match(/^quake(?:\s+(.+))?$/i);
+      if (quakeMatch) {
+        let timestamp = null;
+        const explicit = quakeMatch[1] && quakeMatch[1].trim().replace(/^["']+|["']+$/g, '');
+        if (explicit) {
+          const dt = new Date(explicit);
+          if (!Number.isNaN(dt.getTime())) {
+            timestamp = dt;
+          }
+        }
+        if (!timestamp) {
+          if (parsed.explicitTime && parsed.explicitTime !== 'now') {
+            const dt2 = new Date(parsed.explicitTime);
+            if (!Number.isNaN(dt2.getTime())) {
+              timestamp = dt2;
+            }
+          }
+        }
+        if (!timestamp) {
+          timestamp = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+        }
         const iso = timestamp.toISOString();
         if (!quakeIso || iso > quakeIso) {
           quakeIso = iso;
