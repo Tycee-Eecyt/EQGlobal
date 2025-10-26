@@ -231,11 +231,35 @@ app.post('/api/log-lines', async (req, res) => {
         return;
       }
 
-      const mob = findMobByAlias(parsed.target);
+      // For non-quake: allow explicit trailing time in the target text
+      let aliasTarget = String(parsed.target || '').trim();
+      let explicitTs = null;
+      if (parsed.explicitTime && parsed.explicitTime !== 'now') {
+        const t = new Date(parsed.explicitTime);
+        if (!Number.isNaN(t.getTime())) {
+          explicitTs = t;
+        }
+      } else {
+        const isoRe = /(\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?)\s*$/;
+        const usRe = /(\d{1,2}\/\d{1,2}\/\d{2,4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)?)\s*$/;
+        let m2 = aliasTarget.match(usRe) || aliasTarget.match(isoRe);
+        if (m2 && m2[1]) {
+          const candidate = m2[1].trim();
+          const d2 = new Date(candidate);
+          if (!Number.isNaN(d2.getTime())) {
+            explicitTs = d2;
+            aliasTarget = aliasTarget.slice(0, m2.index).trim();
+          }
+        }
+      }
+
+      const mob = findMobByAlias(aliasTarget);
       if (!mob) {
         return;
       }
-      const timestamp = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+      const timestamp = explicitTs
+        ? explicitTs
+        : (doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now()));
       const iso = timestamp.toISOString();
       const prev = mobUpdates.get(mob.id);
       if (!prev || iso > prev) {
