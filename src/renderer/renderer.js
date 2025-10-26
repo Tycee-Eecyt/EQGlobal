@@ -234,7 +234,7 @@ function getCategoryPath(id) {
 
 function getCategoryDisplayName(id) {
   const path = getCategoryPath(id);
-  return path.length > 0 ? path.join(' â€º ') : '';
+  return path.length > 0 ? path.join(' › ') : '';
 }
 
 function getCategoryOptions({ includeRoot = false, exclude = [] } = {}) {
@@ -398,7 +398,7 @@ function normalizeTriggers(rawTriggers = []) {
       categoryId = ensureCategoryPath(trigger.categoryPath);
     } else if (typeof raw.category === 'string' && raw.category.trim()) {
       const segments = raw.category
-        .split(/[\\/â€º>]/g)
+        .split(/[\\/›>]/g)
         .map((segment) => segment.trim())
         .filter(Boolean);
       categoryId = ensureCategoryPath(segments);
@@ -415,7 +415,7 @@ function normalizeTriggers(rawTriggers = []) {
 function updateDerivedTriggerFields(trigger) {
   rebuildCategoryCaches();
   trigger.categoryPath = getCategoryPath(trigger.categoryId);
-  trigger.category = trigger.categoryPath.length > 0 ? trigger.categoryPath.join(' â€º ') : '';
+  trigger.category = trigger.categoryPath.length > 0 ? trigger.categoryPath.join(' › ') : '';
   trigger.duration = Math.max(
     1,
     Math.round(trigger.timer.durationSeconds || trigger.duration || DEFAULT_TRIGGER_DURATION)
@@ -502,7 +502,7 @@ function renderTreeNode(node) {
   const isSelected = selectedNode && selectedNode.type === 'category' && selectedNode.id === node.id;
 
   const toggle = hasChildren
-    ? `<button class="tree-toggle" data-action="toggle-category" data-category-id="${node.id}" aria-label="${isExpanded ? 'Collapse' : 'Expand'} category">${isExpanded ? 'â–¾' : 'â–¸'}</button>`
+    ? `<button class="tree-toggle" data-action="toggle-category" data-category-id="${node.id}" aria-label="${isExpanded ? 'Collapse' : 'Expand'} category">${isExpanded ? '▾' : '▸'}</button>`
     : `<span class="tree-toggle-placeholder"></span>`;
 
   const childrenMarkup =
@@ -588,7 +588,7 @@ function renderSoundFilePicker(fieldPath, value, enabled) {
   return `
     <div class="sound-file-picker${stateClass}">
       <span class="sound-file-display ${value ? '' : 'empty'}" title="${escapeHtml(displayText)}">${escapeHtml(displayText)}</span>
-      <button type="button" class="secondary small" data-action="browse-sound-file" data-field="${fieldPath}" ${enabled ? '' : 'disabled'}>Browseâ€¦</button>
+      <button type="button" class="secondary small" data-action="browse-sound-file" data-field="${fieldPath}" ${enabled ? '' : 'disabled'}>Browse…</button>
     </div>
   `;
 }
@@ -2030,7 +2030,7 @@ function renderMobWindowTable(snapshot) {
           <td>
             <div class="mob-window-actions">
               <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
-              <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Timeâ€¦</button>
+              <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time…</button>
               <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
             </div>
           </td>
@@ -2420,7 +2420,7 @@ function parseMobTodLog(rawText) {
   let sectionHints = [];
   // Session alias overrides added via !alias commands within this paste
   const sessionAliasMap = new Map(); // mobId -> Set<string>
-  const messageTimestampRegex = /â€”\s*(.+)$/;
+  const messageTimestampRegex = /—\s*(.+)$/;
   const now = new Date();
 
   const ensureContextTime = () => {
@@ -3082,7 +3082,7 @@ function renderTimers(timers) {
 
 function renderRecentLines() {
   if (recentLines.length === 0) {
-    recentLinesList.innerHTML = '<li class="empty-state">Awaiting log dataâ€¦</li>';
+    recentLinesList.innerHTML = '<li class="empty-state">Awaiting log data…</li>';
     return;
   }
 
@@ -3637,6 +3637,7 @@ function updateMoveModeButton() {
   toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlays';
   toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
 }
+
 
 
 
