@@ -70,6 +70,16 @@ app.whenReady().then(async () => {
       }
     );
 
+    // Control Panel (main window)
+    await captureFile(
+      path.join(rendererDir, 'index.html'),
+      path.join(outDir, 'control-panel.png'),
+      {
+        injectCss:
+          'html,body{background:#0f172a !important} .panel{box-shadow:none !important}',
+      }
+    );
+
     // Mob Windows
     await captureFile(
       path.join(rendererDir, 'overlay-mobs.html'),

@@ -58,6 +58,9 @@ Electron-based overlay that watches EverQuest log files, surfaces configurable t
 
 ## Screenshots
 
+Control Panel
+![Control Panel](docs/screenshots/control-panel.png)
+
 Timers Overlay
 ![Timers Overlay](docs/screenshots/overlay-timers.png)
 
