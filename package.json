@@ -1,31 +1,33 @@
-{
-  "name": "eqglobal",
-  "version": "1.0.0",
-  "description": "Electron overlay and backend service for EverQuest log-based timers.",
-  "main": "src/main/main.js",
-  "scripts": {
-    "start": "concurrently \"npm:app\" \"npm:backend\"",
-    "app": "electron .",
-    "backend": "node backend/server.js",
-    "dev": "electron .",
-    "scrape:p99": "node scripts/scrape-p99-raid-windows.js",
-    "cleanup:mob": "node scripts/cleanup-mob-windows.js",
-    "convert:gtp": "powershell -ExecutionPolicy Bypass -File scripts/convert-gina-gtp.ps1",
-    "test:patterns": "node scripts/test-patterns.js --triggers external/all-gina.triggers.json --lines test/log-lines-sample.txt"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^9.2.1",
-    "electron": "^38.4.0"
-  },
-  "dependencies": {
-    "axios": "^1.12.2",
-    "chokidar": "^4.0.3",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "mongodb": "^6.20.0"
-  }
+﻿{
+    "name":  "eqglobal",
+    "version":  "1.0.0",
+    "description":  "Electron overlay and backend service for EverQuest log-based timers.",
+    "main":  "src/main/main.js",
+    "scripts":  {
+                    "start":  "concurrently \"npm:app\" \"npm:backend\"",
+                    "app":  "electron .",
+                    "backend":  "node backend/server.js",
+    "dev":  "electron .",
+                    "scrape:p99":  "node scripts/scrape-p99-raid-windows.js",
+                    "cleanup:mob":  "node scripts/cleanup-mob-windows.js",
+                    "convert:gtp":  "powershell -ExecutionPolicy Bypass -File scripts/convert-gina-gtp.ps1",
+                    "test:patterns":  "node scripts/test-patterns.js --triggers external/all-gina.triggers.json --lines test/log-lines-sample.txt"
+                },
+    "keywords":  [
+
+                 ],
+    "author":  "",
+    "license":  "ISC",
+    "devDependencies":  {
+                            "concurrently":  "^9.2.1",
+                            "electron":  "^38.4.0"
+                        },
+    "dependencies":  {
+                         "axios":  "^1.12.2",
+                         "chokidar":  "^4.0.3",
+                         "cors":  "^2.8.5",
+                         "dotenv":  "^17.2.3",
+                         "express":  "^5.1.0",
+                         "mongodb":  "^6.20.0"
+                     }
 }
