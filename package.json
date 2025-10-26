@@ -29,7 +29,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "mongodb": "^6.20.0"
+    "mongodb": "^6.20.0",
+    "electron-updater": "^6.3.9"
   },
   "build": {
     "appId": "com.eqglobal.app",
@@ -58,6 +59,13 @@
       ],
       "artifactName": "EQGlobal-Setup-${version}-${arch}.exe"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Tycee-Eecyt",
+        "repo": "EQGlobal"
+      }
+    ],
     "nsis": {
       "oneClick": true,
       "perMachine": false,

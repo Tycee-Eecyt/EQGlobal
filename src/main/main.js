@@ -1,6 +1,13 @@
 const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } = require('electron');
+let autoUpdater;
+try {
+  // Loaded at runtime; only used in packaged builds
+  ({ autoUpdater } = require('electron-updater'));
+} catch (_) {
+  autoUpdater = null;
+}
 const axios = require('axios');
 const childProcess = require('child_process');
 const LogWatcher = require('./logWatcher');
@@ -45,6 +52,8 @@ let mobOverlayWindow;
 let logWatcher;
 let settingsPath;
 let tray;
+let manualUpdateCheck = false;
+let updateDownloaded = false;
 
 const timerManager = new TimerManager();
 timerManager.on('update', (timers) => {
@@ -200,6 +209,40 @@ function updateTrayMenu() {
       label: mobOverlayVisible ? 'Hide Mob Overlay' : 'Show Mob Overlay',
       click: () => {
         toggleMobOverlayVisibility();
+      },
+    },
+    { type: 'separator' },
+    // Update controls
+    {
+      label: updateDownloaded ? 'Restart to Update' : 'Check for Updates…',
+      enabled: process.env.NODE_ENV !== 'development',
+      click: () => {
+        if (updateDownloaded) {
+          try {
+            autoUpdater && autoUpdater.quitAndInstall();
+          } catch (err) {
+            console.error('Failed to install update', err);
+          }
+          return;
+        }
+        if (!autoUpdater || !app.isPackaged) {
+          dialog.showMessageBox({
+            type: 'info',
+            title: 'Updates',
+            message: 'Auto-update is only available in packaged builds.',
+          });
+          return;
+        }
+        manualUpdateCheck = true;
+        try {
+          autoUpdater.checkForUpdates().catch((err) => {
+            console.error('Manual update check failed', err);
+            dialog.showErrorBox('Update Error', String(err?.message || err));
+          });
+        } catch (err) {
+          console.error('Manual update check threw', err);
+          dialog.showErrorBox('Update Error', String(err?.message || err));
+        }
       },
     },
     { type: 'separator' },
@@ -1223,6 +1266,71 @@ app.whenReady().then(async () => {
   createMobOverlayWindow();
   ensureTray();
   registerIpcHandlers();
+
+  // Initialize auto-updater in packaged builds
+  if (app.isPackaged && autoUpdater) {
+    try {
+      // Basic configuration
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = true;
+      autoUpdater.allowDowngrade = false;
+      autoUpdater.allowPrerelease = false;
+
+      autoUpdater.on('checking-for-update', () => {
+        updateTrayMenu();
+      });
+      autoUpdater.on('update-available', () => {
+        updateTrayMenu();
+      });
+      autoUpdater.on('update-not-available', () => {
+        if (manualUpdateCheck) {
+          dialog.showMessageBox({
+            type: 'info',
+            title: 'No Updates',
+            message: 'You are running the latest version of EQGlobal.'
+          });
+        }
+        manualUpdateCheck = false;
+        updateTrayMenu();
+      });
+      autoUpdater.on('error', (err) => {
+        console.error('autoUpdater error', err);
+        if (manualUpdateCheck) {
+          dialog.showErrorBox('Update Error', String(err?.message || err));
+        }
+        manualUpdateCheck = false;
+        updateTrayMenu();
+      });
+      autoUpdater.on('update-downloaded', () => {
+        updateDownloaded = true;
+        updateTrayMenu();
+        dialog.showMessageBox({
+          type: 'info',
+          title: 'Update Ready',
+          message: 'An update has been downloaded. Restart now to install?',
+          buttons: ['Restart Now', 'Later'],
+          defaultId: 0,
+          cancelId: 1,
+        }).then((res) => {
+          if (res.response === 0) {
+            try { autoUpdater.quitAndInstall(); } catch (_) {}
+          }
+        });
+      });
+
+      // Staggered startup check and periodic checks
+      setTimeout(() => {
+        autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+          console.warn('Initial update check failed', err?.message || err);
+        });
+      }, 10_000);
+      setInterval(() => {
+        autoUpdater.checkForUpdates().catch(() => {});
+      }, 6 * 60 * 60 * 1000); // every 6 hours
+    } catch (err) {
+      console.error('Failed to initialize auto-updater', err);
+    }
+  }
 
   if (app.isPackaged) {
     // In packaged builds, default to watching automatically if configured.
