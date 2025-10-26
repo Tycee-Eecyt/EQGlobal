@@ -2582,7 +2582,7 @@ function parseMobTodLog(rawText) {
       }
     }
 
-    if (section && !/^!?tod\b/i.test(trimmed)) {
+  if (section && !/^!?tod\b/i.test(trimmed)) {
       const bulletNormalized = trimmed.replace(/^[•\-]+\s*/, '');
       const mobMatch = findMobMatchFromText(bulletNormalized);
       if (!mobMatch) {
@@ -2602,23 +2602,58 @@ function parseMobTodLog(rawText) {
         };
       }
       return;
-    }
+  }
 
-    if (!/^!?tod\b/i.test(trimmed)) {
+  if (!/^!?tod\b/i.test(trimmed)) {
+    return;
+  }
+
+  resetPendingMob();
+  const body = trimmed.replace(/^!?tod\b\s*/i, '');
+  if (!body) {
+    result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
+    return;
+  }
+
+  // Support quake command: !tod quake [time]
+  const quakeMatch = body.match(/^quake\b/i);
+  if (quakeMatch) {
+    let remainder = body.slice(quakeMatch[0].length).trim();
+    if (remainder.startsWith('|') || remainder.startsWith(',')) {
+      remainder = remainder.slice(1).trim();
+    }
+    const timestamp = resolveTemporalExpression(remainder, currentTimestamp, now);
+    if (!timestamp) {
+      result.warnings.push(
+        `Line ${index + 1}: could not understand quake time "${remainder || 'message time'}".`
+      );
       return;
     }
-
-    resetPendingMob();
-    const body = trimmed.replace(/^!?tod\b\s*/i, '');
-    if (!body) {
-      result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
+    const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+    if (!mobs.length) {
+      result.warnings.push(`Line ${index + 1}: no tracked mobs available to apply quake.`);
       return;
     }
+    for (const mob of mobs) {
+      if (!mob || !mob.id) continue;
+      result.entries.push({
+        mobId: mob.id,
+        mobName: mob.name || mob.id,
+        alias: mob.name || mob.id,
+        timestamp,
+        sourceLine: trimmed,
+        lineNumber: index + 1,
+        rawTime: remainder,
+        origin: 'tod-command',
+      });
+    }
+    return;
+  }
 
-    const mobMatch = findMobMatchFromText(body);
-    if (!mobMatch) {
-      const candidateName = body.split(/[|,]/)[0].trim();
-      result.unknown.push({
+  const mobMatch = findMobMatchFromText(body);
+  if (!mobMatch) {
+    const candidateName = body.split(/[|,]/)[0].trim();
+    result.unknown.push({
         lineNumber: index + 1,
         name: candidateName || body,
         raw: trimmed,

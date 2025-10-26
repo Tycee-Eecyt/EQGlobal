@@ -106,6 +106,140 @@ function findMobByAlias(text) {
   return null;
 }
 
+// --- Time parsing helpers for !tod commands ---
+function applyTimeToDate(baseDate, hours, minutes, seconds, ampm) {
+  if (!baseDate || !Number.isFinite(hours)) return null;
+  const result = new Date(baseDate.getTime());
+  let h = Number(hours);
+  if (ampm) {
+    const marker = String(ampm).toLowerCase();
+    h = h % 12;
+    if (marker === 'pm') h += 12;
+  }
+  if (!ampm && h === 24) h = 0;
+  result.setHours(h, Number(minutes) || 0, Number(seconds) || 0, 0);
+  return result;
+}
+
+function parseTimeOnlyExpression(value, contextDate) {
+  if (!value || !contextDate) return null;
+  const m = String(value).trim().match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!m) return null;
+  const hours = Number(m[1]);
+  const minutes = m[2] ? Number(m[2]) : 0;
+  const seconds = m[3] ? Number(m[3]) : 0;
+  const marker = m[4] ? m[4].toLowerCase() : null;
+  return applyTimeToDate(contextDate, hours, minutes, seconds, marker);
+}
+
+function unitToMillis(unit) {
+  if (!unit) return null;
+  const u = String(unit).toLowerCase();
+  if (u.startsWith('m')) return 60_000;
+  if (u.startsWith('h')) return 3_600_000;
+  if (u.startsWith('d')) return 86_400_000;
+  return null;
+}
+
+function resolveTemporalExpression(rawValue, contextDate, now = new Date()) {
+  const base = contextDate ? new Date(contextDate) : null;
+  const fallbackBase = base || (now ? new Date(now) : null);
+  if (rawValue === null || rawValue === undefined) {
+    return fallbackBase ? new Date(fallbackBase) : null;
+  }
+  let value = String(rawValue).trim();
+  if (!value) {
+    return fallbackBase ? new Date(fallbackBase) : null;
+  }
+
+  const lower = value.toLowerCase();
+  if (lower === 'now' || lower === 'now!' || lower === 'now.') {
+    return fallbackBase ? new Date(fallbackBase) : new Date();
+  }
+
+  const dashMatch = lower.match(/^-(\d+(?:\.\d+)?)(?:\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days))?$/);
+  if (dashMatch) {
+    const amount = Number(dashMatch[1]);
+    const unitMs = unitToMillis(dashMatch[2]) || 60_000;
+    if (fallbackBase) return new Date(fallbackBase.getTime() - amount * unitMs);
+    return null;
+  }
+
+  const agoMatch = lower.match(/^(\d+(?:\.\d+)?)\s*(minutes?|minute|min|mins|hours?|hour|hrs|h|days?|day|d)\s+ago$/);
+  if (agoMatch) {
+    const amount = Number(agoMatch[1]);
+    const unitMs = unitToMillis(agoMatch[2]);
+    if (fallbackBase && unitMs) return new Date(fallbackBase.getTime() - amount * unitMs);
+    return null;
+  }
+
+  const relativeMatch = lower.match(/^(yesterday|today|tomorrow)(?:\s+at\s+(.+))?$/);
+  if (relativeMatch) {
+    const keyword = relativeMatch[1];
+    const timePart = relativeMatch[2];
+    const reference = fallbackBase ? new Date(fallbackBase) : new Date(now);
+    reference.setHours(0, 0, 0, 0);
+    if (keyword === 'yesterday') reference.setDate(reference.getDate() - 1);
+    else if (keyword === 'tomorrow') reference.setDate(reference.getDate() + 1);
+    if (timePart) {
+      const t = parseTimeOnlyExpression(timePart, reference);
+      if (t) return t;
+    }
+    return reference;
+  }
+
+  let candidate = value
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/\b(about|approximately|approx|ish)\b/gi, '')
+    .replace(/\b(st|nd|rd|th)\b/gi, '')
+    .replace(/\b(EST|EDT|CST|CDT|PST|PDT|UTC|GMT)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .replace(/,\s*/g, ' ')
+    .trim();
+
+  candidate = candidate.replace(/(\d)(am|pm)\b/gi, '$1 $2');
+
+  const parsedNative = Date.parse(candidate);
+  if (!Number.isNaN(parsedNative)) return new Date(parsedNative);
+
+  let m = candidate.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s+(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (m) {
+    const year = Number(m[1]);
+    const month = Number(m[2]) - 1;
+    const day = Number(m[3]);
+    let hour = Number(m[4]);
+    const minute = m[5] ? Number(m[5]) : 0;
+    const second = m[6] ? Number(m[6]) : 0;
+    const marker = m[7] ? m[7].toLowerCase() : null;
+    if (marker) {
+      hour = hour % 12;
+      if (marker === 'pm') hour += 12;
+    }
+    return new Date(year, month, day, hour, minute, second, 0);
+  }
+
+  m = candidate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (m) {
+    const month = Number(m[1]) - 1;
+    const day = Number(m[2]);
+    const year = Number(m[3]);
+    let hour = Number(m[4]);
+    const minute = m[5] ? Number(m[5]) : 0;
+    const second = m[6] ? Number(m[6]) : 0;
+    const marker = m[7] ? m[7].toLowerCase() : null;
+    if (marker) {
+      hour = hour % 12;
+      if (marker === 'pm') hour += 12;
+    }
+    return new Date(year, month, day, hour, minute, second, 0);
+  }
+
+  const timeOnly = parseTimeOnlyExpression(candidate, fallbackBase || new Date());
+  if (timeOnly) return timeOnly;
+
+  return null;
+}
+
 function extractTodCommandFromLine(line) {
   if (!line || typeof line !== 'string') {
     return null;
@@ -133,6 +267,35 @@ function extractTodCommandFromLine(line) {
     target: remainder,
     explicitTime,
   };
+}
+
+// Extended parser that supports `!tod quake [time]` and `!tod <mob> [time]`
+function extractTodCommandFromLineV2(line) {
+  if (!line || typeof line !== 'string') return null;
+  const match = line.match(/!?tod\s+([^\r\n]+)/i);
+  if (!match) return null;
+  let remainder = match[1].trim();
+  if (!remainder) return null;
+  remainder = remainder.replace(/^[\"'`]+/, '').replace(/[\"'`]+$/, '').trim();
+  remainder = remainder.replace(/#.*$/, '').trim();
+  remainder = remainder.replace(/[\s]+/g, ' ').trim();
+
+  // Quake support
+  const quakeMatch = remainder.match(/^quake\b/i);
+  if (quakeMatch) {
+    let timeText = remainder.slice(quakeMatch[0].length).trim();
+    timeText = timeText.replace(/^[,|\-]+\s*/, '').trim();
+    const explicitTime = /\bnow\b/i.test(timeText) ? 'now' : null;
+    return { kind: 'quake', target: 'quake', timeText: timeText || null, explicitTime };
+  }
+
+  // Mob ToD with optional trailing time
+  const sepIndex = remainder.search(/[|,]/);
+  const initialTarget = sepIndex >= 0 ? remainder.slice(0, sepIndex).trim() : remainder;
+  let timeText = sepIndex >= 0 ? remainder.slice(sepIndex + 1).trim() : remainder.slice(initialTarget.length).trim();
+  timeText = timeText.replace(/^[,|\-]+\s*/, '').trim();
+  const explicitTime = /\bnow\b/i.test(timeText) ? 'now' : null;
+  return { kind: 'mob', target: initialTarget, timeText: timeText || null, explicitTime };
 }
 
 async function applyMobKillUpdates(db, updates) {
@@ -197,25 +360,50 @@ app.post('/api/log-lines', async (req, res) => {
     const mobUpdates = new Map();
     let quakeIso = null;
     documents.forEach((doc) => {
-      const parsed = extractTodCommandFromLine(doc.line);
-      if (!parsed) {
-        return;
-      }
-      // Special handling for quake reset: !tod quake
-      if (String(parsed.target || '').trim().toLowerCase() === 'quake') {
-        const timestamp = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
-        const iso = timestamp.toISOString();
-        if (!quakeIso || iso > quakeIso) {
-          quakeIso = iso;
+      const parsed = extractTodCommandFromLineV2(doc.line);
+      if (!parsed) return;
+
+      const baseTime = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+
+      if (parsed.kind === 'quake') {
+        const resolved = parsed.explicitTime === 'now'
+          ? baseTime
+          : parsed.timeText
+          ? resolveTemporalExpression(parsed.timeText, baseTime, baseTime)
+          : baseTime;
+        if (resolved && !Number.isNaN(resolved.getTime())) {
+          const iso = resolved.toISOString();
+          if (!quakeIso || iso > quakeIso) quakeIso = iso;
         }
         return;
       }
 
-      const mob = findMobByAlias(parsed.target);
+      // Refine mob target by shrinking words from the right until a match
+      let target = parsed.target || '';
+      let mob = findMobByAlias(target);
       if (!mob) {
-        return;
+        const tokens = target.split(/\s+/);
+        for (let k = tokens.length - 1; k >= 1; k--) {
+          const candidate = tokens.slice(0, k).join(' ');
+          const hit = findMobByAlias(candidate);
+          if (hit) {
+            mob = hit;
+            const consumed = candidate.length;
+            let rest = (parsed.target || '').slice(consumed).trim();
+            if (rest.startsWith('|') || rest.startsWith(',')) rest = rest.slice(1).trim();
+            parsed.timeText = rest || parsed.timeText || null;
+            break;
+          }
+        }
       }
-      const timestamp = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+      if (!mob) return;
+
+      const resolved = parsed.explicitTime === 'now'
+        ? baseTime
+        : parsed.timeText
+        ? resolveTemporalExpression(parsed.timeText, baseTime, baseTime)
+        : baseTime;
+      const timestamp = resolved && !Number.isNaN(resolved.getTime()) ? resolved : baseTime;
       const iso = timestamp.toISOString();
       const prev = mobUpdates.get(mob.id);
       if (!prev || iso > prev) {
