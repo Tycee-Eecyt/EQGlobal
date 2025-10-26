@@ -193,6 +193,8 @@ function updateTrayMenu() {
   const mobOverlayVisible = Boolean(mobOverlayExists && mobOverlayWindow.isVisible());
 
   const template = [
+    { label: `EQGlobal v${app.getVersion()}${app.isPackaged ? '' : ' (dev)'}`, enabled: false },
+    { type: 'separator' },
     {
       label: mainVisible ? 'Hide EQGlobal' : 'Show EQGlobal',
       click: () => {
