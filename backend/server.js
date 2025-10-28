@@ -19,6 +19,8 @@ app.use(express.static(path.join(__dirname, '..', 'web')));
 const port = process.env.PORT || 4000;
 const mongoUri = process.env.MONGODB_URI;
 const mongoDbName = process.env.MONGODB_DB || 'eqglobal';
+// Feature flag: disable persisting log events by default
+const persistLogEvents = /^true$/i.test(process.env.PERSIST_LOG_EVENTS || '');
 
 let mongoClient;
 let mongoDb;
@@ -603,6 +605,11 @@ app.post('/api/log-events', async (req, res) => {
     return res.status(400).json({ error: 'Expected "events" to be an array.' });
   }
 
+  // By default, do not persist log events. Opt-in via PERSIST_LOG_EVENTS=true
+  if (!persistLogEvents) {
+    return res.json({ inserted: 0, persisted: false });
+  }
+
   try {
     const db = await ensureMongoConnection();
     const collection = db.collection('log_events');
@@ -621,11 +628,11 @@ app.post('/api/log-events', async (req, res) => {
       .filter((doc) => doc.label);
 
     if (documents.length === 0) {
-      return res.json({ inserted: 0 });
+      return res.json({ inserted: 0, persisted: true });
     }
 
     const result = await collection.insertMany(documents, { ordered: false });
-    res.json({ inserted: result.insertedCount || documents.length });
+    res.json({ inserted: result.insertedCount || documents.length, persisted: true });
   } catch (error) {
     console.error('Failed to persist log events', error);
     res.status(500).json({ error: 'Failed to persist log events.' });

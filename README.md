@@ -21,6 +21,7 @@ Electron-based overlay that watches EverQuest log files, surfaces configurable t
    - `EQ_LOG_DIR` – default log directory to load when the app first launches.
    - `BACKEND_URL` – base URL for the backend service (e.g. `http://localhost:4000`).
    - `MONGODB_URI` / `MONGODB_DB` – Atlas credentials for the backend.
+   - `PERSIST_LOG_EVENTS` – optional; set to `true` to persist trigger events (disabled by default).
 
 ## Running the Apps
 
@@ -94,7 +95,7 @@ Notes:
 
 - `GET /health` – health probe, ensures MongoDB connectivity.
 - `POST /api/log-lines` – accepts `{ lines: [{ filePath, line, timestamp }] }`.
-- `POST /api/log-events` – accepts `{ events: [{ triggerId, label, duration, ... }] }`.
+- `POST /api/log-events` – accepts `{ events: [{ triggerId, label, duration, ... }] }`; by default events are acknowledged but not persisted unless `PERSIST_LOG_EVENTS=true`.
 
 ### Admin: Log Forwarding Triggers
 
@@ -110,7 +111,7 @@ API endpoints:
 - `DELETE /api/log-triggers/:id` – delete a trigger.
 - `POST /api/log-triggers:test` – test a sample line against current triggers.
 
-Data is stored in `log_lines` and `log_events` collections. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
+Data is stored in the `log_lines` collection. The `log_events` collection is not written to unless you opt in with `PERSIST_LOG_EVENTS=true`. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
 
 ## Overlay Tips
 
