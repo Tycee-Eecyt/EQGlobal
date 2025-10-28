@@ -60,6 +60,7 @@
     "id": "derakor-the-vindicator",
     "name": "Derakor the Vindicator",
     "aliases": [
+      "Derakor",
       "Vindicator",
       "Vindi"
     ],
@@ -675,6 +676,30 @@
     "notes": "Halls of Testing named drake. Tank-and-spank; Slow it."
   },
   {
+    "id": "a-shady-goblin",
+    "name": "a shady goblin",
+    "aliases": [
+      "Shady Goblin"
+    ],
+    "zone": "Warsliks Woods",
+    "respawnDisplay": "24h",
+    "minRespawnHours": 24,
+    "maxRespawnHours": 24,
+    "notes": "Kunark goblin warrior (Lv 40). Spawn at (-1647, -1134). Two attacks per round; ~2000 HP."
+  },
+  {
+    "id": "lodizal",
+    "name": "Lodizal",
+    "aliases": [
+      "Lodi"
+    ],
+    "zone": "Iceclad Ocean",
+    "respawnDisplay": "18h +/- 1h (may skip twice)",
+    "minRespawnHours": 17,
+    "maxRespawnHours": 19,
+    "notes": "Sea turtle warrior (Lv 60). Spawns around (377, 2392). Can skip up to two respawns; enrages, summons, immune to charm/fear/mez."
+  },
+  {
     "id": "an-angry-goblin",
     "name": "An angry goblin",
     "aliases": [
@@ -700,5 +725,17 @@
     "minRespawnHours": 18,
     "maxRespawnHours": 18,
     "notes": "Storm Giant Wizard (Lv 65). Summon, Enrage, Unstunnable, See Invis. Spawn: 100% at (-1671, 1479)."
+  },
+  {
+    "id": "sentry-badain",
+    "name": "Sentry Badain",
+    "aliases": [
+      "Narandi"
+    ],
+    "zone": "Great Divide",
+    "respawnDisplay": "3d + 2.5h",
+    "minRespawnHours": 74.5,
+    "maxRespawnHours": 74.5,
+    "notes": "Ring War trigger NPC. Coldain warrior (Lv 55) with ~15k HP. Rotate through Great Divide locations."
   }
 ]

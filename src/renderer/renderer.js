@@ -2170,7 +2170,7 @@ function renderMobWindowTable(snapshot) {
         ? `<td>
             <div class="mob-window-actions">
               <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
-              <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time…</button>
+              <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time...</button>
               <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
             </div>
           </td>`
