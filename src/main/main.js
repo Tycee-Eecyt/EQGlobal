@@ -1385,7 +1385,7 @@ function registerIpcHandlers() {
   ipcMain.handle('mob-windows:definitions', () => mobWindowManager.getDefinitions());
   ipcMain.handle('mob-windows:record-kill', async (_event, mobId, timestamp) => {
     const roleLevel = getCurrentRoleLevel();
-    if (!roleLevel || roleLevel > ROLE_LEVELS.TRACKER) {
+    if (!roleLevel || roleLevel > ROLE_LEVELS.OFFICER) {
       throw new Error('Not authorized to record ToD updates.');
     }
     const updated = mobWindowManager.recordKill(mobId, timestamp ? new Date(timestamp) : new Date());
@@ -1399,7 +1399,7 @@ function registerIpcHandlers() {
   });
   ipcMain.handle('mob-windows:clear', async (_event, mobId) => {
     const roleLevel = getCurrentRoleLevel();
-    if (!roleLevel || roleLevel > ROLE_LEVELS.TRACKER) {
+    if (!roleLevel || roleLevel > ROLE_LEVELS.OFFICER) {
       throw new Error('Not authorized to clear ToD data.');
     }
     const cleared = mobWindowManager.clearKill(mobId);
