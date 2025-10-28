@@ -475,7 +475,7 @@ app.get('/health', async (_req, res) => {
 app.post(
   '/api/log-lines',
   authenticateJwt,
-  requireRoleAtMost(ROLE_LEVELS.OFFICER),
+  requireRoleAtMost(ROLE_LEVELS.TRACKER),
   async (req, res) => {
   const { lines } = req.body || {};
   if (!Array.isArray(lines)) {
@@ -594,7 +594,7 @@ app.post(
 app.get(
   '/api/tod-history/:mobId',
   authenticateJwt,
-  requireRoleAtMost(ROLE_LEVELS.OFFICER),
+  requireRoleAtMost(ROLE_LEVELS.TRACKER),
   async (req, res) => {
   const mobId = String(req.params.mobId || '').trim();
   if (!mobId || !mobDefinitionsById.has(mobId)) {
@@ -630,7 +630,7 @@ app.get(
 app.post(
   '/api/log-events',
   authenticateJwt,
-  requireRoleAtMost(ROLE_LEVELS.OFFICER),
+  requireRoleAtMost(ROLE_LEVELS.TRACKER),
   async (req, res) => {
   const { events } = req.body || {};
   if (!Array.isArray(events)) {
@@ -708,7 +708,7 @@ app.get(
 app.post(
   '/api/mob-windows',
   authenticateJwt,
-  requireRoleAtMost(ROLE_LEVELS.OFFICER),
+  requireRoleAtMost(ROLE_LEVELS.TRACKER),
   async (req, res) => {
     const { kills } = req.body || {};
     if (!kills || typeof kills !== 'object') {
@@ -747,7 +747,7 @@ app.post(
 app.post(
   '/api/mob-windows/clear',
   authenticateJwt,
-  requireRoleAtMost(ROLE_LEVELS.OFFICER),
+  requireRoleAtMost(ROLE_LEVELS.TRACKER),
   async (req, res) => {
     const { mobId, mob } = req.body || {};
     let targetMobId = null;
@@ -783,7 +783,7 @@ app.post(
 app.post(
   '/api/mobs/alias',
   authenticateJwt,
-  requireRoleAtMost(ROLE_LEVELS.OFFICER),
+  requireRoleAtMost(ROLE_LEVELS.TRACKER),
   async (req, res) => {
     const { mob, mobId, alias } = req.body || {};
     const aliasText = String(alias || '').trim();

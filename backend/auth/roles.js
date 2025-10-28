@@ -15,7 +15,7 @@ const ROLE_NAMES = Object.freeze({
 const ROLE_DESCRIPTIONS = Object.freeze({
   [ROLE_LEVELS.ADMIN]: 'Full access, including admin configuration screens.',
   [ROLE_LEVELS.OFFICER]: 'Operational access except admin configuration.',
-  [ROLE_LEVELS.TRACKER]: 'View everything except admin screens and ToD inputs.',
+  [ROLE_LEVELS.TRACKER]: 'Operational access except admin configuration.',
   [ROLE_LEVELS.BASE]: 'Use local GINA triggers only.',
 });
 

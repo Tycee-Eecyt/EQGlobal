@@ -121,7 +121,7 @@ function canAccessMobWindows() {
 
 function canEditTod() {
   const level = getRoleLevel();
-  return Number.isFinite(level) ? level <= ROLE_LEVELS.OFFICER : false;
+  return Number.isFinite(level) ? level <= ROLE_LEVELS.TRACKER : false;
 }
 
 function setAuthModalFeedback(message, { success = false } = {}) {
@@ -199,7 +199,7 @@ function updateAuthUI(message = null, options = {}) {
     if (!signedIn) {
       navMobWindowsButton.title = 'Sign in to view mob windows';
     } else if (!allowMobView) {
-      navMobWindowsButton.title = 'Requires tracker access to view mob windows';
+      navMobWindowsButton.title = 'Requires tracker (or higher) access to view mob windows';
     } else {
       navMobWindowsButton.title = 'View mob windows';
     }
@@ -246,7 +246,7 @@ function switchView(nextView) {
     return;
   }
   if (nextView === 'mob-windows' && !canAccessMobWindows()) {
-    updateAuthUI('Sign in with tracker access to view mob windows.');
+    updateAuthUI('Sign in with tracker (or higher) access to view mob windows.');
     openAuthModal();
     return;
   }
@@ -2191,7 +2191,7 @@ function renderMobWindowTable(snapshot) {
               <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time…</button>
               <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
            </div>`
-        : '<div class="mob-window-actions disabled">Officer access required</div>';
+        : '<div class="mob-window-actions disabled">Tracker or higher access required</div>';
       return `
         <tr data-mob-id="${escapeHtml(mob.id || '')}">
           <td>
@@ -3106,7 +3106,7 @@ async function handleMobWindowActionClick(event) {
     return;
   }
   if (!canEditTod()) {
-    updateAuthUI('ToD updates require officer access.');
+    updateAuthUI('ToD updates require tracker (or higher) access.');
     openAuthModal();
     return;
   }
@@ -3415,7 +3415,7 @@ function attachEventListeners() {
     mobTodInput.addEventListener('input', () => {
       if (!canEditTod()) {
         mobTodInput.value = '';
-        updateAuthUI('ToD updates require officer access.');
+        updateAuthUI('ToD updates require tracker (or higher) access.');
         openAuthModal();
         return;
       }
@@ -3430,7 +3430,7 @@ function attachEventListeners() {
   if (mobTodPreviewButton) {
     mobTodPreviewButton.addEventListener('click', () => {
       if (!canEditTod()) {
-        updateAuthUI('ToD updates require officer access.');
+        updateAuthUI('ToD updates require tracker (or higher) access.');
         openAuthModal();
         return;
       }
@@ -3447,7 +3447,7 @@ function attachEventListeners() {
   if (mobTodApplyButton) {
     mobTodApplyButton.addEventListener('click', async () => {
       if (!canEditTod()) {
-        updateAuthUI('ToD updates require officer access.');
+        updateAuthUI('ToD updates require tracker (or higher) access.');
         openAuthModal();
         return;
       }
@@ -3523,7 +3523,7 @@ function attachEventListeners() {
   if (mobTodClearButton) {
     mobTodClearButton.addEventListener('click', () => {
       if (!canEditTod()) {
-        updateAuthUI('ToD updates require officer access.');
+        updateAuthUI('ToD updates require tracker (or higher) access.');
         openAuthModal();
         return;
       }
