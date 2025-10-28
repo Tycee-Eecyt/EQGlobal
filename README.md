@@ -32,6 +32,7 @@ Electron-based overlay that watches EverQuest log files, surfaces configurable t
    - `EQ_LOG_DIR` – default log directory to load when the app first launches.
    - `BACKEND_URL` – base URL for the backend service (e.g. `http://localhost:4000`).
    - `MONGODB_URI` / `MONGODB_DB` – Atlas credentials for the backend.
+   - `PERSIST_LOG_EVENTS` – optional; set to `true` to persist trigger events (disabled by default).
 
 ## Running the Apps
 
@@ -124,42 +125,24 @@ Notes:
 
 - `GET /health` – health probe, ensures MongoDB connectivity.
 - `POST /api/log-lines` – accepts `{ lines: [{ filePath, line, timestamp }] }`.
-- `POST /api/log-events` – accepts `{ events: [{ triggerId, label, duration, ... }] }`.
+- `POST /api/log-events` – accepts `{ events: [{ triggerId, label, duration, ... }] }`; by default events are acknowledged but not persisted unless `PERSIST_LOG_EVENTS=true`.
 
-Data is stored in `log_lines` and `log_events` collections. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
+### Admin: Log Forwarding Triggers
 
-## Bulk ToD Import
+- Visit `/admin.html` to manage which log lines are stored in the database.
+- Create simple substring or regex-based triggers and enable/disable them.
+- The backend only persists log lines matching at least one enabled trigger.
+- `tod`/`!tod` commands are still parsed server-side to update Mob Windows, even if the raw line is not stored.
 
-You can bulk-import log lines containing ToD commands via the backend. POST to `/api/log-lines` with a JSON body:
+API endpoints:
+- `GET /api/log-triggers` – list configured triggers.
+- `POST /api/log-triggers` – create or upsert a trigger `{ label, pattern, isRegex, flags, enabled }`.
+- `PUT /api/log-triggers/:id` – update a trigger.
+- `DELETE /api/log-triggers/:id` – delete a trigger.
+- `POST /api/log-triggers:test` – test a sample line against current triggers.
 
-Example:
-
-```
-POST /api/log-lines
-{
-  "lines": [
-    { "filePath": "Bulk", "line": "!tod quake 10/25/2025 6:48 PM" },
-    { "filePath": "Bulk", "line": "!tod Trakanon 10/25/2025 7:05 PM" },
-    { "filePath": "Bulk", "line": "!tod Lord Nagafen 2025-10-25 18:55" },
-    { "filePath": "Bulk", "line": "!tod Venril Sathir now" }
-  ]
-}
-```
-
-Supported formats:
-
-- Quake reset: `!tod quake` optionally with an explicit time
-  - US: `!tod quake 10/25/2025 6:48 PM`
-  - ISO-like: `!tod quake 2025-10-25 18:48`
-- Per-mob ToD with explicit time
-  - US: `!tod Trakanon 10/25/2025 7:05 PM`
-  - ISO-like: `!tod Lord Nagafen 2025-10-25 18:55`
-- Use `now` to stamp the current time: `!tod Venril Sathir now`
-
-Notes:
-
-- When multiple entries target the same mob, the latest timestamp wins.
-- A quake entry applies to all mobs; per‑mob times in the same import still win if later than the quake time.
+Data is stored in the `log_lines` collection. The `log_events` collection is not written to unless you opt in with `PERSIST_LOG_EVENTS=true`. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
+Data is stored in the `log_lines` collection. The `log_events` collection is not written to unless you opt in with `PERSIST_LOG_EVENTS=true`. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
 
 ## Overlay Tips
 

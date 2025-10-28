@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const path = require('path');
+const { sanitizeRegexPattern } = require('../src/shared/regex');
 
 const mobWindowDefinitions = require('../src/shared/mobWindows.json');
 const MobWindowManager = require('../src/main/mobWindowManager');
@@ -18,6 +19,8 @@ app.use(express.static(path.join(__dirname, '..', 'web')));
 const port = process.env.PORT || 4000;
 const mongoUri = process.env.MONGODB_URI;
 const mongoDbName = process.env.MONGODB_DB || 'eqglobal';
+// Feature flag: disable persisting log events by default
+const persistLogEvents = /^true$/i.test(process.env.PERSIST_LOG_EVENTS || '');
 
 let mongoClient;
 let mongoDb;
@@ -41,6 +44,75 @@ async function ensureMongoConnection() {
 const mobAliasIndex = new Map();
 const mobDefinitionsById = new Map();
 let aliasOverridesByMobId = new Map();
+
+// --- Global Log Forwarding Triggers (Admin-configured) ---
+let logForwardConfig = {
+  triggers: [], // persisted raw triggers
+  compiled: [], // compiled matcher functions
+  updatedAt: null,
+};
+
+function compileLogTriggers(triggers = []) {
+  const out = [];
+  (Array.isArray(triggers) ? triggers : []).forEach((t) => {
+    if (t && t.enabled === false) return;
+    const isRegex = Boolean(t.isRegex);
+    const flags = (t.flags || 'i').replace(/[^gimsuy]/gi, '');
+    const pattern = String(t.pattern || '').trim();
+    if (!pattern) return;
+
+    let matcher = null;
+    if (isRegex) {
+      try {
+        const sanitized = sanitizeRegexPattern(pattern);
+        const re = new RegExp(sanitized, flags || 'i');
+        matcher = (line) => re.test(String(line || ''));
+      } catch (_err) {
+        // fall back to substring match if bad regex
+        const needle = pattern.toLowerCase();
+        matcher = (line) => String(line || '').toLowerCase().includes(needle);
+      }
+    } else {
+      const needle = pattern.toLowerCase();
+      matcher = (line) => String(line || '').toLowerCase().includes(needle);
+    }
+
+    out.push({ id: t.id || pattern, matcher });
+  });
+  return out;
+}
+
+async function loadLogForwardConfig(db) {
+  try {
+    const collection = db.collection('log_forward_config');
+    const doc = await collection.findOne({ _id: 'global' });
+    const triggers = Array.isArray(doc?.triggers) ? doc.triggers : [];
+    logForwardConfig.triggers = triggers;
+    logForwardConfig.compiled = compileLogTriggers(triggers);
+    logForwardConfig.updatedAt = doc?.updatedAt ? new Date(doc.updatedAt) : null;
+  } catch (err) {
+    console.warn('Failed to load log forward config:', err.message);
+    logForwardConfig.triggers = [];
+    logForwardConfig.compiled = [];
+    logForwardConfig.updatedAt = null;
+  }
+}
+
+async function persistLogForwardConfig(db) {
+  const collection = db.collection('log_forward_config');
+  const payload = {
+    triggers: Array.isArray(logForwardConfig.triggers) ? logForwardConfig.triggers : [],
+    updatedAt: new Date(),
+  };
+  await collection.updateOne(
+    { _id: 'global' },
+    { $set: payload },
+    { upsert: true }
+  );
+  // refresh compiled
+  logForwardConfig.compiled = compileLogTriggers(payload.triggers);
+  logForwardConfig.updatedAt = payload.updatedAt;
+}
 
 function normalizeAliasKey(value) {
   if (!value) {
@@ -390,6 +462,10 @@ app.post('/api/log-lines', async (req, res) => {
 
   try {
     const db = await ensureMongoConnection();
+    // Ensure trigger config is loaded
+    if (!logForwardConfig || !Array.isArray(logForwardConfig.triggers)) {
+      await loadLogForwardConfig(db);
+    }
     const collection = db.collection('log_lines');
     const documents = lines
       .map((entry) => ({
@@ -464,20 +540,27 @@ app.post('/api/log-lines', async (req, res) => {
       });
     }
 
-    if (documents.length === 0) {
+    // Filter which documents to persist based on admin-configured triggers
+    let toInsert = [];
+    const compiled = Array.isArray(logForwardConfig.compiled) ? logForwardConfig.compiled : [];
+    if (documents.length > 0 && compiled.length > 0) {
+      toInsert = documents.filter((doc) => compiled.some((c) => c.matcher(doc.line)));
+    }
+
+    if (toInsert.length === 0) {
       if (mobUpdates.size > 0) {
         await applyMobKillUpdates(db, mobUpdates);
       }
       return res.json({ inserted: 0 });
     }
 
-    const result = await collection.insertMany(documents, { ordered: false });
+    const result = await collection.insertMany(toInsert, { ordered: false });
 
     if (mobUpdates.size > 0) {
       await applyMobKillUpdates(db, mobUpdates);
     }
 
-    res.json({ inserted: result.insertedCount || documents.length });
+    res.json({ inserted: result.insertedCount || toInsert.length });
   } catch (error) {
     console.error('Failed to persist log lines', error);
     res.status(500).json({ error: 'Failed to persist log lines.' });
@@ -522,6 +605,11 @@ app.post('/api/log-events', async (req, res) => {
     return res.status(400).json({ error: 'Expected "events" to be an array.' });
   }
 
+  // By default, do not persist log events. Opt-in via PERSIST_LOG_EVENTS=true
+  if (!persistLogEvents) {
+    return res.json({ inserted: 0, persisted: false });
+  }
+
   try {
     const db = await ensureMongoConnection();
     const collection = db.collection('log_events');
@@ -540,11 +628,11 @@ app.post('/api/log-events', async (req, res) => {
       .filter((doc) => doc.label);
 
     if (documents.length === 0) {
-      return res.json({ inserted: 0 });
+      return res.json({ inserted: 0, persisted: true });
     }
 
     const result = await collection.insertMany(documents, { ordered: false });
-    res.json({ inserted: result.insertedCount || documents.length });
+    res.json({ inserted: result.insertedCount || documents.length, persisted: true });
   } catch (error) {
     console.error('Failed to persist log events', error);
     res.status(500).json({ error: 'Failed to persist log events.' });
@@ -730,6 +818,7 @@ app.listen(port, async () => {
     try {
       await ensureMongoConnection();
       await loadAliasOverrides(mongoDb);
+      await loadLogForwardConfig(mongoDb);
     } catch (error) {
       console.error('Unable to connect to MongoDB on startup:', error.message);
     }
@@ -744,5 +833,121 @@ process.on('SIGINT', async () => {
     }
   } finally {
     process.exit(0);
+  }
+});
+
+// --- Admin API: Log trigger CRUD and testing ---
+app.get('/api/log-triggers', async (_req, res) => {
+  try {
+    const db = await ensureMongoConnection();
+    await loadLogForwardConfig(db);
+    res.json({
+      updatedAt: logForwardConfig.updatedAt ? logForwardConfig.updatedAt.toISOString() : null,
+      triggers: logForwardConfig.triggers || [],
+    });
+  } catch (err) {
+    console.error('Failed to load log triggers', err);
+    res.status(500).json({ error: 'Failed to load log triggers.' });
+  }
+});
+
+app.post('/api/log-triggers', async (req, res) => {
+  const { label, pattern, isRegex, flags, enabled, description } = req.body || {};
+  const trimmedPattern = String(pattern || '').trim();
+  if (!trimmedPattern) {
+    return res.status(400).json({ error: 'pattern is required' });
+  }
+  try {
+    const db = await ensureMongoConnection();
+    await loadLogForwardConfig(db);
+    const id = (String(label || trimmedPattern)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')) || `t-${Date.now()}`;
+    const trigger = {
+      id,
+      label: String(label || '').trim() || id,
+      pattern: trimmedPattern,
+      isRegex: Boolean(isRegex),
+      flags: String(flags || '').trim() || 'i',
+      enabled: enabled !== false,
+      description: String(description || '').trim() || undefined,
+    };
+    const existing = Array.isArray(logForwardConfig.triggers) ? logForwardConfig.triggers : [];
+    const idx = existing.findIndex((t) => String(t.id) === id);
+    if (idx >= 0) {
+      existing[idx] = trigger;
+    } else {
+      existing.push(trigger);
+    }
+    logForwardConfig.triggers = existing;
+    await persistLogForwardConfig(db);
+    res.json({ ok: true, trigger, updatedAt: logForwardConfig.updatedAt.toISOString() });
+  } catch (err) {
+    console.error('Failed to create/update trigger', err);
+    res.status(500).json({ error: 'Failed to create/update trigger.' });
+  }
+});
+
+app.put('/api/log-triggers/:id', async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'id required' });
+  const { label, pattern, isRegex, flags, enabled, description } = req.body || {};
+  const trimmedPattern = pattern !== undefined ? String(pattern).trim() : undefined;
+  try {
+    const db = await ensureMongoConnection();
+    await loadLogForwardConfig(db);
+    const list = Array.isArray(logForwardConfig.triggers) ? logForwardConfig.triggers : [];
+    const idx = list.findIndex((t) => String(t.id) === id);
+    if (idx < 0) return res.status(404).json({ error: 'not found' });
+    const prev = list[idx];
+    const next = {
+      ...prev,
+      ...(label !== undefined ? { label: String(label || '').trim() } : {}),
+      ...(trimmedPattern !== undefined ? { pattern: trimmedPattern } : {}),
+      ...(isRegex !== undefined ? { isRegex: Boolean(isRegex) } : {}),
+      ...(flags !== undefined ? { flags: String(flags || '').trim() } : {}),
+      ...(enabled !== undefined ? { enabled: Boolean(enabled) } : {}),
+      ...(description !== undefined ? { description: String(description || '').trim() || undefined } : {}),
+    };
+    list[idx] = next;
+    logForwardConfig.triggers = list;
+    await persistLogForwardConfig(db);
+    res.json({ ok: true, trigger: next, updatedAt: logForwardConfig.updatedAt.toISOString() });
+  } catch (err) {
+    console.error('Failed to update trigger', err);
+    res.status(500).json({ error: 'Failed to update trigger.' });
+  }
+});
+
+app.delete('/api/log-triggers/:id', async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'id required' });
+  try {
+    const db = await ensureMongoConnection();
+    await loadLogForwardConfig(db);
+    const list = Array.isArray(logForwardConfig.triggers) ? logForwardConfig.triggers : [];
+    const next = list.filter((t) => String(t.id) !== id);
+    logForwardConfig.triggers = next;
+    await persistLogForwardConfig(db);
+    res.json({ ok: true, updatedAt: logForwardConfig.updatedAt.toISOString() });
+  } catch (err) {
+    console.error('Failed to delete trigger', err);
+    res.status(500).json({ error: 'Failed to delete trigger.' });
+  }
+});
+
+app.post('/api/log-triggers:test', async (req, res) => {
+  const { line } = req.body || {};
+  const text = String(line || '').trim();
+  try {
+    const db = await ensureMongoConnection();
+    await loadLogForwardConfig(db);
+    const compiled = Array.isArray(logForwardConfig.compiled) ? logForwardConfig.compiled : [];
+    const hits = compiled.filter((c) => c.matcher(text)).map((c) => c.id);
+    res.json({ text, matched: hits });
+  } catch (err) {
+    console.error('Failed to test trigger', err);
+    res.status(500).json({ error: 'Failed to test trigger.' });
   }
 });

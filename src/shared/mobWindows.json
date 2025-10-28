@@ -153,6 +153,9 @@
   {
     "id": "hoshkar",
     "name": "Hoshkar",
+    "aliases": [
+      "Hosh"
+    ],
     "zone": "Veeshan's Peak",
     "respawnDisplay": "7d ± 8h",
     "minRespawnHours": 160,
@@ -684,5 +687,18 @@
     "minRespawnHours": 72,
     "maxRespawnHours": 79.2,
     "notes": "Turn-in spawn. Window starts 3 days from turn-in and lasts 7 hours 12 minutes."
+  },
+  {
+    "id": "keldor-dek-torek",
+    "name": "Keldor Dek`Torek",
+    "aliases": [
+      "KDT",
+      "Keldor Dek Torek"
+    ],
+    "zone": "Kael Drakkel",
+    "respawnDisplay": "18h",
+    "minRespawnHours": 18,
+    "maxRespawnHours": 18,
+    "notes": "Storm Giant Wizard (Lv 65). Summon, Enrage, Unstunnable, See Invis. Spawn: 100% at (-1671, 1479)."
   }
 ]

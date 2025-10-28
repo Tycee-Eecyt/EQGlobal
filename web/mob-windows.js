@@ -25,12 +25,43 @@ function formatSince(seconds) {
     return 'N/A';
   }
   const abs = Math.abs(Math.round(seconds));
-  const hours = Math.floor(abs / 3600);
-  const minutes = Math.floor((abs % 3600) / 60);
+  const days = Math.floor(abs / 86_400);
+  const hours = Math.floor((abs % 86_400) / 3_600);
+  const minutes = Math.floor((abs % 3_600) / 60);
+  const secs = abs % 60;
   const parts = [];
-  if (hours > 0) parts.push(`${hours}h`);
-  parts.push(`${minutes}m`);
+  if (days > 0) parts.push(`${days}d`);
+  if (parts.length < 2 && hours > 0) parts.push(`${hours}h`);
+  if (parts.length < 2 && minutes > 0) parts.push(`${minutes}m`);
+  if (parts.length === 0) parts.push(`${Math.max(1, secs)}s`);
   return `${parts.join(' ')} ${seconds >= 0 ? 'ago' : 'from now'}`;
+}
+
+function formatDurationShort(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return '';
+  }
+  const abs = Math.max(0, Math.round(seconds));
+  const days = Math.floor(abs / 86_400);
+  const hours = Math.floor((abs % 86_400) / 3_600);
+  const minutes = Math.floor((abs % 3_600) / 60);
+  const secs = abs % 60;
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (parts.length < 2 && hours > 0) parts.push(`${hours}h`);
+  if (parts.length < 2 && minutes > 0) parts.push(`${minutes}m`);
+  if (parts.length === 0) parts.push(`${Math.max(1, secs)}s`);
+  return parts.join(' ');
+}
+
+function formatCountdown(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return 'Unknown';
+  }
+  if (seconds <= 0) {
+    return 'now';
+  }
+  return formatDurationShort(seconds);
 }
 
 function formatRespawnRange(mob) {
@@ -66,12 +97,12 @@ function statusForMob(mob) {
   }
   if (mob.inWindow) {
     const remaining = Number.isFinite(mob.secondsUntilClose)
-      ? `closes in ${formatSince(-mob.secondsUntilClose)}`
+      ? `closes in ${formatCountdown(mob.secondsUntilClose)}`
       : 'currently active';
     return { text: `In window - ${remaining}`, className: 'danger' };
   }
   if (Number.isFinite(mob.secondsUntilOpen) && mob.secondsUntilOpen > 0) {
-    return { text: `Opens in ${formatSince(-mob.secondsUntilOpen)}`, className: 'neutral' };
+    return { text: `Opens in ${formatCountdown(mob.secondsUntilOpen)}`, className: 'neutral' };
   }
   if (!mob.lastKillAt) {
     return { text: 'Awaiting first kill', className: 'neutral' };
