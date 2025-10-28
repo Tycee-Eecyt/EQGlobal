@@ -1,0 +1,35 @@
+.site-nav {
+  display: flex;
+  gap: 1rem;
+}
+.site-nav a {
+  color: #cfe6ff;
+  text-decoration: none;
+  opacity: 0.9;
+}
+.site-nav a[aria-current="page"] {
+  color: #49d1a4;
+  font-weight: 600;
+}
+
+.toolbar { display: flex; gap: 0.5rem; }
+.toolbar button { margin-left: 0.25rem; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.table th, .table td { padding: 0.6rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left; }
+.table tbody tr:hover { background: rgba(73, 209, 164, 0.08); }
+.table-empty { text-align: center; opacity: 0.65; }
+
+.hint { font-size: 0.85rem; opacity: 0.75; margin-bottom: 0.75rem; }
+
+.form-row { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
+.form-row.inline { flex-direction: row; align-items: center; gap: 0.75rem; }
+.form-row input[type="text"] { width: 100%; padding: 0.5rem 0.6rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(16,18,28,0.6); color: #e9edf3; }
+
+.form-actions { display: flex; gap: 0.5rem; }
+.form-actions button { border: none; padding: 0.45rem 0.9rem; border-radius: 999px; cursor: pointer; font-weight: 600; letter-spacing: 0.02rem; background: linear-gradient(135deg, #14c3ff, #49d1a4); color: #081018; }
+.form-actions .danger { background: linear-gradient(135deg, #ff6b6b, #ff8a8a); color: #1c0b0b; }
+
+.test-result { margin-top: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: rgba(16,18,28,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.6rem; }
+.test-result.empty { opacity: 0.7; }
+

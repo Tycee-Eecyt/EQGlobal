@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EQGlobal Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="mob-windows.css" />
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>EQGlobal Admin</h1>
+      <nav class="site-nav">
+        <a href="/mob-windows.html">Mob Windows</a>
+        <a href="/admin.html" aria-current="page">Admin</a>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <section class="panel wide" aria-labelledby="lt-title">
+        <div class="panel-header">
+          <h2 id="lt-title">Log Forwarding Triggers</h2>
+          <div class="toolbar">
+            <button id="add-trigger-btn" type="button">Add Trigger</button>
+            <button id="refresh-triggers-btn" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="hint">Only log lines matching an enabled trigger are stored. !tod/tod commands are still processed for mob windows but are not automatically stored unless a trigger matches.</div>
+          <table class="table" id="triggers-table">
+            <thead>
+              <tr>
+                <th>Enabled</th>
+                <th>Label</th>
+                <th>Pattern</th>
+                <th>Regex</th>
+                <th>Flags</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="table-empty" colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="editor-title">
+        <div class="panel-header">
+          <h2 id="editor-title">Edit Trigger</h2>
+        </div>
+        <div class="panel-body">
+          <form id="trigger-form">
+            <input type="hidden" id="t-id" />
+            <div class="form-row">
+              <label for="t-label">Label</label>
+              <input id="t-label" type="text" placeholder="e.g., Enter West Freeport" />
+            </div>
+            <div class="form-row">
+              <label for="t-pattern">Pattern</label>
+              <input id="t-pattern" type="text" placeholder="Substring or regex pattern" />
+            </div>
+            <div class="form-row inline">
+              <label><input id="t-isRegex" type="checkbox" /> Use Regex</label>
+              <label for="t-flags">Flags</label>
+              <input id="t-flags" type="text" value="i" size="6" />
+              <label><input id="t-enabled" type="checkbox" checked /> Enabled</label>
+            </div>
+            <div class="form-row">
+              <label for="t-desc">Description</label>
+              <input id="t-desc" type="text" placeholder="Optional notes" />
+            </div>
+            <div class="form-actions">
+              <button type="submit">Save</button>
+              <button type="button" id="t-delete" class="danger">Delete</button>
+              <button type="button" id="t-clear">Clear</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="test-title">
+        <div class="panel-header">
+          <h2 id="test-title">Test Match</h2>
+        </div>
+        <div class="panel-body">
+          <div class="form-row">
+            <label for="test-line">Sample Log Line</label>
+            <input id="test-line" type="text" placeholder="[Sat Oct 11 20:34:55 2025] You have entered West Freeport." />
+          </div>
+          <div class="form-actions">
+            <button id="run-test" type="button">Test</button>
+          </div>
+          <div id="test-result" class="test-result empty">No test run yet.</div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Manage what log lines are stored in the database.</span>
+    </footer>
+
+    <script type="module" src="admin.js"></script>
+  </body>
+  </html>
+

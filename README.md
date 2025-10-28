@@ -96,6 +96,20 @@ Notes:
 - `POST /api/log-lines` – accepts `{ lines: [{ filePath, line, timestamp }] }`.
 - `POST /api/log-events` – accepts `{ events: [{ triggerId, label, duration, ... }] }`.
 
+### Admin: Log Forwarding Triggers
+
+- Visit `/admin.html` to manage which log lines are stored in the database.
+- Create simple substring or regex-based triggers and enable/disable them.
+- The backend only persists log lines matching at least one enabled trigger.
+- `tod`/`!tod` commands are still parsed server-side to update Mob Windows, even if the raw line is not stored.
+
+API endpoints:
+- `GET /api/log-triggers` – list configured triggers.
+- `POST /api/log-triggers` – create or upsert a trigger `{ label, pattern, isRegex, flags, enabled }`.
+- `PUT /api/log-triggers/:id` – update a trigger.
+- `DELETE /api/log-triggers/:id` – delete a trigger.
+- `POST /api/log-triggers:test` – test a sample line against current triggers.
+
 Data is stored in `log_lines` and `log_events` collections. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
 
 ## Overlay Tips
