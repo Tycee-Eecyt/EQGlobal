@@ -835,13 +835,16 @@ async function flushBackend() {
   const authHeaders = await buildAuthHeaders({ silent: true });
   const headers = authHeaders || {};
   const hasAuth = Boolean(authHeaders && Object.keys(authHeaders).length > 0);
+  const currentRoleLevel = getCurrentRoleLevel();
+  const allowEvents =
+    hasAuth && currentRoleLevel !== null && currentRoleLevel !== undefined && currentRoleLevel <= ROLE_LEVELS.OFFICER;
 
   const payloadLines = backendQueue.lines.splice(0, backendQueue.lines.length);
   let payloadEvents = [];
-  if (hasAuth) {
+  if (allowEvents) {
     payloadEvents = backendQueue.events.splice(0, backendQueue.events.length);
   } else if (backendQueue.events.length > 0) {
-    console.warn('Dropping log events because user is not authenticated.');
+    console.warn('Skipping log events sync because the current role is not permitted to persist them.');
     backendQueue.events.length = 0;
   }
 
@@ -1072,7 +1075,7 @@ async function buildAuthHeaders({ silent = false } = {}) {
 
 function isUnauthorizedError(error) {
   const status = error?.response?.status;
-  return status === 401 || status === 403;
+  return status === 401;
 }
 
 let mobWindowsFetchedFromBackend = false;
@@ -1121,6 +1124,10 @@ async function loadMobWindowsFromBackend({ force = false } = {}) {
 async function syncMobWindowsToBackend(state) {
   const baseUrl = (settings.backendUrl || '').trim();
   if (!baseUrl) {
+    return;
+  }
+  const roleLevel = getCurrentRoleLevel();
+  if (!roleLevel || roleLevel > ROLE_LEVELS.OFFICER) {
     return;
   }
   const payload = state && typeof state === 'object' ? state : mobWindowManager.serializeState();

@@ -2166,13 +2166,15 @@ function renderMobWindowTable(snapshot) {
       const statusText = statusParts.join(' • ');
       const clearDisabled = mob.lastKillAt ? '' : 'disabled';
       const zoneText = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
-      const actionsHtml = allowActions
-        ? `<div class="mob-window-actions">
+      const actionsCell = allowActions
+        ? `<td>
+            <div class="mob-window-actions">
               <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
               <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time…</button>
               <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
-           </div>`
-        : '<div class="mob-window-actions disabled">Officer access required</div>';
+            </div>
+          </td>`
+        : '';
       return `
         <tr data-mob-id="${escapeHtml(mob.id || '')}">
           <td>
@@ -2182,13 +2184,13 @@ function renderMobWindowTable(snapshot) {
           <td>${escapeHtml(lastKillDisplay)}</td>
           <td>${escapeHtml(respawnRange)}</td>
           <td>${escapeHtml(statusText)}</td>
-          <td>
-            ${actionsHtml}
-          </td>
+          ${actionsCell}
         </tr>
       `;
     })
     .join('');
+
+  const actionsHeader = allowActions ? '<th>Actions</th>' : '';
 
   mobWindowTableContainer.innerHTML = `
     <table>
@@ -2198,7 +2200,7 @@ function renderMobWindowTable(snapshot) {
           <th>Last Kill</th>
           <th>Respawn</th>
           <th>Status</th>
-          <th>Actions</th>
+          ${actionsHeader}
         </tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
