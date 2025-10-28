@@ -1211,8 +1211,11 @@ button:active {
   background: rgba(245, 247, 250, 0.08);
   color: rgba(245, 247, 250, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 1.2rem;
-  line-height: 1;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .auth-modal-close:hover {
@@ -1231,6 +1234,11 @@ button:active {
   margin-top: 0.5rem;
 }
 
+.auth-modal .field {
+  display: flex;
+  flex-direction: column;
+}
+
 .auth-modal .field label {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -1240,12 +1248,19 @@ button:active {
 
 .auth-modal .field input {
   width: 100%;
-  margin-top: 0.35rem;
-  padding: 0.6rem 0.75rem;
+  box-sizing: border-box;
+  margin-top: 0.4rem;
+  padding: 0.65rem 0.8rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(18, 20, 26, 0.9);
   color: #f5f7fa;
+}
+
+.auth-modal .field input:disabled {
+  opacity: 0.85;
+  background: rgba(18, 20, 26, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 
