@@ -474,119 +474,119 @@ app.get('/health', async (_req, res) => {
 
 app.post(
   '/api/log-lines',
-  authenticateJwt,
-  requireRoleAtMost(ROLE_LEVELS.OFFICER),
   async (req, res) => {
-  const { lines } = req.body || {};
-  if (!Array.isArray(lines)) {
-    return res.status(400).json({ error: 'Expected "lines" to be an array.' });
-  }
-
-  try {
-    const db = await ensureMongoConnection();
-    // Ensure trigger config is loaded
-    if (!logForwardConfig || !Array.isArray(logForwardConfig.triggers)) {
-      await loadLogForwardConfig(db);
+    const { lines } = req.body || {};
+    if (!Array.isArray(lines)) {
+      return res.status(400).json({ error: 'Expected "lines" to be an array.' });
     }
-    const collection = db.collection('log_lines');
-    const documents = lines
-      .map((entry) => ({
-        filePath: entry.filePath || '',
-        line: entry.line || '',
-        timestamp: entry.timestamp ? new Date(entry.timestamp) : new Date(),
-        ingestedAt: new Date(),
-      }))
-      .filter((doc) => doc.line);
 
-    const mobUpdates = new Map();
-    let quakeIso = null;
-    documents.forEach((doc) => {
-      const parsed = extractTodCommandFromLineV2(doc.line);
-      if (!parsed) return;
-
-      const baseTime = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
-
-      if (parsed.kind === 'quake') {
-        const resolved = parsed.explicitTime === 'now'
-          ? baseTime
-          : parsed.timeText
-          ? resolveTemporalExpression(parsed.timeText, baseTime, baseTime)
-          : baseTime;
-        if (resolved && !Number.isNaN(resolved.getTime())) {
-          const iso = resolved.toISOString();
-          if (!quakeIso || iso > quakeIso) quakeIso = iso;
-        }
-        return;
+    try {
+      const db = await ensureMongoConnection();
+      // Ensure trigger config is loaded
+      if (!logForwardConfig || !Array.isArray(logForwardConfig.triggers)) {
+        await loadLogForwardConfig(db);
       }
+      const collection = db.collection('log_lines');
+      const documents = lines
+        .map((entry) => ({
+          filePath: entry.filePath || '',
+          line: entry.line || '',
+          timestamp: entry.timestamp ? new Date(entry.timestamp) : new Date(),
+          ingestedAt: new Date(),
+        }))
+        .filter((doc) => doc.line);
 
-      // Refine mob target by shrinking words from the right until a match
-      let target = parsed.target || '';
-      let mob = findMobByAlias(target);
-      if (!mob) {
-        const tokens = target.split(/\s+/);
-        for (let k = tokens.length - 1; k >= 1; k--) {
-          const candidate = tokens.slice(0, k).join(' ');
-          const hit = findMobByAlias(candidate);
-          if (hit) {
-            mob = hit;
-            const consumed = candidate.length;
-            let rest = (parsed.target || '').slice(consumed).trim();
-            if (rest.startsWith('|') || rest.startsWith(',')) rest = rest.slice(1).trim();
-            parsed.timeText = rest || parsed.timeText || null;
-            break;
+      const mobUpdates = new Map();
+      let quakeIso = null;
+      documents.forEach((doc) => {
+        const parsed = extractTodCommandFromLineV2(doc.line);
+        if (!parsed) return;
+
+        const baseTime = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+
+        if (parsed.kind === 'quake') {
+          const resolved =
+            parsed.explicitTime === 'now'
+              ? baseTime
+              : parsed.timeText
+              ? resolveTemporalExpression(parsed.timeText, baseTime, baseTime)
+              : baseTime;
+          if (resolved && !Number.isNaN(resolved.getTime())) {
+            const iso = resolved.toISOString();
+            if (!quakeIso || iso > quakeIso) quakeIso = iso;
+          }
+          return;
+        }
+
+        // Refine mob target by shrinking words from the right until a match
+        let target = parsed.target || '';
+        let mob = findMobByAlias(target);
+        if (!mob) {
+          const tokens = target.split(/\s+/);
+          for (let k = tokens.length - 1; k >= 1; k--) {
+            const candidate = tokens.slice(0, k).join(' ');
+            const hit = findMobByAlias(candidate);
+            if (hit) {
+              mob = hit;
+              const consumed = candidate.length;
+              let rest = (parsed.target || '').slice(consumed).trim();
+              if (rest.startsWith('|') || rest.startsWith(',')) rest = rest.slice(1).trim();
+              parsed.timeText = rest || parsed.timeText || null;
+              break;
+            }
           }
         }
-      }
-      if (!mob) return;
+        if (!mob) return;
 
-      const resolved = parsed.explicitTime === 'now'
-        ? baseTime
-        : parsed.timeText
-        ? resolveTemporalExpression(parsed.timeText, baseTime, baseTime)
-        : baseTime;
-      const timestamp = resolved && !Number.isNaN(resolved.getTime()) ? resolved : baseTime;
-      const iso = timestamp.toISOString();
-      const prev = mobUpdates.get(mob.id);
-      if (!prev || iso > prev) {
-        mobUpdates.set(mob.id, iso);
-      }
-    });
-
-    // If a quake command was observed, set all known mobs to that timestamp
-    if (quakeIso) {
-      mobDefinitionsById.forEach((_def, mobId) => {
-        const prev = mobUpdates.get(mobId);
-        if (!prev || quakeIso > prev) {
-          mobUpdates.set(mobId, quakeIso);
+        const resolved =
+          parsed.explicitTime === 'now'
+            ? baseTime
+            : parsed.timeText
+            ? resolveTemporalExpression(parsed.timeText, baseTime, baseTime)
+            : baseTime;
+        const timestamp = resolved && !Number.isNaN(resolved.getTime()) ? resolved : baseTime;
+        const iso = timestamp.toISOString();
+        const prev = mobUpdates.get(mob.id);
+        if (!prev || iso > prev) {
+          mobUpdates.set(mob.id, iso);
         }
       });
-    }
 
-    // Filter which documents to persist based on admin-configured triggers
-    let toInsert = [];
-    const compiled = Array.isArray(logForwardConfig.compiled) ? logForwardConfig.compiled : [];
-    if (documents.length > 0 && compiled.length > 0) {
-      toInsert = documents.filter((doc) => compiled.some((c) => c.matcher(doc.line)));
-    }
+      // If a quake command was observed, set all known mobs to that timestamp
+      if (quakeIso) {
+        mobDefinitionsById.forEach((_def, mobId) => {
+          const prev = mobUpdates.get(mobId);
+          if (!prev || quakeIso > prev) {
+            mobUpdates.set(mobId, quakeIso);
+          }
+        });
+      }
 
-    if (toInsert.length === 0) {
+      // Filter which documents to persist based on admin-configured triggers
+      let toInsert = [];
+      const compiled = Array.isArray(logForwardConfig.compiled) ? logForwardConfig.compiled : [];
+      if (documents.length > 0 && compiled.length > 0) {
+        toInsert = documents.filter((doc) => compiled.some((c) => c.matcher(doc.line)));
+      }
+
+      if (toInsert.length === 0) {
+        if (mobUpdates.size > 0) {
+          await applyMobKillUpdates(db, mobUpdates);
+        }
+        return res.json({ inserted: 0 });
+      }
+
+      const result = await collection.insertMany(toInsert, { ordered: false });
+
       if (mobUpdates.size > 0) {
         await applyMobKillUpdates(db, mobUpdates);
       }
-      return res.json({ inserted: 0 });
+
+      res.json({ inserted: result.insertedCount || toInsert.length });
+    } catch (error) {
+      console.error('Failed to persist log lines', error);
+      res.status(500).json({ error: 'Failed to persist log lines.' });
     }
-
-    const result = await collection.insertMany(toInsert, { ordered: false });
-
-    if (mobUpdates.size > 0) {
-      await applyMobKillUpdates(db, mobUpdates);
-    }
-
-    res.json({ inserted: result.insertedCount || toInsert.length });
-  } catch (error) {
-    console.error('Failed to persist log lines', error);
-    res.status(500).json({ error: 'Failed to persist log lines.' });
-  }
   }
 );
 

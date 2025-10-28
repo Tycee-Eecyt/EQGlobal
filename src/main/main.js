@@ -832,15 +832,18 @@ async function flushBackend() {
     return;
   }
 
-  const headers = await buildAuthHeaders({ silent: true });
-  if (!headers) {
-    backendQueue.lines.length = 0;
-    backendQueue.events.length = 0;
-    return;
-  }
+  const authHeaders = await buildAuthHeaders({ silent: true });
+  const headers = authHeaders || {};
+  const hasAuth = Boolean(authHeaders && Object.keys(authHeaders).length > 0);
 
   const payloadLines = backendQueue.lines.splice(0, backendQueue.lines.length);
-  const payloadEvents = backendQueue.events.splice(0, backendQueue.events.length);
+  let payloadEvents = [];
+  if (hasAuth) {
+    payloadEvents = backendQueue.events.splice(0, backendQueue.events.length);
+  } else if (backendQueue.events.length > 0) {
+    console.warn('Dropping log events because user is not authenticated.');
+    backendQueue.events.length = 0;
+  }
 
   const requests = [];
 
