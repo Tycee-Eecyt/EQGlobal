@@ -17,6 +17,32 @@
     </header>
 
     <main class="layout">
+      <section class="panel auth-panel">
+        <div class="panel-header">
+          <h2>Account</h2>
+        </div>
+        <div class="panel-body">
+          <div class="auth-summary">
+            <span id="auth-user-label">Not signed in</span>
+            <span id="auth-role-label" class="auth-role"></span>
+          </div>
+          <form id="auth-form">
+            <div class="form-row">
+              <label for="auth-username">Username</label>
+              <input id="auth-username" type="text" autocomplete="username" />
+            </div>
+            <div class="form-row">
+              <label for="auth-password">Password</label>
+              <input id="auth-password" type="password" autocomplete="current-password" />
+            </div>
+            <div class="form-actions auth-actions">
+              <button type="submit" id="auth-login-button">Sign In</button>
+              <button type="button" id="auth-logout-button" class="secondary hidden">Sign Out</button>
+            </div>
+            <div id="auth-feedback" class="auth-feedback" aria-live="polite"></div>
+          </form>
+        </div>
+      </section>
       <section class="panel wide" aria-labelledby="lt-title">
         <div class="panel-header">
           <h2 id="lt-title">Log Forwarding Triggers</h2>

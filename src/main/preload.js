@@ -24,6 +24,17 @@ contextBridge.exposeInMainWorld('eqApi', {
   getMobWindowDefinitions: () => ipcRenderer.invoke('mob-windows:definitions'),
   recordMobKill: (mobId, timestamp) => ipcRenderer.invoke('mob-windows:record-kill', mobId, timestamp),
   clearMobKill: (mobId) => ipcRenderer.invoke('mob-windows:clear', mobId),
+  getAuthState: () => ipcRenderer.invoke('auth:status'),
+  login: (username, password) => ipcRenderer.invoke('auth:login', { username, password }),
+  logout: () => ipcRenderer.invoke('auth:logout'),
+  onAuthChanged: (callback) => {
+    if (typeof callback !== 'function') {
+      return () => {};
+    }
+    const listener = (_event, auth) => callback(auth);
+    ipcRenderer.on('auth:changed', listener);
+    return () => ipcRenderer.removeListener('auth:changed', listener);
+  },
   onTimersUpdate: (callback) => {
     const listener = (_event, timers) => callback(timers);
     ipcRenderer.on('timers:update', listener);

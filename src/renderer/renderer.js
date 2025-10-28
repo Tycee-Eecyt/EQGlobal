@@ -6,6 +6,13 @@ const STATUS_COLORS = {
   idle: '#7d8597',
 };
 
+const ROLE_LEVELS = {
+  ADMIN: 1,
+  OFFICER: 2,
+  TRACKER: 3,
+  BASE: 4,
+};
+
 const ROOT_CATEGORY_ID = 'root';
 const DEFAULT_TRIGGER_DURATION = 30;
 
@@ -39,10 +46,23 @@ const mobTodPreviewButton = document.getElementById('mob-tod-preview');
 const mobTodApplyButton = document.getElementById('mob-tod-apply');
 const mobTodClearButton = document.getElementById('mob-tod-clear');
 const mobTodFeedback = document.getElementById('mob-tod-feedback');
+const mobTodPanelElement = document.getElementById('mob-tod-panel');
 const mobPanelCurrent = document.getElementById('mob-panel-current');
 const mobPanelUpcoming = document.getElementById('mob-panel-upcoming');
 const mobPanelTable = document.getElementById('mob-panel-table');
 const mobViewFilter = document.getElementById('mob-view-filter');
+const navMobWindowsButton = document.getElementById('nav-mob-windows');
+const headerAuthButton = document.getElementById('header-auth-button');
+const authModal = document.getElementById('auth-modal');
+const authModalForm = document.getElementById('auth-modal-form');
+const authModalUsername = document.getElementById('auth-modal-username');
+const authModalPassword = document.getElementById('auth-modal-password');
+const authModalSubmit = document.getElementById('auth-modal-submit');
+const authModalLogout = document.getElementById('auth-modal-logout');
+const authModalFeedback = document.getElementById('auth-modal-feedback');
+const authModalSummary = document.getElementById('auth-modal-summary');
+const authModalClose = document.getElementById('auth-modal-close');
+const authModalBackdrop = authModal?.querySelector('[data-auth-dismiss]');
 let overlayMoveMode = false;
 let draggedTriggerId = null;
 let draggedCategoryId = null;
@@ -51,12 +71,12 @@ let currentDropTarget = null;
 const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
 const views = Array.from(document.querySelectorAll('.view'));
 const watcherDirectorySummary = document.getElementById('watcher-directory-summary');
-const headerStartStopButton = document.getElementById('header-start-stop');
 let currentView = 'dashboard';
 
 let categoryMap = new Map();
 let mobAliasMatchers = [];
 let lastMobTodParse = null;
+let authState = { user: null, accessTokenExpiresAt: null, refreshTokenExpiresAt: null };
 
 function escapeHtml(value) {
   if (typeof value !== 'string') {
@@ -80,8 +100,144 @@ function createId(prefix = 'id') {
   return `${prefix}-${random}-${time}`;
 }
 
+function isSignedIn() {
+  return Boolean(authState?.user);
+}
+
+function getRoleLevel() {
+  const level = Number(authState?.user?.roleLevel);
+  return Number.isFinite(level) ? level : null;
+}
+
+function getRoleName() {
+  return authState?.user?.roleName || null;
+}
+
+function canAccessMobWindows() {
+  const level = getRoleLevel();
+  return Number.isFinite(level) ? level <= ROLE_LEVELS.TRACKER : false;
+}
+
+function canEditTod() {
+  const level = getRoleLevel();
+  return Number.isFinite(level) ? level <= ROLE_LEVELS.OFFICER : false;
+}
+
+function setAuthModalFeedback(message, { success = false } = {}) {
+  if (!authModalFeedback) {
+    return;
+  }
+  if (!message) {
+    authModalFeedback.textContent = '';
+    authModalFeedback.classList.remove('success');
+    return;
+  }
+  authModalFeedback.textContent = message;
+  authModalFeedback.classList.toggle('success', success);
+}
+
+function openAuthModal() {
+  if (!authModal) return;
+  authModal.classList.remove('hidden');
+  setAuthModalFeedback('');
+  if (!isSignedIn() && authModalUsername) {
+    authModalUsername.focus();
+  } else if (isSignedIn() && authModalLogout && !authModalLogout.classList.contains('hidden')) {
+    authModalLogout.focus();
+  }
+}
+
+function closeAuthModal() {
+  if (!authModal) return;
+  authModal.classList.add('hidden');
+  setAuthModalFeedback('');
+}
+
+function updateAuthUI(message = null, options = {}) {
+  if (message !== null) {
+    setAuthModalFeedback(message, options);
+  } else {
+    setAuthModalFeedback('');
+  }
+
+  const signedIn = isSignedIn();
+  const roleLevel = getRoleLevel();
+  const roleName = getRoleName();
+  const username = authState?.user?.username || '';
+
+  if (headerAuthButton) {
+    headerAuthButton.textContent = signedIn ? 'Account' : 'Sign In';
+    headerAuthButton.title = signedIn ? `Signed in as ${username}` : 'Sign in to EQGlobal backend';
+  }
+  if (authModalSummary) {
+    authModalSummary.textContent = signedIn
+      ? `Signed in as ${username}${roleName ? ` (${roleName})` : roleLevel ? ` (Level ${roleLevel})` : ''}`
+      : 'Enter your EQGlobal credentials to sign in.';
+  }
+  if (authModalUsername) {
+    authModalUsername.value = signedIn ? username : '';
+    authModalUsername.disabled = signedIn;
+  }
+  if (authModalPassword) {
+    authModalPassword.value = '';
+    authModalPassword.disabled = signedIn;
+  }
+  if (authModalSubmit) {
+    authModalSubmit.classList.toggle('hidden', signedIn);
+  }
+  if (authModalLogout) {
+    authModalLogout.classList.toggle('hidden', !signedIn);
+    authModalLogout.disabled = !signedIn;
+  }
+
+  const canViewMobWindows = canAccessMobWindows();
+  if (navMobWindowsButton) {
+    navMobWindowsButton.classList.toggle('hidden', !canViewMobWindows);
+  }
+  if (currentView === 'mob-windows' && !canViewMobWindows) {
+    switchView('dashboard');
+  }
+
+  const allowTod = canEditTod();
+  if (mobTodPanelElement) {
+    mobTodPanelElement.classList.toggle('hidden', !allowTod);
+  }
+  if (mobTodInput) {
+    mobTodInput.disabled = !allowTod;
+    if (!allowTod) {
+      mobTodInput.value = '';
+    }
+  }
+  if (mobTodPreviewButton) {
+    mobTodPreviewButton.disabled = !allowTod;
+  }
+  if (mobTodApplyButton) {
+    mobTodApplyButton.disabled = true;
+  }
+  if (mobTodClearButton) {
+    mobTodClearButton.disabled = !allowTod;
+  }
+  if (!allowTod) {
+    lastMobTodParse = null;
+    if (mobTodFeedback) {
+      mobTodFeedback.textContent = '';
+      mobTodFeedback.classList.remove('success', 'warning', 'error', 'empty');
+    }
+  }
+
+  if (!canViewMobWindows) {
+    mobWindowSnapshot = { generatedAt: null, mobs: [] };
+    renderMobWindows(mobWindowSnapshot);
+  }
+}
+
 function switchView(nextView) {
   if (!nextView) {
+    return;
+  }
+  if (nextView === 'mob-windows' && !canAccessMobWindows()) {
+    updateAuthUI('Sign in with tracker access to view mob windows.');
+    openAuthModal();
     return;
   }
   const targetView = views.find((view) => view.dataset.view === nextView);
@@ -502,7 +658,7 @@ function renderTreeNode(node) {
   const isSelected = selectedNode && selectedNode.type === 'category' && selectedNode.id === node.id;
 
   const toggle = hasChildren
-    ? `<button class="tree-toggle" data-action="toggle-category" data-category-id="${node.id}" aria-label="${isExpanded ? 'Collapse' : 'Expand'} category">${isExpanded ? '▾' : '▸'}</button>`
+    ? `<button class="tree-toggle" data-action="toggle-category" data-category-id="${node.id}" aria-label="${isExpanded ? 'Collapse' : 'Expand'} category">${isExpanded ? '?' : '?'}</button>`
     : `<span class="tree-toggle-placeholder"></span>`;
 
   const childrenMarkup =
@@ -1632,15 +1788,6 @@ function updateStatus({ state, message, directory } = {}) {
     watcherStatus.removeAttribute('title');
   }
 
-  if (headerStartStopButton) {
-    if (status === 'watching') {
-      headerStartStopButton.dataset.state = 'stop';
-      headerStartStopButton.textContent = 'Stop Watching';
-    } else {
-      headerStartStopButton.dataset.state = 'start';
-      headerStartStopButton.textContent = 'Start Watching';
-    }
-  }
 }
 
 function cancelTimersAnimation() {
@@ -1995,6 +2142,7 @@ function renderMobWindowTable(snapshot) {
     mobWindowTableContainer.innerHTML = '<div class="mob-window-empty">No tracked mobs configured.</div>';
     return;
   }
+  const allowActions = canEditTod();
 
   const rowsHtml = mobs
     .map((mob) => {
@@ -2018,6 +2166,15 @@ function renderMobWindowTable(snapshot) {
       const statusText = statusParts.join(' • ');
       const clearDisabled = mob.lastKillAt ? '' : 'disabled';
       const zoneText = [mob.zone, mob.expansion].filter(Boolean).join(' • ');
+      const actionsCell = allowActions
+        ? `<td>
+            <div class="mob-window-actions">
+              <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
+              <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time…</button>
+              <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
+            </div>
+          </td>`
+        : '';
       return `
         <tr data-mob-id="${escapeHtml(mob.id || '')}">
           <td>
@@ -2027,17 +2184,13 @@ function renderMobWindowTable(snapshot) {
           <td>${escapeHtml(lastKillDisplay)}</td>
           <td>${escapeHtml(respawnRange)}</td>
           <td>${escapeHtml(statusText)}</td>
-          <td>
-            <div class="mob-window-actions">
-              <button type="button" data-action="set-now" data-mob-id="${escapeHtml(mob.id || '')}">Mark Kill Now</button>
-              <button type="button" data-action="set-custom" data-mob-id="${escapeHtml(mob.id || '')}">Set Time…</button>
-              <button type="button" class="danger" data-action="clear" data-mob-id="${escapeHtml(mob.id || '')}" ${clearDisabled}>Clear</button>
-            </div>
-          </td>
+          ${actionsCell}
         </tr>
       `;
     })
     .join('');
+
+  const actionsHeader = allowActions ? '<th>Actions</th>' : '';
 
   mobWindowTableContainer.innerHTML = `
     <table>
@@ -2047,7 +2200,7 @@ function renderMobWindowTable(snapshot) {
           <th>Last Kill</th>
           <th>Respawn</th>
           <th>Status</th>
-          <th>Actions</th>
+          ${actionsHeader}
         </tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
@@ -2935,6 +3088,11 @@ async function handleMobWindowActionClick(event) {
   if (!mobId || !action) {
     return;
   }
+  if (!canEditTod()) {
+    updateAuthUI('ToD updates require officer access.');
+    openAuthModal();
+    return;
+  }
   try {
     if (action === 'set-now') {
       const snapshot = await window.eqApi.recordMobKill(mobId, new Date().toISOString());
@@ -3146,6 +3304,19 @@ async function persistSettings() {
 async function hydrate() {
   await window.eqApi.ready();
   const stored = await window.eqApi.loadSettings();
+  authState = stored.auth || { user: null, accessTokenExpiresAt: null, refreshTokenExpiresAt: null };
+  updateAuthUI();
+  if (typeof window.eqApi.getAuthState === 'function') {
+    try {
+      const latestAuth = await window.eqApi.getAuthState();
+      if (latestAuth) {
+        authState = latestAuth;
+        updateAuthUI();
+      }
+    } catch (_err) {
+      // ignore; fallback to stored auth state
+    }
+  }
   logDirectoryInput.value = stored.logDirectory || '';
   backendUrlInput.value = stored.backendUrl || '';
   overlayOpacityInput.value = stored.overlayOpacity || 0.85;
@@ -3177,7 +3348,7 @@ async function hydrate() {
   renderTriggerTree();
   renderTriggerDetail();
 
-  if (window.eqApi.getMobWindows) {
+  if (window.eqApi.getMobWindows && canAccessMobWindows()) {
     try {
       const snapshot = await window.eqApi.getMobWindows();
       mobWindowSnapshot = snapshot || { generatedAt: null, mobs: [] };
@@ -3186,7 +3357,16 @@ async function hydrate() {
     }
     renderMobWindows(mobWindowSnapshot);
   } else {
+    mobWindowSnapshot = { generatedAt: null, mobs: [] };
     renderMobWindows(mobWindowSnapshot);
+  }
+
+  if ((stored.logDirectory || '').trim()) {
+    try {
+      await window.eqApi.startWatcher();
+    } catch (error) {
+      console.error('Failed to auto-start watcher', error);
+    }
   }
 
   try {
@@ -3204,26 +3384,14 @@ function attachEventListeners() {
     });
   });
 
-  if (headerStartStopButton) {
-    headerStartStopButton.dataset.state = 'start';
-    headerStartStopButton.textContent = 'Start Watching';
-    headerStartStopButton.addEventListener('click', async () => {
-      try {
-        const isStart = headerStartStopButton.dataset.state !== 'stop';
-        if (isStart) {
-          await persistSettings();
-          await window.eqApi.startWatcher();
-        } else {
-          await window.eqApi.stopWatcher();
-        }
-      } catch (error) {
-        console.error('Failed to toggle watcher from header', error);
-      }
-    });
-  }
-
   if (mobTodInput) {
     mobTodInput.addEventListener('input', () => {
+      if (!canEditTod()) {
+        mobTodInput.value = '';
+        updateAuthUI('ToD updates require officer access.');
+        openAuthModal();
+        return;
+      }
       lastMobTodParse = null;
       if (mobTodApplyButton) {
         mobTodApplyButton.disabled = true;
@@ -3234,6 +3402,11 @@ function attachEventListeners() {
 
   if (mobTodPreviewButton) {
     mobTodPreviewButton.addEventListener('click', () => {
+      if (!canEditTod()) {
+        updateAuthUI('ToD updates require officer access.');
+        openAuthModal();
+        return;
+      }
       const text = mobTodInput ? mobTodInput.value : '';
       const parsed = parseMobTodLog(text || '');
       lastMobTodParse = parsed;
@@ -3246,6 +3419,11 @@ function attachEventListeners() {
 
   if (mobTodApplyButton) {
     mobTodApplyButton.addEventListener('click', async () => {
+      if (!canEditTod()) {
+        updateAuthUI('ToD updates require officer access.');
+        openAuthModal();
+        return;
+      }
       const text = mobTodInput ? mobTodInput.value : '';
       const parsed = parseMobTodLog(text || '');
       lastMobTodParse = parsed;
@@ -3317,6 +3495,11 @@ function attachEventListeners() {
 
   if (mobTodClearButton) {
     mobTodClearButton.addEventListener('click', () => {
+      if (!canEditTod()) {
+        updateAuthUI('ToD updates require officer access.');
+        openAuthModal();
+        return;
+      }
       if (mobTodInput) {
         mobTodInput.value = '';
       }
@@ -3325,6 +3508,64 @@ function attachEventListeners() {
         mobTodApplyButton.disabled = true;
       }
       updateMobTodFeedback(null);
+    });
+  }
+
+  if (headerAuthButton) {
+    headerAuthButton.addEventListener('click', () => {
+      openAuthModal();
+    });
+  }
+
+  authModalClose?.addEventListener('click', closeAuthModal);
+  authModalBackdrop?.addEventListener('click', closeAuthModal);
+
+  if (authModalForm) {
+    authModalForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (isSignedIn()) {
+        return;
+      }
+      const username = authModalUsername ? authModalUsername.value.trim() : '';
+      const password = authModalPassword ? authModalPassword.value : '';
+      if (!username || !password) {
+        updateAuthUI('Enter username and password.');
+        return;
+      }
+      try {
+        updateAuthUI('Signing in...');
+        const result = await window.eqApi.login(username, password);
+        authState = result || { user: null, accessTokenExpiresAt: null, refreshTokenExpiresAt: null };
+        updateAuthUI('Signed in.', { success: true });
+        closeAuthModal();
+      } catch (error) {
+        const message = error?.message || 'Login failed.';
+        updateAuthUI(message);
+      } finally {
+        if (authModalPassword) {
+          authModalPassword.value = '';
+        }
+      }
+    });
+  }
+
+  if (authModalLogout) {
+    authModalLogout.addEventListener('click', async () => {
+      if (!isSignedIn()) {
+        return;
+      }
+      try {
+        authModalLogout.disabled = true;
+        const result = await window.eqApi.logout();
+        authState = result || { user: null, accessTokenExpiresAt: null, refreshTokenExpiresAt: null };
+        updateAuthUI('Signed out.', { success: true });
+        closeAuthModal();
+      } catch (error) {
+        const message = error?.message || 'Failed to sign out.';
+        updateAuthUI(message);
+      } finally {
+        authModalLogout.disabled = false;
+      }
     });
   }
 
@@ -3591,12 +3832,22 @@ function attachEventListeners() {
 }
 
 function subscribeToIpc() {
+  if (typeof window.eqApi.onAuthChanged === 'function') {
+    window.eqApi.onAuthChanged((next) => {
+      authState = next || { user: null, accessTokenExpiresAt: null, refreshTokenExpiresAt: null };
+      updateAuthUI();
+    });
+  }
+
   window.eqApi.onTimersUpdate((timers) => {
     renderTimers(timers);
   });
 
   if (window.eqApi.onMobWindowsUpdate) {
     window.eqApi.onMobWindowsUpdate((snapshot) => {
+      if (!canAccessMobWindows()) {
+        return;
+      }
       mobWindowSnapshot = snapshot || { generatedAt: null, mobs: [] };
       renderMobWindows(mobWindowSnapshot);
     });
@@ -3612,15 +3863,20 @@ function subscribeToIpc() {
   });
 }
 
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && authModal && !authModal.classList.contains('hidden')) {
+    closeAuthModal();
+  }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
+  subscribeToIpc();
   await hydrate();
   attachEventListeners();
   switchView('dashboard');
-  subscribeToIpc();
   renderTimers([]);
   renderMobWindows(mobWindowSnapshot);
   renderRecentLines();
-  updateStatus({ state: 'idle' });
 
   // Restore saved mob window filter
   try {
@@ -3637,6 +3893,9 @@ function updateMoveModeButton() {
   toggleMoveModeButton.textContent = overlayMoveMode ? 'Done Moving' : 'Move Overlays';
   toggleMoveModeButton.classList.toggle('active', overlayMoveMode);
 }
+
+
+
 
 
 

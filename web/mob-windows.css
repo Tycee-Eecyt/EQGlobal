@@ -213,3 +213,37 @@ a {
   font-size: 0.8rem;
   opacity: 0.7;
 }
+
+.auth-panel .auth-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.auth-role {
+  color: #6b7a8f;
+  font-size: 0.9rem;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.auth-feedback {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #c0392b;
+}
+
+.auth-feedback.success {
+  color: #1c7c3a;
+}
+
+.hidden {
+  display: none !important;
+}
+
