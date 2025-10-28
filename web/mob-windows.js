@@ -1,13 +1,139 @@
+import {
+  ROLE_LEVELS,
+  fetchWithAuth,
+  login as authLogin,
+  logout as authLogout,
+  onAuthChanged,
+  getAuthState,
+  hasRoleAtMost,
+  isSignedIn,
+} from './auth.js';
+
 const currentList = document.getElementById('current-list');
 const upcomingList = document.getElementById('upcoming-list');
 const futureList = document.getElementById('future-list');
 const tableBody = document.querySelector('#mob-table tbody');
 const lastUpdatedEl = document.getElementById('last-updated');
 const refreshButton = document.getElementById('refresh-button');
+const authForm = document.getElementById('auth-form');
+const authUsernameInput = document.getElementById('auth-username');
+const authPasswordInput = document.getElementById('auth-password');
+const authLoginButton = document.getElementById('auth-login-button');
+const authLogoutButton = document.getElementById('auth-logout-button');
+const authFeedback = document.getElementById('auth-feedback');
+const authUserLabel = document.getElementById('auth-user-label');
+const authRoleLabel = document.getElementById('auth-role-label');
 
 const REFRESH_INTERVAL = 30000;
 const UPCOMING_WINDOW_SECONDS = 24 * 60 * 60;
 const FUTURE_WINDOW_SECONDS = 72 * 60 * 60;
+let authState = getAuthState();
+let refreshTimer = null;
+let dataLoaded = false;
+
+function canViewMobWindows() {
+  return hasRoleAtMost(ROLE_LEVELS.TRACKER);
+}
+
+function setAuthFeedback(message, { success = false } = {}) {
+  if (!authFeedback) {
+    return;
+  }
+  if (!message) {
+    authFeedback.textContent = '';
+    authFeedback.classList.remove('success');
+    return;
+  }
+  authFeedback.textContent = message;
+  authFeedback.classList.toggle('success', success);
+}
+
+function clearDisplays(message) {
+  if (currentList) {
+    currentList.classList.add('empty');
+    currentList.textContent = message;
+  }
+  if (upcomingList) {
+    upcomingList.classList.add('empty');
+    upcomingList.textContent = message;
+  }
+  if (futureList) {
+    futureList.classList.add('empty');
+    futureList.textContent = message;
+  }
+  if (tableBody) {
+    tableBody.innerHTML = `<tr><td colspan="5" class="table-empty">${message}</td></tr>`;
+  }
+  if (lastUpdatedEl) {
+    lastUpdatedEl.textContent = message;
+  }
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  if (canViewMobWindows()) {
+    refreshTimer = setInterval(fetchAndRender, REFRESH_INTERVAL);
+  }
+}
+
+function updateAuthUI(message = null, options = {}) {
+  if (authUserLabel) {
+    authUserLabel.textContent = authState.user ? `Signed in as ${authState.user.username}` : 'Not signed in';
+  }
+  if (authRoleLabel) {
+    const roleLevel = Number(authState?.user?.roleLevel);
+    const roleName = authState?.user?.roleName;
+    authRoleLabel.textContent = authState.user
+      ? `Role: ${roleName || (Number.isFinite(roleLevel) ? `Level ${roleLevel}` : 'Unknown')}`
+      : '';
+  }
+  if (authUsernameInput) {
+    authUsernameInput.disabled = isSignedIn();
+  }
+  if (authPasswordInput) {
+    authPasswordInput.value = '';
+    authPasswordInput.disabled = isSignedIn();
+  }
+  if (authLoginButton) {
+    authLoginButton.classList.toggle('hidden', isSignedIn());
+    authLoginButton.disabled = isSignedIn();
+  }
+  if (authLogoutButton) {
+    authLogoutButton.classList.toggle('hidden', !isSignedIn());
+    authLogoutButton.disabled = !isSignedIn();
+  }
+
+  const authorized = canViewMobWindows();
+  if (refreshButton) {
+    refreshButton.disabled = !authorized;
+  }
+
+  if (authorized) {
+    if (message !== null) {
+      setAuthFeedback(message, options);
+    } else {
+      setAuthFeedback('');
+    }
+    if (!dataLoaded) {
+      dataLoaded = true;
+      fetchAndRender();
+    }
+    startAutoRefresh();
+  } else {
+    dataLoaded = false;
+    stopAutoRefresh();
+    clearDisplays('Sign in with tracker access to view mob windows.');
+    const feedbackMessage = message !== null ? message : 'Tracker access required to view mob windows.';
+    setAuthFeedback(feedbackMessage, options);
+  }
+}
 
 function formatAbsolute(value) {
   if (!value) {
@@ -234,8 +360,11 @@ function renderLists(snapshot) {
 }
 
 async function fetchAndRender() {
+  if (!canViewMobWindows()) {
+    return;
+  }
   try {
-    const response = await fetch('/api/mob-windows', { cache: 'no-store' });
+    const response = await fetchWithAuth('/api/mob-windows', { method: 'GET', cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
@@ -244,33 +373,73 @@ async function fetchAndRender() {
       ? data.snapshot
       : { generatedAt: data?.updatedAt || null, mobs: Array.isArray(data?.mobs) ? data.mobs : [] };
     renderLists(snapshot);
+    dataLoaded = true;
   } catch (error) {
     console.error('Failed to load mob windows', error);
-    const message = 'Failed to load mob windows. Please try again.';
-    if (currentList) {
-      currentList.classList.add('empty');
-      currentList.textContent = message;
-    }
-    if (upcomingList) {
-      upcomingList.classList.add('empty');
-      upcomingList.textContent = message;
-    }
-    if (futureList) {
-      futureList.classList.add('empty');
-      futureList.textContent = message;
-    }
-    if (tableBody) {
-      tableBody.innerHTML = `<tr><td colspan="5" class="table-empty">${message}</td></tr>`;
-    }
-    if (lastUpdatedEl) {
-      lastUpdatedEl.textContent = 'Last updated: error';
+    const unauthorized = error && error.message === 'Unauthorized';
+    const message = unauthorized
+      ? 'Tracker access required to view mob windows.'
+      : 'Failed to load mob windows. Please try again.';
+    clearDisplays(message);
+    if (unauthorized) {
+      updateAuthUI(message);
     }
   }
 }
 
 refreshButton?.addEventListener('click', () => {
+  if (!canViewMobWindows()) {
+    updateAuthUI('Tracker access required to view mob windows.');
+    return;
+  }
   fetchAndRender();
 });
 
-fetchAndRender();
-setInterval(fetchAndRender, REFRESH_INTERVAL);
+authForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (isSignedIn()) {
+    return;
+  }
+  const username = authUsernameInput ? authUsernameInput.value.trim() : '';
+  const password = authPasswordInput ? authPasswordInput.value : '';
+  if (!username || !password) {
+    updateAuthUI('Enter username and password.');
+    return;
+  }
+  try {
+    updateAuthUI('Signing in...');
+    await authLogin(username, password);
+    authState = getAuthState();
+    updateAuthUI('Signed in.', { success: true });
+  } catch (error) {
+    updateAuthUI(error?.message || 'Login failed.');
+  } finally {
+    if (authPasswordInput) {
+      authPasswordInput.value = '';
+    }
+  }
+});
+
+authLogoutButton?.addEventListener('click', async () => {
+  if (!isSignedIn()) {
+    return;
+  }
+  try {
+    authLogoutButton.disabled = true;
+    await authLogout();
+    authState = getAuthState();
+    updateAuthUI('Signed out.', { success: true });
+  } catch (error) {
+    updateAuthUI(error?.message || 'Failed to sign out.');
+  } finally {
+    authLogoutButton.disabled = false;
+  }
+});
+
+onAuthChanged((next) => {
+  authState = { ...authState, ...next };
+  dataLoaded = false;
+  updateAuthUI();
+});
+
+updateAuthUI();

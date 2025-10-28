@@ -7,7 +7,8 @@
                     "start":  "concurrently \"npm:app\" \"npm:backend\"",
                     "app":  "electron .",
                     "backend":  "node backend/server.js",
-    "dev":  "electron .",
+                    "dev":  "electron .",
+                    "user:create":  "node scripts/create-user.js",
                     "scrape:p99":  "node scripts/scrape-p99-raid-windows.js",
                     "cleanup:mob":  "node scripts/cleanup-mob-windows.js",
                     "convert:gtp":  "powershell -ExecutionPolicy Bypass -File scripts/convert-gina-gtp.ps1",
@@ -24,10 +25,15 @@
                         },
     "dependencies":  {
                          "axios":  "^1.12.2",
+                         "bcryptjs":  "^2.4.3",
                          "chokidar":  "^4.0.3",
                          "cors":  "^2.8.5",
                          "dotenv":  "^17.2.3",
                          "express":  "^5.1.0",
-                         "mongodb":  "^6.20.0"
+                         "jsonwebtoken":  "^9.0.2",
+                         "mongodb":  "^6.20.0",
+                         "passport":  "^0.7.0",
+                         "passport-jwt":  "^4.0.1",
+                         "passport-local":  "^1.0.0"
                      }
 }

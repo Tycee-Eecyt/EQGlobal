@@ -1,3 +1,14 @@
+import {
+  ROLE_LEVELS,
+  fetchWithAuth,
+  login as authLogin,
+  logout as authLogout,
+  onAuthChanged,
+  getAuthState,
+  hasRoleAtMost,
+  isSignedIn,
+} from './auth.js';
+
 const tableBody = document.querySelector('#triggers-table tbody');
 const addBtn = document.getElementById('add-trigger-btn');
 const refreshBtn = document.getElementById('refresh-triggers-btn');
@@ -16,8 +27,107 @@ const clearBtn = document.getElementById('t-clear');
 const testLine = document.getElementById('test-line');
 const testBtn = document.getElementById('run-test');
 const testResult = document.getElementById('test-result');
+const authForm = document.getElementById('auth-form');
+const authUsernameInput = document.getElementById('auth-username');
+const authPasswordInput = document.getElementById('auth-password');
+const authLoginButton = document.getElementById('auth-login-button');
+const authLogoutButton = document.getElementById('auth-logout-button');
+const authFeedback = document.getElementById('auth-feedback');
+const authUserLabel = document.getElementById('auth-user-label');
+const authRoleLabel = document.getElementById('auth-role-label');
 
 let triggerCache = [];
+let authState = getAuthState();
+let triggersLoaded = false;
+
+function isAuthorized() {
+  return hasRoleAtMost(ROLE_LEVELS.ADMIN);
+}
+
+function setAuthFeedback(message, { success = false } = {}) {
+  if (!authFeedback) {
+    return;
+  }
+  if (!message) {
+    authFeedback.textContent = '';
+    authFeedback.classList.remove('success');
+    return;
+  }
+  authFeedback.textContent = message;
+  authFeedback.classList.toggle('success', success);
+}
+
+function setControlsDisabled(disabled) {
+  [addBtn, refreshBtn, delBtn, clearBtn, testBtn].forEach((btn) => {
+    if (btn) {
+      btn.disabled = disabled;
+    }
+  });
+  if (form) {
+    const elements = form.querySelectorAll('input, button, select, textarea');
+    elements.forEach((el) => {
+      if (el === authUsernameInput || el === authPasswordInput || el === authLoginButton || el === authLogoutButton) {
+        return;
+      }
+      el.disabled = disabled;
+    });
+  }
+}
+
+function showUnauthorizedTableMessage() {
+  if (!tableBody) {
+    return;
+  }
+  tableBody.innerHTML = '<tr><td class="table-empty" colspan="6">Admin access required.</td></tr>';
+}
+
+function updateAuthUI(message = null, options = {}) {
+  if (authUserLabel) {
+    authUserLabel.textContent = authState.user ? `Signed in as ${authState.user.username}` : 'Not signed in';
+  }
+  if (authRoleLabel) {
+    const roleLevel = Number(authState?.user?.roleLevel);
+    const roleName = authState?.user?.roleName;
+    authRoleLabel.textContent = authState.user
+      ? `Role: ${roleName || (Number.isFinite(roleLevel) ? `Level ${roleLevel}` : 'Unknown')}`
+      : '';
+  }
+  if (authUsernameInput) {
+    authUsernameInput.disabled = isSignedIn();
+  }
+  if (authPasswordInput) {
+    authPasswordInput.value = '';
+    authPasswordInput.disabled = isSignedIn();
+  }
+  if (authLoginButton) {
+    authLoginButton.classList.toggle('hidden', isSignedIn());
+    authLoginButton.disabled = isSignedIn();
+  }
+  if (authLogoutButton) {
+    authLogoutButton.classList.toggle('hidden', !isSignedIn());
+    authLogoutButton.disabled = !isSignedIn();
+  }
+
+  const authorized = isAuthorized();
+  setControlsDisabled(!authorized);
+  if (authorized) {
+    if (!triggersLoaded) {
+      triggersLoaded = true;
+      loadTriggers();
+    }
+    if (message !== null) {
+      setAuthFeedback(message, options);
+    } else {
+      setAuthFeedback('');
+    }
+  } else {
+    triggersLoaded = false;
+    triggerCache = [];
+    showUnauthorizedTableMessage();
+    const feedbackMessage = message !== null ? message : 'Admin access required.';
+    setAuthFeedback(feedbackMessage, options);
+  }
+}
 
 function setEditor(trigger) {
   fId.value = trigger?.id || '';
@@ -73,8 +183,12 @@ function escapeHtml(s) {
 }
 
 async function loadTriggers() {
+  if (!isAuthorized()) {
+    showUnauthorizedTableMessage();
+    return;
+  }
   try {
-    const res = await fetch('/api/log-triggers', { cache: 'no-store' });
+    const res = await fetchWithAuth('/api/log-triggers', { method: 'GET', cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     triggerCache = Array.isArray(data?.triggers) ? data.triggers : [];
@@ -83,6 +197,9 @@ async function loadTriggers() {
     console.error('Failed to load triggers', err);
     triggerCache = [];
     renderRows(triggerCache);
+    if (err && err.message === 'Unauthorized') {
+      updateAuthUI('Admin access required.');
+    }
   }
 }
 
@@ -91,9 +208,8 @@ async function saveTrigger(payload) {
   const url = payload.id ? `/api/log-triggers/${encodeURIComponent(payload.id)}` : '/api/log-triggers';
   const body = payload.id ? { ...payload } : { ...payload };
   if (method === 'PUT') delete body.id;
-  const res = await fetch(url, {
+  const res = await fetchWithAuth(url, {
     method,
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -101,17 +217,25 @@ async function saveTrigger(payload) {
 }
 
 async function deleteTrigger(id) {
-  const res = await fetch(`/api/log-triggers/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  const res = await fetchWithAuth(`/api/log-triggers/${encodeURIComponent(id)}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
 addBtn?.addEventListener('click', () => {
+  if (!isAuthorized()) {
+    updateAuthUI('Admin access required.');
+    return;
+  }
   clearEditor();
   fLabel.focus();
 });
 
 refreshBtn?.addEventListener('click', () => {
+  if (!isAuthorized()) {
+    updateAuthUI('Admin access required.');
+    return;
+  }
   loadTriggers();
 });
 
@@ -121,6 +245,10 @@ tableBody?.addEventListener('click', async (e) => {
   const action = target.getAttribute('data-action');
   const id = target.getAttribute('data-id');
   if (!action || !id) return;
+  if (!isAuthorized()) {
+    updateAuthUI('Admin access required.');
+    return;
+  }
 
   if (action === 'edit') {
     const t = triggerCache.find((x) => String(x.id) === id);
@@ -134,6 +262,10 @@ tableBody?.addEventListener('change', async (e) => {
   const action = target.getAttribute('data-action');
   const id = target.getAttribute('data-id');
   if (action === 'toggle' && id) {
+    if (!isAuthorized()) {
+      updateAuthUI('Admin access required.');
+      return;
+    }
     try {
       await saveTrigger({ id, enabled: target.checked });
       await loadTriggers();
@@ -145,6 +277,10 @@ tableBody?.addEventListener('change', async (e) => {
 
 form?.addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (!isAuthorized()) {
+    updateAuthUI('Admin access required.');
+    return;
+  }
   const payload = {
     id: fId.value.trim() || undefined,
     label: fLabel.value.trim(),
@@ -167,6 +303,10 @@ delBtn?.addEventListener('click', async () => {
   const id = fId.value.trim();
   if (!id) return;
   if (!confirm('Delete this trigger?')) return;
+  if (!isAuthorized()) {
+    updateAuthUI('Admin access required.');
+    return;
+  }
   try {
     await deleteTrigger(id);
     clearEditor();
@@ -185,10 +325,13 @@ testBtn?.addEventListener('click', async () => {
     testResult.textContent = 'Enter a sample log line to test.';
     return;
   }
+  if (!isAuthorized()) {
+    updateAuthUI('Admin access required.');
+    return;
+  }
   try {
-    const res = await fetch('/api/log-triggers:test', {
+    const res = await fetchWithAuth('/api/log-triggers:test', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ line: text }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -209,5 +352,52 @@ testBtn?.addEventListener('click', async () => {
   }
 });
 
-loadTriggers();
+authForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (isSignedIn()) {
+    return;
+  }
+  const username = authUsernameInput ? authUsernameInput.value.trim() : '';
+  const password = authPasswordInput ? authPasswordInput.value : '';
+  if (!username || !password) {
+    updateAuthUI('Enter username and password.');
+    return;
+  }
+  try {
+    updateAuthUI('Signing in...');
+    await authLogin(username, password);
+    authState = getAuthState();
+    updateAuthUI('Signed in.', { success: true });
+  } catch (error) {
+    updateAuthUI(error?.message || 'Login failed.');
+  } finally {
+    if (authPasswordInput) {
+      authPasswordInput.value = '';
+    }
+  }
+});
+
+authLogoutButton?.addEventListener('click', async () => {
+  if (!isSignedIn()) {
+    return;
+  }
+  try {
+    authLogoutButton.disabled = true;
+    await authLogout();
+    authState = getAuthState();
+    updateAuthUI('Signed out.', { success: true });
+  } catch (error) {
+    updateAuthUI(error?.message || 'Failed to sign out.');
+  } finally {
+    authLogoutButton.disabled = false;
+  }
+});
+
+onAuthChanged((next) => {
+  authState = { ...authState, ...next };
+  triggersLoaded = false;
+  updateAuthUI();
+});
+
+updateAuthUI();
 

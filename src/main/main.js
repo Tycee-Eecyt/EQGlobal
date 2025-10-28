@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } = require('electron');
 const axios = require('axios');
@@ -8,6 +8,13 @@ const TimerManager = require('./timerManager');
 const MobWindowManager = require('./mobWindowManager');
 const defaultTriggers = require('../shared/defaultTriggers.json');
 const mobWindowDefinitions = require('../shared/mobWindows.json');
+
+const ROLE_LEVELS = {
+  ADMIN: 1,
+  OFFICER: 2,
+  TRACKER: 3,
+  BASE: 4,
+};
 
 const ASSETS_DIR = path.join(__dirname, '..', '..', 'assets');
 const APP_ICON_FILENAME = 'EQ-Global-logo.png';
@@ -85,6 +92,13 @@ const defaultSettings = {
   triggers: defaultTriggers,
   mobWindows: {
     kills: {},
+  },
+  auth: {
+    accessToken: null,
+    accessTokenExpiresAt: null,
+    refreshToken: null,
+    refreshTokenExpiresAt: null,
+    user: null,
   },
 };
 
@@ -776,6 +790,13 @@ async function flushBackend() {
     return;
   }
 
+  const headers = await buildAuthHeaders({ silent: true });
+  if (!headers) {
+    backendQueue.lines.length = 0;
+    backendQueue.events.length = 0;
+    return;
+  }
+
   const payloadLines = backendQueue.lines.splice(0, backendQueue.lines.length);
   const payloadEvents = backendQueue.events.splice(0, backendQueue.events.length);
 
@@ -784,9 +805,12 @@ async function flushBackend() {
   if (payloadLines.length > 0) {
     requests.push(
       axios
-        .post(joinBackendUrl(baseUrl, '/api/log-lines'), { lines: payloadLines })
-        .catch((error) => {
+        .post(joinBackendUrl(baseUrl, '/api/log-lines'), { lines: payloadLines }, { headers })
+        .catch(async (error) => {
           console.error('Failed to push log lines', error.message);
+          if (isUnauthorizedError(error)) {
+            await clearAuthState();
+          }
         })
     );
   }
@@ -794,9 +818,12 @@ async function flushBackend() {
   if (payloadEvents.length > 0) {
     requests.push(
       axios
-        .post(joinBackendUrl(baseUrl, '/api/log-events'), { events: payloadEvents })
-        .catch((error) => {
+        .post(joinBackendUrl(baseUrl, '/api/log-events'), { events: payloadEvents }, { headers })
+        .catch(async (error) => {
           console.error('Failed to push log events', error.message);
+          if (isUnauthorizedError(error)) {
+            await clearAuthState();
+          }
         })
     );
   }
@@ -814,6 +841,195 @@ function joinBackendUrl(base, suffix) {
   }
 }
 
+const AUTH_REFRESH_GRACE_MS = 60_000;
+let accessTokenRefreshPromise = null;
+
+function emptyAuthState() {
+  return {
+    accessToken: null,
+    accessTokenExpiresAt: null,
+    refreshToken: null,
+    refreshTokenExpiresAt: null,
+    user: null,
+  };
+}
+
+function getStoredAuthState() {
+  const raw = settings && typeof settings === 'object' ? settings.auth : undefined;
+  if (!raw || typeof raw !== 'object') {
+    return emptyAuthState();
+  }
+  return {
+    ...emptyAuthState(),
+    ...raw,
+  };
+}
+
+function getRendererAuthState(auth = getStoredAuthState()) {
+  return {
+    user: auth.user || null,
+    accessTokenExpiresAt: auth.accessTokenExpiresAt || null,
+    refreshTokenExpiresAt: auth.refreshTokenExpiresAt || null,
+  };
+}
+
+function emitAuthChanged() {
+  const payload = getRendererAuthState();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('auth:changed', payload);
+  }
+}
+
+async function persistAuthState(nextState) {
+  await ensureSettingsLoaded();
+  settings.auth = {
+    ...emptyAuthState(),
+    ...(nextState && typeof nextState === 'object' ? nextState : {}),
+  };
+  await saveSettings(settings);
+  emitAuthChanged();
+  return settings.auth;
+}
+
+async function clearAuthState() {
+  return persistAuthState(emptyAuthState());
+}
+
+function sanitizeSettingsForRenderer(currentSettings = settings) {
+  return {
+    ...currentSettings,
+    auth: getRendererAuthState(),
+  };
+}
+
+function getCurrentRoleLevel() {
+  const auth = getStoredAuthState();
+  const level = Number(auth.user?.roleLevel);
+  return Number.isFinite(level) ? level : null;
+}
+
+function shouldRefreshAccessToken(auth) {
+  if (!auth.accessTokenExpiresAt) {
+    return false;
+  }
+  const expiresAt = new Date(auth.accessTokenExpiresAt).getTime();
+  if (!Number.isFinite(expiresAt)) {
+    return false;
+  }
+  return expiresAt - Date.now() < AUTH_REFRESH_GRACE_MS;
+}
+
+async function loginToBackend({ username, password }) {
+  await ensureSettingsLoaded();
+  const baseUrl = (settings.backendUrl || '').trim();
+  if (!baseUrl) {
+    throw new Error('Configure Backend URL before signing in.');
+  }
+  const url = joinBackendUrl(baseUrl, '/api/auth/login');
+  const response = await axios.post(url, { username, password });
+  const data = response?.data || {};
+  if (!data.accessToken || !data.refreshToken || !data.user) {
+    throw new Error('Unexpected response from auth/login.');
+  }
+  await persistAuthState({
+    user: data.user,
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
+    accessTokenExpiresAt: data.accessTokenExpiresAt || null,
+    refreshTokenExpiresAt: data.refreshTokenExpiresAt || null,
+  });
+  return getRendererAuthState();
+}
+
+async function logoutFromBackend() {
+  await ensureSettingsLoaded();
+  await persistAuthState(emptyAuthState());
+  return getRendererAuthState();
+}
+
+async function refreshAccessToken({ silent = false } = {}) {
+  await ensureSettingsLoaded();
+  const auth = getStoredAuthState();
+  if (!auth.refreshToken) {
+    if (silent) {
+      return null;
+    }
+    throw new Error('No refresh token available.');
+  }
+  const baseUrl = (settings.backendUrl || '').trim();
+  if (!baseUrl) {
+    if (silent) {
+      return null;
+    }
+    throw new Error('Backend URL missing.');
+  }
+  if (accessTokenRefreshPromise) {
+    return accessTokenRefreshPromise;
+  }
+  const url = joinBackendUrl(baseUrl, '/api/auth/refresh');
+  accessTokenRefreshPromise = axios
+    .post(url, { refreshToken: auth.refreshToken })
+    .then(async (response) => {
+      const data = response?.data || {};
+      if (!data.accessToken || !data.refreshToken) {
+        throw new Error('Invalid refresh response.');
+      }
+      await persistAuthState({
+        user: data.user || auth.user,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        accessTokenExpiresAt: data.accessTokenExpiresAt || null,
+        refreshTokenExpiresAt: data.refreshTokenExpiresAt || auth.refreshTokenExpiresAt || null,
+      });
+      return getStoredAuthState();
+    })
+    .catch(async (error) => {
+      await clearAuthState();
+      if (silent) {
+        return null;
+      }
+      throw error;
+    })
+    .finally(() => {
+      accessTokenRefreshPromise = null;
+    });
+  return accessTokenRefreshPromise;
+}
+
+async function getAccessToken({ silent = false } = {}) {
+  await ensureSettingsLoaded();
+  const auth = getStoredAuthState();
+  if (!auth.accessToken) {
+    const refreshed = await refreshAccessToken({ silent });
+    return refreshed ? refreshed.accessToken : null;
+  }
+  if (shouldRefreshAccessToken(auth)) {
+    const refreshed = await refreshAccessToken({ silent: true });
+    if (refreshed && refreshed.accessToken) {
+      return refreshed.accessToken;
+    }
+  }
+  return auth.accessToken;
+}
+
+async function buildAuthHeaders({ silent = false } = {}) {
+  const token = await getAccessToken({ silent: true });
+  if (!token) {
+    if (silent) {
+      return null;
+    }
+    throw new Error('Not authenticated.');
+  }
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+function isUnauthorizedError(error) {
+  const status = error?.response?.status;
+  return status === 401 || status === 403;
+}
+
 let mobWindowsFetchedFromBackend = false;
 
 async function fetchMobWindowsFromBackend() {
@@ -823,7 +1039,11 @@ async function fetchMobWindowsFromBackend() {
   }
 
   try {
-    const response = await axios.get(joinBackendUrl(baseUrl, '/api/mob-windows'));
+    const headers = await buildAuthHeaders({ silent: true });
+    if (!headers) {
+      return null;
+    }
+    const response = await axios.get(joinBackendUrl(baseUrl, '/api/mob-windows'), { headers });
     const data = response?.data;
     if (!data || typeof data.kills !== 'object' || !data.kills) {
       return null;
@@ -831,6 +1051,9 @@ async function fetchMobWindowsFromBackend() {
     return { kills: data.kills };
   } catch (error) {
     console.error('Failed to fetch mob windows from backend', error.message || error);
+    if (isUnauthorizedError(error)) {
+      await clearAuthState();
+    }
     return null;
   }
 }
@@ -860,16 +1083,26 @@ async function syncMobWindowsToBackend(state) {
     return;
   }
   try {
-    await axios.post(joinBackendUrl(baseUrl, '/api/mob-windows'), { kills: payload.kills });
+    const headers = await buildAuthHeaders({ silent: true });
+    if (!headers) {
+      return;
+    }
+    await axios.post(joinBackendUrl(baseUrl, '/api/mob-windows'), { kills: payload.kills }, { headers });
   } catch (error) {
     console.error('Failed to sync mob windows to backend', error.message || error);
+    if (isUnauthorizedError(error)) {
+      await clearAuthState();
+    }
   }
 }
 
 function registerIpcHandlers() {
   ipcMain.handle('ready', async () => ensureSettingsLoaded());
 
-  ipcMain.handle('settings:load', async () => ensureSettingsLoaded());
+  ipcMain.handle('settings:load', async () => {
+    await ensureSettingsLoaded();
+    return sanitizeSettingsForRenderer();
+  });
 
   ipcMain.handle('settings:update', async (_event, partialSettings) => {
     await ensureSettingsLoaded();
@@ -882,6 +1115,8 @@ function registerIpcHandlers() {
       Object.prototype.hasOwnProperty.call(partialSettings || {}, 'backendUrl') &&
       (partialSettings.backendUrl || '') !== previousBackendUrl;
     if (backendUrlChanged) {
+      settings.auth = emptyAuthState();
+      emitAuthChanged();
       mobWindowsFetchedFromBackend = false;
       if ((settings.backendUrl || '').trim()) {
         const loaded = await loadMobWindowsFromBackend({ force: true });
@@ -901,8 +1136,23 @@ function registerIpcHandlers() {
     }
 
     await saveSettings(settings);
-    return settings;
+    return sanitizeSettingsForRenderer();
   });
+
+  ipcMain.handle('auth:status', async () => {
+    await ensureSettingsLoaded();
+    return getRendererAuthState();
+  });
+
+  ipcMain.handle('auth:login', async (_event, credentials) => {
+    const { username, password } = credentials || {};
+    if (!username || !password) {
+      throw new Error('username and password are required.');
+    }
+    return loginToBackend({ username, password });
+  });
+
+  ipcMain.handle('auth:logout', async () => logoutFromBackend());
 
   ipcMain.handle('dialog:select-log-dir', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -1125,23 +1375,42 @@ function registerIpcHandlers() {
 
   ipcMain.handle('triggers:default', () => defaultTriggers);
 
-  ipcMain.handle('mob-windows:get', () => mobWindowManager.computeSnapshot());
+  ipcMain.handle('mob-windows:get', () => {
+    const roleLevel = getCurrentRoleLevel();
+    if (!roleLevel || roleLevel > ROLE_LEVELS.TRACKER) {
+      throw new Error('Not authorized for mob window data.');
+    }
+    return mobWindowManager.computeSnapshot();
+  });
   ipcMain.handle('mob-windows:definitions', () => mobWindowManager.getDefinitions());
   ipcMain.handle('mob-windows:record-kill', async (_event, mobId, timestamp) => {
+    const roleLevel = getCurrentRoleLevel();
+    if (!roleLevel || roleLevel > ROLE_LEVELS.OFFICER) {
+      throw new Error('Not authorized to record ToD updates.');
+    }
     const updated = mobWindowManager.recordKill(mobId, timestamp ? new Date(timestamp) : new Date());
     if (updated) {
       await saveSettings(settings);
+      if ((settings.backendUrl || '').trim()) {
+        await syncMobWindowsToBackend(updated);
+      }
     }
     return mobWindowManager.computeSnapshot();
   });
   ipcMain.handle('mob-windows:clear', async (_event, mobId) => {
+    const roleLevel = getCurrentRoleLevel();
+    if (!roleLevel || roleLevel > ROLE_LEVELS.OFFICER) {
+      throw new Error('Not authorized to clear ToD data.');
+    }
     const cleared = mobWindowManager.clearKill(mobId);
     if (cleared) {
       await saveSettings(settings);
+      if ((settings.backendUrl || '').trim()) {
+        await syncMobWindowsToBackend(cleared);
+      }
     }
     return mobWindowManager.computeSnapshot();
   });
-
   ipcMain.handle('triggers:import-gtp', async () => {
     // Ask user for a .gtp file
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -1259,3 +1528,4 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
