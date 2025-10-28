@@ -194,9 +194,11 @@ function updateAuthUI(message = null, options = {}) {
   const canViewMobWindows = canAccessMobWindows();
   if (navMobWindowsButton) {
     navMobWindowsButton.classList.remove('hidden');
+    const allowMobView = signedIn && canViewMobWindows;
+    navMobWindowsButton.disabled = !allowMobView;
     if (!signedIn) {
       navMobWindowsButton.title = 'Sign in to view mob windows';
-    } else if (!canViewMobWindows) {
+    } else if (!allowMobView) {
       navMobWindowsButton.title = 'Requires tracker access to view mob windows';
     } else {
       navMobWindowsButton.title = 'View mob windows';
