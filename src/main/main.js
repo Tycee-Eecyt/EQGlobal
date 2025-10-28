@@ -87,7 +87,9 @@ const defaultSettings = {
   overlayClickThroughMobs: false,
   overlayOpacity: 0.85,
   overlayBounds: null,
+  overlayVisible: true,
   mobOverlayBounds: null,
+  mobOverlayVisible: true,
   categories: [],
   triggers: defaultTriggers,
   mobWindows: {
@@ -448,6 +450,12 @@ async function ensureSettingsLoaded() {
     if (Object.prototype.hasOwnProperty.call(settings, 'overlayClickThrough')) {
       delete settings.overlayClickThrough;
     }
+    if (typeof settings.overlayVisible !== 'boolean') {
+      settings.overlayVisible = defaultSettings.overlayVisible;
+    }
+    if (typeof settings.mobOverlayVisible !== 'boolean') {
+      settings.mobOverlayVisible = defaultSettings.mobOverlayVisible;
+    }
     if (!settings.backendUrl) {
       settings.backendUrl = defaultSettings.backendUrl;
     }
@@ -556,6 +564,7 @@ function createOverlayWindow() {
     transparent: true,
     resizable: true,
     alwaysOnTop: true,
+    show: settings.overlayVisible !== false,
     focusable: false,
     skipTaskbar: true,
     icon: hasIcon ? iconPath : undefined,
@@ -602,10 +611,26 @@ function createOverlayWindow() {
   overlayWindow.on('move', scheduleSaveOverlayBounds);
   overlayWindow.on('resize', scheduleSaveOverlayBounds);
 
-  overlayWindow.on('show', updateTrayMenu);
-  overlayWindow.on('hide', updateTrayMenu);
+  overlayWindow.on('show', () => {
+    if (settings.overlayVisible !== true) {
+      settings.overlayVisible = true;
+      saveSettings(settings);
+    }
+    updateTrayMenu();
+  });
+  overlayWindow.on('hide', () => {
+    if (settings.overlayVisible !== false) {
+      settings.overlayVisible = false;
+      saveSettings(settings);
+    }
+    updateTrayMenu();
+  });
   overlayWindow.on('closed', () => {
     overlayWindow = null;
+    if (settings.overlayVisible !== false) {
+      settings.overlayVisible = false;
+      saveSettings(settings);
+    }
     updateTrayMenu();
   });
 
@@ -630,6 +655,7 @@ function createMobOverlayWindow() {
     transparent: true,
     resizable: true,
     alwaysOnTop: true,
+    show: settings.mobOverlayVisible !== false,
     focusable: false,
     skipTaskbar: true,
     icon: hasIcon ? iconPath : undefined,
@@ -673,10 +699,26 @@ function createMobOverlayWindow() {
 
   mobOverlayWindow.on('move', scheduleSaveMobOverlayBounds);
   mobOverlayWindow.on('resize', scheduleSaveMobOverlayBounds);
-  mobOverlayWindow.on('show', updateTrayMenu);
-  mobOverlayWindow.on('hide', updateTrayMenu);
+  mobOverlayWindow.on('show', () => {
+    if (settings.mobOverlayVisible !== true) {
+      settings.mobOverlayVisible = true;
+      saveSettings(settings);
+    }
+    updateTrayMenu();
+  });
+  mobOverlayWindow.on('hide', () => {
+    if (settings.mobOverlayVisible !== false) {
+      settings.mobOverlayVisible = false;
+      saveSettings(settings);
+    }
+    updateTrayMenu();
+  });
   mobOverlayWindow.on('closed', () => {
     mobOverlayWindow = null;
+    if (settings.mobOverlayVisible !== false) {
+      settings.mobOverlayVisible = false;
+      saveSettings(settings);
+    }
     updateTrayMenu();
   });
 
@@ -1097,7 +1139,18 @@ async function syncMobWindowsToBackend(state) {
 }
 
 function registerIpcHandlers() {
-  ipcMain.handle('ready', async () => ensureSettingsLoaded());
+  ipcMain.handle('ready', async () => {
+    const currentSettings = await ensureSettingsLoaded();
+    const hasLogDir = (currentSettings.logDirectory || '').trim().length > 0;
+    if (logWatcher) {
+      sendStatus({ state: 'watching', directory: currentSettings.logDirectory });
+    } else if (hasLogDir) {
+      sendStatus({ state: 'stopped', directory: currentSettings.logDirectory });
+    } else {
+      sendStatus({ state: 'idle' });
+    }
+    return currentSettings;
+  });
 
   ipcMain.handle('settings:load', async () => {
     await ensureSettingsLoaded();
@@ -1130,9 +1183,25 @@ function registerIpcHandlers() {
       logWatcher.setTriggers(settings.triggers);
     }
 
-    if (partialSettings.logDirectory && logWatcher) {
-      await stopWatcher();
-      await startWatcher();
+    if (Object.prototype.hasOwnProperty.call(partialSettings || {}, 'logDirectory')) {
+      const trimmedLogDir = (settings.logDirectory || '').trim();
+      if (!trimmedLogDir) {
+        if (logWatcher) {
+          await stopWatcher();
+        } else {
+          sendStatus({ state: 'idle' });
+        }
+      } else {
+        if (logWatcher) {
+          await stopWatcher();
+        }
+        try {
+          await startWatcher();
+        } catch (error) {
+          console.error('Failed to start watcher after log directory update', error);
+          sendStatus({ state: 'error', message: error.message || String(error) });
+        }
+      }
     }
 
     await saveSettings(settings);
@@ -1493,11 +1562,15 @@ app.whenReady().then(async () => {
   ensureTray();
   registerIpcHandlers();
 
-  if (app.isPackaged) {
-    // In packaged builds, default to watching automatically if configured.
-    if (settings.logDirectory) {
-      startWatcher().catch((error) => console.error('Failed to start watcher on boot', error));
+  if ((settings.logDirectory || '').trim()) {
+    try {
+      await startWatcher();
+    } catch (error) {
+      console.error('Failed to start watcher on boot', error);
+      sendStatus({ state: 'error', message: error.message || String(error) });
     }
+  } else {
+    sendStatus({ state: 'idle' });
   }
 
   app.on('activate', () => {

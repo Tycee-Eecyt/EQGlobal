@@ -71,7 +71,6 @@ let currentDropTarget = null;
 const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
 const views = Array.from(document.querySelectorAll('.view'));
 const watcherDirectorySummary = document.getElementById('watcher-directory-summary');
-const headerStartStopButton = document.getElementById('header-start-stop');
 let currentView = 'dashboard';
 
 let categoryMap = new Map();
@@ -1789,15 +1788,6 @@ function updateStatus({ state, message, directory } = {}) {
     watcherStatus.removeAttribute('title');
   }
 
-  if (headerStartStopButton) {
-    if (status === 'watching') {
-      headerStartStopButton.dataset.state = 'stop';
-      headerStartStopButton.textContent = 'Stop Watching';
-    } else {
-      headerStartStopButton.dataset.state = 'start';
-      headerStartStopButton.textContent = 'Start Watching';
-    }
-  }
 }
 
 function cancelTimersAnimation() {
@@ -3369,6 +3359,14 @@ async function hydrate() {
     renderMobWindows(mobWindowSnapshot);
   }
 
+  if ((stored.logDirectory || '').trim()) {
+    try {
+      await window.eqApi.startWatcher();
+    } catch (error) {
+      console.error('Failed to auto-start watcher', error);
+    }
+  }
+
   try {
     overlayMoveMode = Boolean(await window.eqApi.getOverlayMoveMode());
   } catch (error) {
@@ -3383,24 +3381,6 @@ function attachEventListeners() {
       switchView(button.dataset.viewTarget || 'dashboard');
     });
   });
-
-  if (headerStartStopButton) {
-    headerStartStopButton.dataset.state = 'start';
-    headerStartStopButton.textContent = 'Start Watching';
-    headerStartStopButton.addEventListener('click', async () => {
-      try {
-        const isStart = headerStartStopButton.dataset.state !== 'stop';
-        if (isStart) {
-          await persistSettings();
-          await window.eqApi.startWatcher();
-        } else {
-          await window.eqApi.stopWatcher();
-        }
-      } catch (error) {
-        console.error('Failed to toggle watcher from header', error);
-      }
-    });
-  }
 
   if (mobTodInput) {
     mobTodInput.addEventListener('input', () => {
@@ -3888,14 +3868,13 @@ document.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
+  subscribeToIpc();
   await hydrate();
   attachEventListeners();
   switchView('dashboard');
-  subscribeToIpc();
   renderTimers([]);
   renderMobWindows(mobWindowSnapshot);
   renderRecentLines();
-  updateStatus({ state: 'idle' });
 
   // Restore saved mob window filter
   try {
