@@ -23,6 +23,8 @@ const authLogoutButton = document.getElementById('auth-logout-button');
 const authFeedback = document.getElementById('auth-feedback');
 const authUserLabel = document.getElementById('auth-user-label');
 const authRoleLabel = document.getElementById('auth-role-label');
+const navMobLink = document.getElementById('nav-mob-link');
+const navAdminLink = document.getElementById('nav-admin-link');
 
 const REFRESH_INTERVAL = 30000;
 const UPCOMING_WINDOW_SECONDS = 24 * 60 * 60;
@@ -33,6 +35,10 @@ let dataLoaded = false;
 
 function canViewMobWindows() {
   return hasRoleAtMost(ROLE_LEVELS.TRACKER);
+}
+
+function canViewAdmin() {
+  return hasRoleAtMost(ROLE_LEVELS.ADMIN);
 }
 
 function setAuthFeedback(message, { success = false } = {}) {
@@ -83,6 +89,30 @@ function startAutoRefresh() {
   }
 }
 
+function setNavState(link, enabled, message) {
+  if (!link) return;
+  if (!enabled) {
+    link.style.display = 'none';
+    return;
+  }
+  link.style.display = '';
+  link.classList.remove('disabled');
+  link.setAttribute('aria-disabled', 'false');
+  link.tabIndex = 0;
+  delete link.dataset.disabledMessage;
+}
+
+function updateNavLinks() {
+  setNavState(navMobLink, canViewMobWindows(), 'Tracker access required to view mob windows.');
+  setNavState(navAdminLink, canViewAdmin(), 'Admin access required.');
+}
+
+function enforceAccess() {
+  if (!isSignedIn() || !canViewMobWindows()) {
+    window.location.replace('/login.html');
+  }
+}
+
 function updateAuthUI(message = null, options = {}) {
   if (authUserLabel) {
     authUserLabel.textContent = authState.user ? `Signed in as ${authState.user.username}` : 'Not signed in';
@@ -111,6 +141,7 @@ function updateAuthUI(message = null, options = {}) {
   }
 
   const authorized = canViewMobWindows();
+  updateNavLinks();
   if (refreshButton) {
     refreshButton.disabled = !authorized;
   }
@@ -440,6 +471,19 @@ onAuthChanged((next) => {
   authState = { ...authState, ...next };
   dataLoaded = false;
   updateAuthUI();
+  enforceAccess();
 });
 
+[[navMobLink, () => canViewMobWindows(), 'Tracker access required to view mob windows.'], [navAdminLink, () => canViewAdmin(), 'Admin access required.']].forEach(
+  ([link, allowed, message]) => {
+    link?.addEventListener('click', (event) => {
+      if (!allowed()) {
+        event.preventDefault();
+        updateAuthUI(message);
+      }
+    });
+  }
+);
+
 updateAuthUI();
+enforceAccess();
