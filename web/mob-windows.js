@@ -20,9 +20,11 @@ const authUsernameInput = document.getElementById('auth-username');
 const authPasswordInput = document.getElementById('auth-password');
 const authLoginButton = document.getElementById('auth-login-button');
 const authLogoutButton = document.getElementById('auth-logout-button');
+const headerLogoutButton = document.getElementById('header-logout-button');
 const authFeedback = document.getElementById('auth-feedback');
 const authUserLabel = document.getElementById('auth-user-label');
 const authRoleLabel = document.getElementById('auth-role-label');
+const inlineUserLabel = document.getElementById('inline-user-label');
 const navMobLink = document.getElementById('nav-mob-link');
 const navAdminLink = document.getElementById('nav-admin-link');
 
@@ -117,6 +119,9 @@ function updateAuthUI(message = null, options = {}) {
   if (authUserLabel) {
     authUserLabel.textContent = authState.user ? `Signed in as ${authState.user.username}` : 'Not signed in';
   }
+  if (inlineUserLabel) {
+    inlineUserLabel.textContent = authState.user ? `${authState.user.username} (${authState.user.roleName || 'role'})` : 'Not signed in';
+  }
   if (authRoleLabel) {
     const roleLevel = Number(authState?.user?.roleLevel);
     const roleName = authState?.user?.roleName;
@@ -136,8 +141,12 @@ function updateAuthUI(message = null, options = {}) {
     authLoginButton.disabled = isSignedIn();
   }
   if (authLogoutButton) {
-    authLogoutButton.classList.toggle('hidden', !isSignedIn());
-    authLogoutButton.disabled = !isSignedIn();
+    authLogoutButton.classList.toggle('hidden', true);
+    authLogoutButton.disabled = true;
+  }
+  if (headerLogoutButton) {
+    headerLogoutButton.classList.toggle('hidden', !isSignedIn());
+    headerLogoutButton.disabled = !isSignedIn();
   }
 
   const authorized = canViewMobWindows();
@@ -472,6 +481,20 @@ onAuthChanged((next) => {
   dataLoaded = false;
   updateAuthUI();
   enforceAccess();
+});
+
+headerLogoutButton?.addEventListener('click', async () => {
+  if (!isSignedIn()) return;
+  try {
+    headerLogoutButton.disabled = true;
+    await authLogout();
+    authState = getAuthState();
+    updateAuthUI('Signed out.', { success: true });
+  } catch (error) {
+    updateAuthUI(error?.message || 'Failed to sign out.');
+  } finally {
+    headerLogoutButton.disabled = false;
+  }
 });
 
 [[navMobLink, () => canViewMobWindows(), 'Tracker access required to view mob windows.'], [navAdminLink, () => canViewAdmin(), 'Admin access required.']].forEach(

@@ -12,6 +12,15 @@ body {
   min-height: 100vh;
 }
 
+.login-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: radial-gradient(circle at 15% 10%, rgba(73, 209, 164, 0.15), transparent 25%),
+    radial-gradient(circle at 80% 20%, rgba(20, 195, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 50% 120%, rgba(9, 14, 28, 0.8), rgba(10, 12, 20, 0.95));
+}
+
 a {
   color: #4cd2a6;
 }
@@ -28,6 +37,12 @@ a {
   top: 0;
   z-index: 10;
 }
+.login-header {
+  position: static;
+  box-shadow: none;
+  background: transparent;
+  padding: 2rem 2.5rem 1rem;
+}
 
 .site-header h1 {
   margin: 0;
@@ -35,10 +50,55 @@ a {
   font-weight: 600;
 }
 
+.login-brand h1 {
+  font-size: 2.2rem;
+  margin: 0.25rem 0;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: #7dd8ff;
+  opacity: 0.9;
+}
+.lede {
+  margin: 0.35rem 0 0;
+  color: #c7d4e5;
+  opacity: 0.85;
+}
+.lede.subtle {
+  font-size: 0.95rem;
+  opacity: 0.7;
+}
+.pill {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, rgba(73, 209, 164, 0.2), rgba(20, 195, 255, 0.18));
+  color: #c6f7ff;
+}
+
 .site-nav { display: flex; gap: 1rem; }
 .site-nav a { color: #cfe6ff; text-decoration: none; opacity: 0.9; }
 .site-nav a[aria-current="page"] { color: #49d1a4; font-weight: 600; }
 .site-nav a.disabled { opacity: 0.45; cursor: not-allowed; color: #9aa4b5; }
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.inline-user {
+  font-size: 0.95rem;
+  color: #cfe6ff;
+  opacity: 0.9;
+}
+.header-actions .secondary {
+  padding: 0.35rem 0.85rem;
+}
 
 .last-updated {
   font-size: 0.9rem;
@@ -60,6 +120,31 @@ a {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+.login-shell {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.login-panel {
+  max-width: 640px;
+  width: min(90vw, 700px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.login-form input {
+  background: rgba(8, 12, 22, 0.6);
+}
+.login-summary {
+  margin-bottom: 0.5rem;
+}
+.login-footer {
+  text-align: center;
+  padding: 1.5rem 0 2rem;
+  background: transparent;
+  color: #9fb2c8;
 }
 
 .panel.wide {
