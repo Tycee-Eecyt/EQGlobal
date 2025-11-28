@@ -16,6 +16,17 @@
   cursor: not-allowed;
   color: #9aa4b5;
 }
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.inline-user {
+  font-size: 0.95rem;
+  color: #cfe6ff;
+  opacity: 0.9;
+}
 
 .toolbar { display: flex; gap: 0.5rem; }
 .toolbar button { margin-left: 0.25rem; }

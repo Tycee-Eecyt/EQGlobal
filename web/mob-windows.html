@@ -13,36 +13,14 @@
         <a id="nav-mob-link" href="/mob-windows.html" aria-current="page" data-role="tracker">Mob Windows</a>
         <a id="nav-admin-link" href="/admin.html" data-role="admin">Admin</a>
       </nav>
+      <div class="header-actions">
+        <span id="inline-user-label" class="inline-user">Not signed in</span>
+        <button id="header-logout-button" class="secondary hidden" type="button">Sign Out</button>
+      </div>
       <div class="last-updated" id="last-updated">Loading...</div>
     </header>
 
     <main class="layout">
-      <section class="panel auth-panel">
-        <div class="panel-header">
-          <h2>Account</h2>
-        </div>
-        <div class="panel-body">
-          <div class="auth-summary">
-            <span id="auth-user-label">Not signed in</span>
-            <span id="auth-role-label" class="auth-role"></span>
-          </div>
-          <form id="auth-form">
-            <div class="form-row">
-              <label for="auth-username">Username</label>
-              <input id="auth-username" type="text" autocomplete="username" />
-            </div>
-            <div class="form-row">
-              <label for="auth-password">Password</label>
-              <input id="auth-password" type="password" autocomplete="current-password" />
-            </div>
-            <div class="form-actions auth-actions">
-              <button type="submit" id="auth-login-button">Sign In</button>
-              <button type="button" id="auth-logout-button" class="secondary hidden">Sign Out</button>
-            </div>
-            <div id="auth-feedback" class="auth-feedback" aria-live="polite"></div>
-          </form>
-        </div>
-      </section>
       <section class="panel" aria-labelledby="panel-current-title">
         <div class="panel-header">
           <h2 id="panel-current-title">Mobs In Window</h2>
