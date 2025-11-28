@@ -38,6 +38,7 @@ a {
 .site-nav { display: flex; gap: 1rem; }
 .site-nav a { color: #cfe6ff; text-decoration: none; opacity: 0.9; }
 .site-nav a[aria-current="page"] { color: #49d1a4; font-weight: 600; }
+.site-nav a.disabled { opacity: 0.45; cursor: not-allowed; color: #9aa4b5; }
 
 .last-updated {
   font-size: 0.9rem;

@@ -193,7 +193,7 @@ function buildSnapshotFromKills(kills = {}) {
 }
 
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'web', 'mob-windows.html'));
+  res.sendFile(path.join(__dirname, '..', 'web', 'login.html'));
 });
 
 function findMobByAlias(text) {

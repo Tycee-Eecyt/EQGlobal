@@ -143,10 +143,15 @@ export async function login(username, password) {
     let message = 'Login failed.';
     try {
       const data = await response.json();
-      if (data && data.error) {
-        message = data.error;
+      if (data && (data.error || data.message)) {
+        message = data.error || data.message;
       }
-    } catch (_err) {}
+    } catch (_err) {
+      try {
+        const text = await response.text();
+        if (text) message = text;
+      } catch (_err2) {}
+    }
     throw new Error(message);
   }
   const data = await response.json();

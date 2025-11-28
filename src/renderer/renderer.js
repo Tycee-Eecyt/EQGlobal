@@ -2834,26 +2834,56 @@ function parseMobTodLog(rawText) {
       return;
     }
 
-    // Handle alias command: !alias <mob> add|remove <alias>
-    const aliasCmd = trimmed.match(/^!?alias\s+(.+?)\s+(add|remove)\s+(.+)$/i);
-    if (aliasCmd) {
-      const mobText = aliasCmd[1].trim();
-      const op = aliasCmd[2].toLowerCase();
-      const aliasText = aliasCmd[3].trim();
+    // Handle alias command: support both "!alias mob add|remove alias" and "!alias mob | alias" styles
+    const aliasDelimitedCmd = trimmed.match(/^!?alias\s+(.+?)\s*\|\s*(.+)$/i);
+    const aliasAddRemoveCmd = trimmed.match(/^!?alias\s+(.+?)\s+(add|remove)\s+(.+)$/i);
+    if (aliasDelimitedCmd || aliasAddRemoveCmd) {
+      const mobText = (aliasDelimitedCmd ? aliasDelimitedCmd[1] : aliasAddRemoveCmd[1]).trim();
       const mobMatch = resolveMobByText(mobText);
       if (!mobMatch) {
         result.unknown.push({ lineNumber: index + 1, name: mobText, raw: trimmed });
       } else {
         const set = sessionAliasMap.get(mobMatch.mobId) || new Set();
-        if (op === 'add') {
-          set.add(aliasText);
-          sessionAliasMap.set(mobMatch.mobId, set);
-          result.aliasChanges.push({ type: 'add', mobId: mobMatch.mobId, mobName: mobMatch.mobName, alias: aliasText });
+        if (aliasDelimitedCmd) {
+          const aliases = aliasDelimitedCmd[2]
+            .split('|')
+            .map((a) => a.trim())
+            .filter(Boolean);
+          aliases.forEach((aliasText) => {
+            set.add(aliasText);
+            result.aliasChanges.push({
+              type: 'add',
+              mobId: mobMatch.mobId,
+              mobName: mobMatch.mobName,
+              alias: aliasText,
+            });
+          });
+          if (set.size > 0) {
+            sessionAliasMap.set(mobMatch.mobId, set);
+          }
         } else {
-          set.delete(aliasText);
-          if (set.size > 0) sessionAliasMap.set(mobMatch.mobId, set);
-          else sessionAliasMap.delete(mobMatch.mobId);
-          result.aliasChanges.push({ type: 'remove', mobId: mobMatch.mobId, mobName: mobMatch.mobName, alias: aliasText });
+          const op = aliasAddRemoveCmd[2].toLowerCase();
+          const aliasText = aliasAddRemoveCmd[3].trim();
+          if (op === 'add') {
+            set.add(aliasText);
+            sessionAliasMap.set(mobMatch.mobId, set);
+            result.aliasChanges.push({
+              type: 'add',
+              mobId: mobMatch.mobId,
+              mobName: mobMatch.mobName,
+              alias: aliasText,
+            });
+          } else {
+            set.delete(aliasText);
+            if (set.size > 0) sessionAliasMap.set(mobMatch.mobId, set);
+            else sessionAliasMap.delete(mobMatch.mobId);
+            result.aliasChanges.push({
+              type: 'remove',
+              mobId: mobMatch.mobId,
+              mobName: mobMatch.mobName,
+              alias: aliasText,
+            });
+          }
         }
       }
       resetPendingMob();
@@ -2884,61 +2914,75 @@ function parseMobTodLog(rawText) {
       return;
     }
 
-    // Ignore unsupported bot commands
-    if (/^!\s*(register|unregister|show|rename|register_link|register_clear|set_warn_time|autotod|skip|unskip|timers|schedule|leaderboard|todhistory)\b/i.test(trimmed)) {
+    // Ignore bot help text and non-ToD commands from the spawn timer bot
+    if (
+      /^Spawn\s+Timer\s+Bot\s+Help\s+Menu/i.test(trimmed) ||
+      /^List\s+of\s+available\s+commands/i.test(trimmed) ||
+      /^To\s+see\s+how\s+to\s+use\s+a\s+specific\s+command/i.test(trimmed)
+    ) {
       resetPendingMob();
       return;
     }
-  if (!/^!?tod\b/i.test(trimmed)) {
-    return;
-  }
-
-  resetPendingMob();
-  const body = trimmed.replace(/^!?tod\b\s*/i, '');
-  if (!body) {
-    result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
-    return;
-  }
-
-  // Support quake command: !tod quake [time]
-  const quakeMatch = body.match(/^quake\b/i);
-  if (quakeMatch) {
-    let remainder = body.slice(quakeMatch[0].length).trim();
-    if (remainder.startsWith('|') || remainder.startsWith(',')) {
-      remainder = remainder.slice(1).trim();
-    }
-    const timestamp = resolveTemporalExpression(remainder, currentTimestamp, now);
-    if (!timestamp) {
-      result.warnings.push(
-        `Line ${index + 1}: could not understand quake time "${remainder || 'message time'}".`
-      );
+    const ignoredCommands =
+      /^!\s*(register|unregister|alias|show|rename|register_link|register_clear|set_warn_time|autotod|skip|unskip|timers|schedule|leaderboard|todhistory)\b/i;
+    if (ignoredCommands.test(trimmed)) {
+      resetPendingMob();
       return;
     }
-    const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
-    if (!mobs.length) {
-      result.warnings.push(`Line ${index + 1}: no tracked mobs available to apply quake.`);
+    if (/^tod$/i.test(trimmed) || /^app$/i.test(trimmed)) {
+      resetPendingMob();
       return;
     }
-    for (const mob of mobs) {
-      if (!mob || !mob.id) continue;
-      result.entries.push({
-        mobId: mob.id,
-        mobName: mob.name || mob.id,
-        alias: mob.name || mob.id,
-        timestamp,
-        sourceLine: trimmed,
-        lineNumber: index + 1,
-        rawTime: remainder,
-        origin: 'tod-command',
-      });
+    if (!/^!?tod\b/i.test(trimmed)) {
+      return;
     }
-    return;
-  }
 
-  const mobMatch = resolveMobByText(body);
-  if (!mobMatch) {
-    const candidateName = body.split(/[|,]/)[0].trim();
-    result.unknown.push({
+    resetPendingMob();
+    const body = trimmed.replace(/^!?tod\b\s*/i, '');
+    if (!body) {
+      result.warnings.push(`Line ${index + 1}: missing mob name after ToD command.`);
+      return;
+    }
+
+    // Support quake command: !tod quake [time]
+    const quakeMatch = body.match(/^quake\b/i);
+    if (quakeMatch) {
+      let remainder = body.slice(quakeMatch[0].length).trim();
+      if (remainder.startsWith('|') || remainder.startsWith(',')) {
+        remainder = remainder.slice(1).trim();
+      }
+      const timestamp = resolveTemporalExpression(remainder, currentTimestamp, now);
+      if (!timestamp) {
+        result.warnings.push(
+          `Line ${index + 1}: could not understand quake time "${remainder || 'message time'}".`
+        );
+        return;
+      }
+      const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+      if (!mobs.length) {
+        result.warnings.push(`Line ${index + 1}: no tracked mobs available to apply quake.`);
+        return;
+      }
+      for (const mob of mobs) {
+        if (!mob || !mob.id) continue;
+        result.entries.push({
+          mobId: mob.id,
+          mobName: mob.name || mob.id,
+          alias: mob.name || mob.id,
+          timestamp,
+          sourceLine: trimmed,
+          lineNumber: index + 1,
+          rawTime: remainder,
+          origin: 'tod-command',
+        });
+      }
+      return;
+    }
+
+    const mobMatch = resolveMobByText(body);
+    if (!mobMatch) {
+      const candidateName = body.split(/[|,]/)[0].trim();
+      result.unknown.push({
         lineNumber: index + 1,
         name: candidateName || body,
         raw: trimmed,
@@ -2954,9 +2998,7 @@ function parseMobTodLog(rawText) {
     if (hashIndex >= 0) {
       remainder = remainder.slice(0, hashIndex).trim();
     }
-    remainder = remainder.replace(/\(.*?\)/g, (match) =>
-      /ish/i.test(match) ? '' : match
-    );
+    remainder = remainder.replace(/\(.*?\)/g, (match) => (/ish/i.test(match) ? '' : match));
     remainder = remainder.trim();
 
     const timestamp = resolveTemporalExpression(remainder, currentTimestamp, now);

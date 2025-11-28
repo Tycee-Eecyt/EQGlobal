@@ -35,6 +35,8 @@ const authLogoutButton = document.getElementById('auth-logout-button');
 const authFeedback = document.getElementById('auth-feedback');
 const authUserLabel = document.getElementById('auth-user-label');
 const authRoleLabel = document.getElementById('auth-role-label');
+const navMobLink = document.getElementById('nav-mob-link');
+const navAdminLink = document.getElementById('nav-admin-link');
 
 let triggerCache = [];
 let authState = getAuthState();
@@ -42,6 +44,10 @@ let triggersLoaded = false;
 
 function isAuthorized() {
   return hasRoleAtMost(ROLE_LEVELS.ADMIN);
+}
+
+function canViewMobWindows() {
+  return hasRoleAtMost(ROLE_LEVELS.TRACKER);
 }
 
 function setAuthFeedback(message, { success = false } = {}) {
@@ -109,6 +115,7 @@ function updateAuthUI(message = null, options = {}) {
   }
 
   const authorized = isAuthorized();
+  updateNavLinks();
   setControlsDisabled(!authorized);
   if (authorized) {
     if (!triggersLoaded) {
@@ -126,6 +133,37 @@ function updateAuthUI(message = null, options = {}) {
     showUnauthorizedTableMessage();
     const feedbackMessage = message !== null ? message : 'Admin access required.';
     setAuthFeedback(feedbackMessage, options);
+  }
+}
+
+function setNavState(link, enabled, fallbackMessage) {
+  if (!link) return;
+  link.classList.toggle('disabled', !enabled);
+  link.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+  link.tabIndex = enabled ? 0 : -1;
+  if (!enabled && fallbackMessage) {
+    link.dataset.disabledMessage = fallbackMessage;
+  } else {
+    delete link.dataset.disabledMessage;
+  }
+}
+
+function updateNavLinks() {
+  setNavState(navAdminLink, isAuthorized(), 'Admin access required.');
+  setNavState(navMobLink, canViewMobWindows(), 'Tracker access required.');
+}
+
+function enforceAccess() {
+  if (!isSignedIn()) {
+    window.location.replace('/login.html');
+    return;
+  }
+  if (!isAuthorized()) {
+    if (canViewMobWindows()) {
+      window.location.replace('/mob-windows.html');
+    } else {
+      window.location.replace('/login.html');
+    }
   }
 }
 
@@ -397,7 +435,20 @@ onAuthChanged((next) => {
   authState = { ...authState, ...next };
   triggersLoaded = false;
   updateAuthUI();
+  enforceAccess();
 });
 
+[[navAdminLink, () => isAuthorized(), 'Admin access required.'], [navMobLink, () => canViewMobWindows(), 'Tracker access required.']].forEach(
+  ([link, allowed, message]) => {
+    link?.addEventListener('click', (event) => {
+      if (!allowed()) {
+        event.preventDefault();
+        updateAuthUI(message);
+      }
+    });
+  }
+);
+
 updateAuthUI();
+enforceAccess();
 

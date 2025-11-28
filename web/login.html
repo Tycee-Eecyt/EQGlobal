@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EQGlobal Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="mob-windows.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>EQGlobal Login</h1>
+    </header>
+
+    <main class="layout">
+      <section class="panel auth-panel">
+        <div class="panel-header">
+          <h2>Sign In</h2>
+        </div>
+        <div class="panel-body">
+          <div class="auth-summary">
+            <span id="auth-user-label">Not signed in</span>
+            <span id="auth-role-label" class="auth-role"></span>
+          </div>
+          <form id="auth-form">
+            <div class="form-row">
+              <label for="auth-username">Username</label>
+              <input id="auth-username" type="text" autocomplete="username" />
+            </div>
+            <div class="form-row">
+              <label for="auth-password">Password</label>
+              <input id="auth-password" type="password" autocomplete="current-password" />
+            </div>
+            <div class="form-actions auth-actions">
+              <button type="submit" id="auth-login-button">Sign In</button>
+              <button type="button" id="auth-logout-button" class="secondary hidden">Sign Out</button>
+            </div>
+            <div id="auth-feedback" class="auth-feedback" aria-live="polite"></div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Please sign in to access mob windows and admin tools.</span>
+    </footer>
+
+    <script type="module" src="login.js"></script>
+  </body>
+</html>
