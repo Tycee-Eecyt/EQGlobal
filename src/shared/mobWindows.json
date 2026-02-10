@@ -547,6 +547,15 @@
     "notes": ""
   },
   {
+    "id": "vilefang",
+    "name": "Vilefang",
+    "zone": "Dragon Necropolis",
+    "respawnDisplay": "1d",
+    "minRespawnHours": 24,
+    "maxRespawnHours": 24,
+    "notes": "Level 60 giant snake warrior. 100% spawn at (-315, -1257) underground."
+  },
+  {
     "id": "vulak-aerr",
     "name": "Vulak`Aerr",
     "aliases": [

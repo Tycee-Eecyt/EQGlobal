@@ -62,6 +62,66 @@ app.use(
 const mobAliasIndex = new Map();
 const mobDefinitionsById = new Map();
 let aliasOverridesByMobId = new Map();
+const mobKillMatchers = [];
+
+function escapeRegex(text = '') {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildMobKillMatchers(definitions = [], aliasOverrides = new Map()) {
+  mobKillMatchers.length = 0;
+  (Array.isArray(definitions) ? definitions : []).forEach((definition) => {
+    if (!definition || !definition.id) return;
+    const names = new Set([definition.name, ...(Array.isArray(definition.aliases) ? definition.aliases : [])]);
+    const overrides = aliasOverrides.get(definition.id);
+    if (Array.isArray(overrides)) {
+      overrides.forEach((alias) => names.add(alias));
+    }
+    const killPhrases = Array.isArray(definition.killPhrases)
+      ? definition.killPhrases.map((phrase) => String(phrase).trim()).filter(Boolean)
+      : [];
+    const phraseRegexes = killPhrases
+      .map((phrase) => {
+        try {
+          return phrase ? new RegExp(phrase, 'i') : null;
+        } catch (_err) {
+          return null;
+        }
+      })
+      .filter(Boolean);
+    const autoRegexes = Array.from(names)
+      .filter(Boolean)
+      .flatMap((mobName) => {
+        const escaped = escapeRegex(mobName);
+        return [
+          new RegExp(`${escaped}\\s+has\\s+been\\s+slain\\s+by`, 'i'),
+          new RegExp(`${escaped}\\s+has\\s+been\\s+defeated\\s+by`, 'i'),
+          new RegExp(`you\\s+have\\s+slain\\s+${escaped}!`, 'i'),
+        ];
+      });
+    const matchers = [...phraseRegexes, ...autoRegexes];
+    if (matchers.length > 0) {
+      mobKillMatchers.push({ id: definition.id, matchers });
+    }
+  });
+}
+
+function findMobKillInLine(line) {
+  if (!line) {
+    return null;
+  }
+  const message = String(line).replace(/^\[[^\]]+\]\s*/, '').trim();
+  if (!message) {
+    return null;
+  }
+  const lowered = message.toLowerCase();
+  for (const entry of mobKillMatchers) {
+    if (entry.matchers.some((matcher) => matcher.test(lowered))) {
+      return entry.id;
+    }
+  }
+  return null;
+}
 
 // --- Global Log Forwarding Triggers (Admin-configured) ---
 let logForwardConfig = {
@@ -182,6 +242,8 @@ function rebuildAliasIndex() {
       });
     });
   }
+
+  buildMobKillMatchers(mobWindowDefinitions, aliasOverridesByMobId);
 }
 
 rebuildAliasIndex();
@@ -499,10 +561,19 @@ app.post(
       const mobUpdates = new Map();
       let quakeIso = null;
       documents.forEach((doc) => {
+        const baseTime = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
+
+        const killMobId = findMobKillInLine(doc.line);
+        if (killMobId) {
+          const iso = baseTime.toISOString();
+          const prev = mobUpdates.get(killMobId);
+          if (!prev || iso > prev) {
+            mobUpdates.set(killMobId, iso);
+          }
+        }
+
         const parsed = extractTodCommandFromLineV2(doc.line);
         if (!parsed) return;
-
-        const baseTime = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || Date.now());
 
         if (parsed.kind === 'quake') {
           const resolved =

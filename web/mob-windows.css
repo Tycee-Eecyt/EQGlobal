@@ -28,8 +28,9 @@ a {
 .site-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1.2rem 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.2rem 2rem 0.6rem;
   background: rgba(16, 18, 28, 0.9);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.4);
@@ -80,10 +81,36 @@ a {
   color: #c6f7ff;
 }
 
-.site-nav { display: flex; gap: 1rem; }
-.site-nav a { color: #cfe6ff; text-decoration: none; opacity: 0.9; }
-.site-nav a[aria-current="page"] { color: #49d1a4; font-weight: 600; }
-.site-nav a.disabled { opacity: 0.45; cursor: not-allowed; color: #9aa4b5; }
+.site-nav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+.site-nav a {
+  color: #cfe6ff;
+  text-decoration: none;
+  opacity: 0.9;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  transition: background 120ms ease, color 120ms ease;
+}
+.site-nav a[aria-current="page"] {
+  color: #0c161a;
+  font-weight: 600;
+  background: linear-gradient(135deg, #14c3ff, #49d1a4);
+  opacity: 1;
+}
+.site-nav a.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: #9aa4b5;
+}
+.site-nav a:not([aria-current="page"]):not(.disabled):hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 
 .header-actions {
   margin-left: auto;
@@ -102,7 +129,11 @@ a {
 
 .last-updated {
   font-size: 0.9rem;
-  opacity: 0.75;
+  opacity: 0.7;
+  margin-left: auto;
+  padding: 0 2rem 0.6rem;
+  flex-basis: 100%;
+  text-align: right;
 }
 
 .layout {

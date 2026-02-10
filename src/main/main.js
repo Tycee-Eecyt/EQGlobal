@@ -839,6 +839,7 @@ async function handleNewLines({ filePath, lines }) {
   const mobUpdated = mobWindowManager.ingestLines(decoratedLines);
   if (mobUpdated) {
     await saveSettings(settings);
+    await syncMobWindowsToBackend();
   }
 }
 
