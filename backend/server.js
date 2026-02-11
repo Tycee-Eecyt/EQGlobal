@@ -11,6 +11,7 @@ const configurePassport = require('./auth/passport');
 const createAuthMiddleware = require('./auth/middleware');
 const createAuthRouter = require('./auth/routes');
 const { ROLE_LEVELS } = require('./auth/roles');
+const createDiscordBot = require('./discord/bot');
 
 require('dotenv').config({
   path: path.resolve(process.cwd(), '.env'),
@@ -30,6 +31,7 @@ const persistLogEvents = /^true$/i.test(process.env.PERSIST_LOG_EVENTS || '');
 
 let mongoClient;
 let mongoDb;
+let discordBot;
 
 async function ensureMongoConnection() {
   if (mongoDb && mongoClient) {
@@ -252,6 +254,13 @@ function buildSnapshotFromKills(kills = {}) {
   const manager = new MobWindowManager(mobWindowDefinitions, { tickRateMs: 60_000 });
   manager.loadState({ kills });
   return manager.computeSnapshot();
+}
+
+function notifyDiscord(payload) {
+  if (!discordBot || !discordBot.enabled) return;
+  discordBot.notifyMobUpdates(payload).catch((err) => {
+    console.warn('[discord] Failed to send update:', err.message);
+  });
 }
 
 app.get('/', (_req, res) => {
@@ -521,7 +530,27 @@ async function applyMobKillUpdates(db, updates) {
     'at',
     updatedAt.toISOString()
   );
-  return { kills, updatedAt };
+  const snapshot = buildSnapshotFromKills(kills);
+  return { kills, updatedAt, snapshot, updatedMobIds: Array.from(updates.keys()) };
+}
+
+async function clearMobKill(db, mobId) {
+  if (!mobId) return null;
+  const collection = db.collection('mob_windows');
+  const doc = await collection.findOne({ _id: 'global' });
+  const kills = doc && doc.kills ? { ...doc.kills } : {};
+  if (!Object.prototype.hasOwnProperty.call(kills, mobId)) {
+    return null;
+  }
+  delete kills[mobId];
+  const updatedAt = new Date();
+  await collection.updateOne(
+    { _id: 'global' },
+    { $set: { kills, updatedAt } },
+    { upsert: true }
+  );
+  const snapshot = buildSnapshotFromKills(kills);
+  return { kills, updatedAt, snapshot, clearedMobIds: [mobId] };
 }
 
 app.get('/health', async (_req, res) => {
@@ -642,7 +671,14 @@ app.post(
 
       if (toInsert.length === 0) {
         if (mobUpdates.size > 0) {
-          await applyMobKillUpdates(db, mobUpdates);
+          const result = await applyMobKillUpdates(db, mobUpdates);
+          if (result) {
+            notifyDiscord({
+              snapshot: result.snapshot,
+              updatedMobIds: result.updatedMobIds,
+              clearedMobIds: [],
+            });
+          }
         }
         return res.json({ inserted: 0 });
       }
@@ -650,7 +686,14 @@ app.post(
       const result = await collection.insertMany(toInsert, { ordered: false });
 
       if (mobUpdates.size > 0) {
-        await applyMobKillUpdates(db, mobUpdates);
+        const result = await applyMobKillUpdates(db, mobUpdates);
+        if (result) {
+          notifyDiscord({
+            snapshot: result.snapshot,
+            updatedMobIds: result.updatedMobIds,
+            clearedMobIds: [],
+          });
+        }
       }
 
       res.json({ inserted: result.insertedCount || toInsert.length });
@@ -808,6 +851,11 @@ app.post(
         { upsert: true }
       );
       const snapshot = buildSnapshotFromKills(sanitized);
+      notifyDiscord({
+        snapshot,
+        updatedMobIds: Object.keys(sanitized),
+        clearedMobIds: [],
+      });
       res.json({ kills: sanitized, updatedAt: updatedAt.toISOString(), mobs: snapshot.mobs, snapshot });
     } catch (error) {
       console.error('Failed to persist mob window state', error);
@@ -833,16 +881,30 @@ app.post(
     }
     try {
       const db = await ensureMongoConnection();
-      const collection = db.collection('mob_windows');
-      const doc = await collection.findOne({ _id: 'global' });
-      const kills = doc && doc.kills ? { ...doc.kills } : {};
-      if (Object.prototype.hasOwnProperty.call(kills, targetMobId)) {
-        delete kills[targetMobId];
+      const result = await clearMobKill(db, targetMobId);
+      if (!result) {
+        const collection = db.collection('mob_windows');
+        const doc = await collection.findOne({ _id: 'global' });
+        const kills = doc && doc.kills ? doc.kills : {};
+        const snapshot = buildSnapshotFromKills(kills);
+        return res.json({
+          kills,
+          updatedAt: doc?.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
+          mobs: snapshot.mobs,
+          snapshot,
+        });
       }
-      const updatedAt = new Date();
-      await collection.updateOne({ _id: 'global' }, { $set: { kills, updatedAt } }, { upsert: true });
-      const snapshot = buildSnapshotFromKills(kills);
-      res.json({ kills, updatedAt: updatedAt.toISOString(), mobs: snapshot.mobs, snapshot });
+      notifyDiscord({
+        snapshot: result.snapshot,
+        updatedMobIds: [targetMobId],
+        clearedMobIds: [targetMobId],
+      });
+      res.json({
+        kills: result.kills,
+        updatedAt: result.updatedAt ? result.updatedAt.toISOString() : null,
+        mobs: result.snapshot.mobs,
+        snapshot: result.snapshot,
+      });
     } catch (err) {
       console.error('Failed to clear mob kill', err);
       res.status(500).json({ error: 'Failed to clear mob kill.' });
@@ -958,6 +1020,25 @@ app.listen(port, async () => {
       await loadLogForwardConfig(mongoDb);
     } catch (error) {
       console.error('Unable to connect to MongoDB on startup:', error.message);
+    }
+  }
+
+  discordBot = createDiscordBot({
+    getDb: ensureMongoConnection,
+    mobDefinitionsById,
+    findMobByAlias,
+    resolveTemporalExpression,
+    buildSnapshotFromKills,
+    applyMobKillUpdates,
+    clearMobKill,
+  });
+
+  if (discordBot && discordBot.enabled) {
+    try {
+      await discordBot.start();
+      console.log('[discord] Bot started.');
+    } catch (err) {
+      console.warn('[discord] Failed to start bot:', err.message);
     }
   }
 });

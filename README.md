@@ -144,6 +144,39 @@ API endpoints:
 Data is stored in the `log_lines` collection. The `log_events` collection is not written to unless you opt in with `PERSIST_LOG_EVENTS=true`. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
 Data is stored in the `log_lines` collection. The `log_events` collection is not written to unless you opt in with `PERSIST_LOG_EVENTS=true`. Set `MONGODB_URI` before running or the server logs a warning and skips persistence.
 
+## Discord Bot
+
+Optional Discord integration can post mob updates to a channel and maintain an embed dashboard in another channel.
+
+Set the following `.env` values to enable it:
+
+- `DISCORD_BOT_TOKEN`
+- `DISCORD_CLIENT_ID`
+- `DISCORD_UPDATES_CHANNEL_ID`
+- `DISCORD_DASHBOARD_CHANNEL_ID`
+- Optional: `DISCORD_UPDATES_ENABLED=false` to disable update messages (default).
+- Optional: `DISCORD_TEXT_INPUT_ENABLED=true` to allow `!tod` messages in a channel.
+- Optional: `DISCORD_TEXT_INPUT_CHANNEL_ID` to restrict `!tod` messages to a single channel.
+- Optional: `DISCORD_GUILD_ID` for faster command registration during development.
+- Optional: `DISCORD_OFFICER_ROLE_ID` to restrict commands to a role (otherwise users need Manage Server).
+- Optional: `DISCORD_COMMANDS_ENABLED=false` to disable slash command registration.
+- Optional: `DISCORD_DASHBOARD_REFRESH_MS=300000` to refresh the dashboard periodically.
+
+Commands:
+
+- `/mob set mob:<name> time:<text>` sets a mob ToD.
+- `/mob now mob:<name>` sets a mob ToD to now.
+- `/mob clear mob:<name>` clears a mob ToD.
+- `/mob quake time:<text>` applies a quake ToD to all mobs.
+- `/mob dashboard` refreshes the embed dashboard.
+
+Text commands (optional, when `DISCORD_TEXT_INPUT_ENABLED=true`):
+
+- `!tod <mob> [time]`
+- `!tod quake [time]`
+
+Note: For text commands, enable the bot's Message Content Intent in the Discord Developer Portal.
+
 ## Overlay Tips
 
 - **Overlay opacity** slider adjusts transparency live.
