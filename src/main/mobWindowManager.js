@@ -48,6 +48,11 @@ function normalizeDefinition(raw) {
 
   let minRespawnMinutes = null;
   let maxRespawnMinutes = null;
+  const maxSkips = Number.isFinite(Number(raw.maxSkips))
+    ? Math.max(0, Math.floor(Number(raw.maxSkips)))
+    : Number.isFinite(Number(raw.skipCount))
+      ? Math.max(0, Math.floor(Number(raw.skipCount)))
+      : null;
 
   if (raw.minRespawnMinutes || raw.maxRespawnMinutes) {
     minRespawnMinutes = toMinutes(raw.minRespawnMinutes);
@@ -101,6 +106,7 @@ function normalizeDefinition(raw) {
     expansion: typeof raw.expansion === 'string' ? raw.expansion : '',
     respawnDisplay: typeof raw.respawnDisplay === 'string' ? raw.respawnDisplay : '',
     notes: typeof raw.notes === 'string' ? raw.notes : '',
+    maxSkips,
     minRespawnMinutes,
     maxRespawnMinutes,
     killMatchers: [...phraseRegexes, ...autoRegexes],
@@ -175,6 +181,7 @@ class MobWindowManager extends EventEmitter {
     this.definitionMap = new Map(this.definitions.map((def) => [def.id, def]));
     this.aliasIndex = buildAliasIndex(this.definitions);
     this.killTimestamps = new Map();
+    this.skipCounts = new Map();
     this.tickHandle = null;
   }
 
@@ -194,11 +201,19 @@ class MobWindowManager extends EventEmitter {
 
   loadState(state = {}) {
     const kills = state.kills && typeof state.kills === 'object' ? state.kills : {};
+    const skips = state.skips && typeof state.skips === 'object' ? state.skips : {};
     this.killTimestamps.clear();
+    this.skipCounts.clear();
     for (const [mobId, value] of Object.entries(kills)) {
       const parsed = asDate(value);
       if (parsed) {
         this.killTimestamps.set(mobId, parsed.getTime());
+      }
+    }
+    for (const [mobId, value] of Object.entries(skips)) {
+      const count = Number(value);
+      if (Number.isFinite(count) && count > 0) {
+        this.skipCounts.set(mobId, Math.floor(count));
       }
     }
     this.emitUpdate();
@@ -209,7 +224,11 @@ class MobWindowManager extends EventEmitter {
     for (const [mobId, timestamp] of this.killTimestamps.entries()) {
       kills[mobId] = new Date(timestamp).toISOString();
     }
-    return { kills };
+    const skips = {};
+    for (const [mobId, count] of this.skipCounts.entries()) {
+      skips[mobId] = count;
+    }
+    return { kills, skips };
   }
 
   ingestLines(lines = []) {
@@ -323,6 +342,7 @@ class MobWindowManager extends EventEmitter {
       return false;
     }
     this.killTimestamps.set(mobId, ms);
+    this.skipCounts.delete(mobId);
     this.emit('kill', {
       mobId,
       definition,
@@ -347,6 +367,7 @@ class MobWindowManager extends EventEmitter {
       }
     }
     if (changed) {
+      this.skipCounts.clear();
       this.emit('quake', { timestamp: parsed.toISOString() });
       this.emitUpdate();
     }
@@ -354,6 +375,7 @@ class MobWindowManager extends EventEmitter {
   }
   clearKill(mobId) {
     const existed = this.killTimestamps.delete(mobId);
+    this.skipCounts.delete(mobId);
     if (existed) {
       this.emitUpdate();
     }
@@ -364,16 +386,20 @@ class MobWindowManager extends EventEmitter {
     const records = this.definitions.map((definition) => {
       const lastKillMs = this.killTimestamps.get(definition.id) || null;
       const lastKillAt = lastKillMs ? new Date(lastKillMs) : null;
+      const skipCount = this.skipCounts.get(definition.id) || 0;
 
       const minMs = definition.minRespawnMinutes * 60_000;
       const maxMs = definition.maxRespawnMinutes * 60_000;
+      const baseRespawnMinutes = (definition.minRespawnMinutes + definition.maxRespawnMinutes) / 2;
+      const skipOffsetMs =
+        Number.isFinite(baseRespawnMinutes) && skipCount > 0 ? baseRespawnMinutes * 60_000 * skipCount : 0;
 
       let windowOpensAt = null;
       let windowClosesAt = null;
 
       if (lastKillMs) {
-        windowOpensAt = new Date(lastKillMs + minMs);
-        windowClosesAt = new Date(lastKillMs + maxMs);
+        windowOpensAt = new Date(lastKillMs + minMs + skipOffsetMs);
+        windowClosesAt = new Date(lastKillMs + maxMs + skipOffsetMs);
       }
 
       const inWindow =
@@ -411,6 +437,8 @@ class MobWindowManager extends EventEmitter {
         expansion: definition.expansion,
         respawnDisplay: definition.respawnDisplay,
         notes: definition.notes,
+        maxSkips: definition.maxSkips,
+        skipCount,
         minRespawnMinutes: definition.minRespawnMinutes,
         maxRespawnMinutes: definition.maxRespawnMinutes,
         lastKillAt: lastKillAt ? lastKillAt.toISOString() : null,
@@ -441,6 +469,7 @@ class MobWindowManager extends EventEmitter {
       zone: definition.zone,
       expansion: definition.expansion,
       respawnDisplay: definition.respawnDisplay,
+      maxSkips: definition.maxSkips,
       minRespawnMinutes: definition.minRespawnMinutes,
       maxRespawnMinutes: definition.maxRespawnMinutes,
       notes: definition.notes,

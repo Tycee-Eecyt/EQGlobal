@@ -250,9 +250,9 @@ function rebuildAliasIndex() {
 
 rebuildAliasIndex();
 
-function buildSnapshotFromKills(kills = {}) {
+function buildSnapshotFromKills(kills = {}, skips = {}) {
   const manager = new MobWindowManager(mobWindowDefinitions, { tickRateMs: 60_000 });
-  manager.loadState({ kills });
+  manager.loadState({ kills, skips });
   return manager.computeSnapshot();
 }
 
@@ -508,20 +508,26 @@ async function applyMobKillUpdates(db, updates) {
   const collection = db.collection('mob_windows');
   const existing = await collection.findOne({ _id: 'global' });
   const kills = existing && existing.kills ? { ...existing.kills } : {};
+  const skips = existing && existing.skips ? { ...existing.skips } : {};
   let changed = false;
+  let skipsChanged = false;
   updates.forEach((isoTimestamp, mobId) => {
     if (!kills[mobId] || isoTimestamp > kills[mobId]) {
       kills[mobId] = isoTimestamp;
       changed = true;
     }
+    if (Object.prototype.hasOwnProperty.call(skips, mobId)) {
+      delete skips[mobId];
+      skipsChanged = true;
+    }
   });
-  if (!changed) {
+  if (!changed && !skipsChanged) {
     return null;
   }
   const updatedAt = new Date();
   await collection.updateOne(
     { _id: 'global' },
-    { $set: { kills, updatedAt } },
+    { $set: { kills, skips, updatedAt } },
     { upsert: true }
   );
   console.log(
@@ -530,8 +536,8 @@ async function applyMobKillUpdates(db, updates) {
     'at',
     updatedAt.toISOString()
   );
-  const snapshot = buildSnapshotFromKills(kills);
-  return { kills, updatedAt, snapshot, updatedMobIds: Array.from(updates.keys()) };
+  const snapshot = buildSnapshotFromKills(kills, skips);
+  return { kills, skips, updatedAt, snapshot, updatedMobIds: Array.from(updates.keys()) };
 }
 
 async function clearMobKill(db, mobId) {
@@ -539,18 +545,22 @@ async function clearMobKill(db, mobId) {
   const collection = db.collection('mob_windows');
   const doc = await collection.findOne({ _id: 'global' });
   const kills = doc && doc.kills ? { ...doc.kills } : {};
+  const skips = doc && doc.skips ? { ...doc.skips } : {};
   if (!Object.prototype.hasOwnProperty.call(kills, mobId)) {
     return null;
   }
   delete kills[mobId];
+  if (Object.prototype.hasOwnProperty.call(skips, mobId)) {
+    delete skips[mobId];
+  }
   const updatedAt = new Date();
   await collection.updateOne(
     { _id: 'global' },
-    { $set: { kills, updatedAt } },
+    { $set: { kills, skips, updatedAt } },
     { upsert: true }
   );
-  const snapshot = buildSnapshotFromKills(kills);
-  return { kills, updatedAt, snapshot, clearedMobIds: [mobId] };
+  const snapshot = buildSnapshotFromKills(kills, skips);
+  return { kills, skips, updatedAt, snapshot, clearedMobIds: [mobId] };
 }
 
 app.get('/health', async (_req, res) => {
@@ -797,17 +807,19 @@ app.get(
       const collection = db.collection('mob_windows');
       const doc = await collection.findOne({ _id: 'global' });
       if (!doc) {
-        const snapshot = buildSnapshotFromKills({});
+        const snapshot = buildSnapshotFromKills({}, {});
         return res.json({
           kills: {},
+          skips: {},
           updatedAt: null,
           mobs: snapshot.mobs,
           snapshot,
         });
       }
-      const snapshot = buildSnapshotFromKills(doc.kills || {});
+      const snapshot = buildSnapshotFromKills(doc.kills || {}, doc.skips || {});
       res.json({
         kills: doc.kills || {},
+        skips: doc.skips || {},
         updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : null,
         mobs: snapshot.mobs,
         snapshot,
@@ -850,13 +862,20 @@ app.post(
         { $set: { kills: sanitized, updatedAt } },
         { upsert: true }
       );
-      const snapshot = buildSnapshotFromKills(sanitized);
+      const existing = await collection.findOne({ _id: 'global' });
+      const snapshot = buildSnapshotFromKills(sanitized, existing?.skips || {});
       notifyDiscord({
         snapshot,
         updatedMobIds: Object.keys(sanitized),
         clearedMobIds: [],
       });
-      res.json({ kills: sanitized, updatedAt: updatedAt.toISOString(), mobs: snapshot.mobs, snapshot });
+      res.json({
+        kills: sanitized,
+        skips: existing?.skips || {},
+        updatedAt: updatedAt.toISOString(),
+        mobs: snapshot.mobs,
+        snapshot,
+      });
     } catch (error) {
       console.error('Failed to persist mob window state', error);
       res.status(500).json({ error: 'Failed to persist mob window state.' });
@@ -886,9 +905,10 @@ app.post(
         const collection = db.collection('mob_windows');
         const doc = await collection.findOne({ _id: 'global' });
         const kills = doc && doc.kills ? doc.kills : {};
-        const snapshot = buildSnapshotFromKills(kills);
+        const snapshot = buildSnapshotFromKills(kills, doc?.skips || {});
         return res.json({
           kills,
+          skips: doc?.skips || {},
           updatedAt: doc?.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
           mobs: snapshot.mobs,
           snapshot,
@@ -901,6 +921,7 @@ app.post(
       });
       res.json({
         kills: result.kills,
+        skips: result.skips || {},
         updatedAt: result.updatedAt ? result.updatedAt.toISOString() : null,
         mobs: result.snapshot.mobs,
         snapshot: result.snapshot,

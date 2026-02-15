@@ -706,6 +706,7 @@
     "respawnDisplay": "18h +/- 1h (may skip twice)",
     "minRespawnHours": 17,
     "maxRespawnHours": 19,
+    "maxSkips": 2,
     "notes": "Sea turtle warrior (Lv 60). Spawns around (377, 2392). Can skip up to two respawns; enrages, summons, immune to charm/fear/mez."
   },
   {
