@@ -1,6 +1,6 @@
 {
   "name": "eqglobal",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Electron overlay and backend service for EverQuest log-based timers.",
   "main": "src/main/main.js",
   "scripts": {
