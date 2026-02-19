@@ -187,10 +187,7 @@ a {
 }
 
 .dashboard-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 0.95rem;
-  align-items: start;
+  display: block;
 }
 
 .dashboard-columns {
@@ -277,18 +274,6 @@ a {
 .panel-body {
   padding: 0.95rem 1.05rem;
   min-height: 110px;
-}
-
-.rail-panel {
-  position: sticky;
-  top: 5.45rem;
-  max-height: calc(100vh - 7.5rem);
-  overflow: hidden;
-}
-
-#rail-list {
-  overflow: auto;
-  max-height: calc(100vh - 13rem);
 }
 
 .empty {
@@ -468,21 +453,13 @@ a {
   }
 
   .dashboard-layout {
-    grid-template-columns: 1fr;
+    display: block;
   }
 
   .dashboard-columns {
     grid-template-columns: 1fr;
   }
 
-  .rail-panel {
-    position: static;
-    max-height: none;
-  }
-
-  #rail-list {
-    max-height: none;
-  }
 }
 
 .mob-window-times {

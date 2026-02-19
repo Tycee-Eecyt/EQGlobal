@@ -12,7 +12,6 @@ import {
 const currentList = document.getElementById('current-list');
 const upcomingList = document.getElementById('upcoming-list');
 const futureList = document.getElementById('future-list');
-const railList = document.getElementById('rail-list');
 const tableBody = document.querySelector('#mob-table tbody');
 const lastUpdatedEl = document.getElementById('last-updated');
 const refreshButton = document.getElementById('refresh-button');
@@ -70,10 +69,6 @@ function clearDisplays(message) {
   if (futureList) {
     futureList.classList.add('empty');
     futureList.textContent = message;
-  }
-  if (railList) {
-    railList.classList.add('empty');
-    railList.textContent = message;
   }
   if (tableBody) {
     tableBody.innerHTML = `<tr><td colspan="5" class="table-empty">${message}</td></tr>`;
