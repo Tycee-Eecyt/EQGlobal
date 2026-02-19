@@ -12,6 +12,7 @@ import {
 const currentList = document.getElementById('current-list');
 const upcomingList = document.getElementById('upcoming-list');
 const futureList = document.getElementById('future-list');
+const railList = document.getElementById('rail-list');
 const tableBody = document.querySelector('#mob-table tbody');
 const lastUpdatedEl = document.getElementById('last-updated');
 const refreshButton = document.getElementById('refresh-button');
@@ -68,6 +69,10 @@ function clearDisplays(message) {
   if (futureList) {
     futureList.classList.add('empty');
     futureList.textContent = message;
+  }
+  if (railList) {
+    railList.classList.add('empty');
+    railList.textContent = message;
   }
   if (tableBody) {
     tableBody.innerHTML = `<tr><td colspan="5" class="table-empty">${message}</td></tr>`;
@@ -276,9 +281,10 @@ function statusForMob(mob) {
   return { text: 'Window closed', className: 'neutral' };
 }
 
-function renderMobCard(container, mob) {
+function renderMobCard(container, mob, options = {}) {
+  const compact = Boolean(options.compact);
   const card = document.createElement('article');
-  card.className = 'mob-card';
+  card.className = `mob-card${compact ? ' compact' : ''}`;
 
   const title = document.createElement('h3');
   title.textContent = mob.name;
@@ -289,6 +295,17 @@ function renderMobCard(container, mob) {
   chip.className = `status-chip ${status.className}`;
   chip.textContent = status.text;
   card.appendChild(chip);
+
+  if (compact) {
+    const progressRow = document.createElement('div');
+    progressRow.className = 'rail-progress';
+    const fill = document.createElement('div');
+    fill.className = 'rail-progress-fill';
+    const progress = Number.isFinite(mob.windowProgress) ? Math.max(0, Math.min(1, mob.windowProgress)) : 0;
+    fill.style.transform = `scaleX(${progress.toFixed(4)})`;
+    progressRow.appendChild(fill);
+    card.appendChild(progressRow);
+  }
 
   const meta = document.createElement('div');
   meta.className = 'mob-meta';
@@ -334,6 +351,10 @@ function renderLists(snapshot) {
       mob.secondsUntilOpen > UPCOMING_WINDOW_SECONDS &&
       mob.secondsUntilOpen <= FUTURE_WINDOW_SECONDS
   );
+
+  current.sort((a, b) => (Number(a.secondsUntilClose) || 0) - (Number(b.secondsUntilClose) || 0));
+  upcoming.sort((a, b) => (Number(a.secondsUntilOpen) || 0) - (Number(b.secondsUntilOpen) || 0));
+  future.sort((a, b) => (Number(a.secondsUntilOpen) || 0) - (Number(b.secondsUntilOpen) || 0));
 
   currentList.innerHTML = '';
   if (current.length === 0) {
@@ -402,6 +423,18 @@ function renderLists(snapshot) {
 async function fetchAndRender() {
   if (!canViewMobWindows()) {
     return;
+  }
+
+  if (railList) {
+    railList.innerHTML = '';
+    const railItems = current.slice(0, 8);
+    if (railItems.length === 0) {
+      railList.classList.add('empty');
+      railList.textContent = 'No active window entries.';
+    } else {
+      railList.classList.remove('empty');
+      railItems.forEach((mob) => renderMobCard(railList, mob, { compact: true }));
+    }
   }
   try {
     const response = await fetchWithAuth('/api/mob-windows', { method: 'GET', cache: 'no-store' });

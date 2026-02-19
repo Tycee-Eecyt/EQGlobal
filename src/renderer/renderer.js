@@ -759,10 +759,6 @@ function renderTreeNode(node) {
   const hasChildren = Array.isArray(node.children) && node.children.length > 0;
   const isSelected = selectedNode && selectedNode.type === 'category' && selectedNode.id === node.id;
 
-  const toggle = hasChildren
-    ? `<button class="tree-toggle" data-action="toggle-category" data-category-id="${node.id}" aria-label="${isExpanded ? 'Collapse' : 'Expand'} category">${isExpanded ? '?' : '?'}</button>`
-    : `<span class="tree-toggle-placeholder"></span>`;
-
   const childrenMarkup =
     hasChildren && isExpanded
       ? `<ul class="tree-children" role="group">${node.children.map((child) => renderTreeNode(child)).join('')}</ul>`
@@ -771,9 +767,9 @@ function renderTreeNode(node) {
   return `
     <li>
       <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}" data-drop-target="category" data-category-id="${node.id}" draggable="true" data-drag-type="category">
-        ${toggle}
-        <span class="tree-icon folder"></span>
-        <span class="tree-label">${escapeHtml(node.name)}</span>
+        <span class="tree-toggle-placeholder"></span>
+        <span class="tree-icon folder ${hasChildren ? 'folder-toggle' : ''}" data-action="${hasChildren ? 'toggle-category' : ''}" data-category-id="${node.id}" role="${hasChildren ? 'button' : ''}" aria-label="${hasChildren ? (isExpanded ? 'Collapse category' : 'Expand category') : ''}" tabindex="${hasChildren ? '0' : ''}"></span>
+        <span class="tree-label ${hasChildren ? 'folder-toggle' : ''}" data-action="${hasChildren ? 'toggle-category' : ''}" data-category-id="${node.id}" role="${hasChildren ? 'button' : ''}" aria-label="${hasChildren ? (isExpanded ? 'Collapse category' : 'Expand category') : ''}" tabindex="${hasChildren ? '0' : ''}">${escapeHtml(node.name)}</span>
       </div>
       ${childrenMarkup}
     </li>
@@ -1987,6 +1983,7 @@ async function handleDetailClick(event) {
 function handleTreeClick(event) {
   const toggle = event.target.closest('[data-action="toggle-category"]');
   if (toggle) {
+    event.stopPropagation();
     toggleCategoryExpansion(toggle.dataset.categoryId);
     return;
   }
@@ -1996,6 +1993,20 @@ function handleTreeClick(event) {
   const nodeType = item.dataset.nodeType;
   const nodeId = item.dataset.nodeId;
   setSelectedNode(nodeType, nodeId);
+}
+
+function handleTreeKeydown(event) {
+  const isToggleKey = event.key === 'Enter' || event.key === ' ';
+  if (!isToggleKey) {
+    return;
+  }
+  const toggle = event.target.closest('[data-action="toggle-category"]');
+  if (!toggle) {
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  toggleCategoryExpansion(toggle.dataset.categoryId);
 }
 
 function updateStatus({ state, message, directory } = {}) {
@@ -2773,12 +2784,127 @@ function resolveTemporalExpression(rawValue, contextDate, now = new Date()) {
   return null;
 }
 
+function normalizeDiscordAuthorLabel(rawLabel) {
+  if (!rawLabel) {
+    return '';
+  }
+  return String(rawLabel)
+    .replace(/\bRole\s+icon\b/gi, ' ')
+    .replace(/:\S+:/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatTodHistoryTimestamp(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return null;
+  }
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZoneName: 'short',
+  });
+  return formatter.format(date);
+}
+
+function getMobTodHistoryById(mobId) {
+  if (!mobId) {
+    return [];
+  }
+  const mob = getMobDefinitionById(mobId);
+  if (!mob) {
+    return [];
+  }
+  const rawHistory = Array.isArray(mob.todHistory) ? mob.todHistory : [];
+  return rawHistory
+    .map((value) => {
+      if (value && typeof value === 'object' && value.timestamp) {
+        const parsed = Date.parse(value.timestamp);
+        if (Number.isNaN(parsed)) return null;
+        return {
+          date: new Date(parsed),
+          reportedBy:
+            typeof value.reportedBy === 'string' && value.reportedBy.trim()
+              ? value.reportedBy.trim()
+              : null,
+        };
+      }
+      const parsed = Date.parse(value);
+      if (Number.isNaN(parsed)) return null;
+      return { date: new Date(parsed), reportedBy: null };
+    })
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function buildTimersSummaryReport() {
+  const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+  const now = Date.now();
+  const inWindow = mobs.filter((mob) => mob && mob.inWindow).length;
+  const upcoming24h = mobs.filter((mob) => {
+    const openAt = Date.parse(mob?.windowOpensAt || '');
+    return Number.isFinite(openAt) && openAt > now && openAt <= now + 24 * 60 * 60 * 1000;
+  }).length;
+  return `Timers summary: ${mobs.length} tracked, ${inWindow} in window, ${upcoming24h} opening within 24h.`;
+}
+
+function buildScheduleSummaryReport() {
+  const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+  const now = Date.now();
+  const horizon = now + 7 * 24 * 60 * 60 * 1000;
+  const upcoming = mobs
+    .map((mob) => ({
+      mobName: mob?.name || mob?.id || 'Unknown',
+      opensAtMs: Date.parse(mob?.windowOpensAt || ''),
+    }))
+    .filter((item) => Number.isFinite(item.opensAtMs) && item.opensAtMs >= now && item.opensAtMs <= horizon)
+    .sort((a, b) => a.opensAtMs - b.opensAtMs)
+    .slice(0, 8);
+  if (!upcoming.length) {
+    return 'Schedule (7d): no upcoming windows found.';
+  }
+  const lines = upcoming.map((item) => `${item.mobName} (${formatAbsoluteTime(new Date(item.opensAtMs))})`);
+  return `Schedule (7d): ${lines.join(', ')}.`;
+}
+
+function buildLeaderboardSummaryReport(authorTodCounts) {
+  const merged = new Map();
+  const mobs = Array.isArray(mobWindowSnapshot?.mobs) ? mobWindowSnapshot.mobs : [];
+  mobs.forEach((mob) => {
+    const history = Array.isArray(mob?.todHistory) ? mob.todHistory : [];
+    history.forEach((entry) => {
+      if (!entry || typeof entry !== 'object') return;
+      const reporter =
+        typeof entry.reportedBy === 'string' && entry.reportedBy.trim()
+          ? entry.reportedBy.trim()
+          : '';
+      if (!reporter) return;
+      merged.set(reporter, Number(merged.get(reporter) || 0) + 1);
+    });
+  });
+  authorTodCounts.forEach((count, reporter) => {
+    if (!reporter) return;
+    merged.set(reporter, Number(merged.get(reporter) || 0) + Number(count || 0));
+  });
+  const rows = Array.from(merged.entries()).sort((a, b) => b[1] - a[1]).slice(0, 20);
+  if (!rows.length) {
+    return 'Leaderboard: no ToD reporters recorded yet.';
+  }
+  const text = rows.map(([name, count], idx) => `${idx + 1}. ${name} (${count})`).join(', ');
+  return `Leaderboard (persisted + paste): ${text}.`;
+}
+
 function parseMobTodLog(rawText) {
   const result = {
     entries: [],
     warnings: [],
     errors: [],
     unknown: [],
+    reports: [],
     aliasChanges: [],
     totalLines: 0,
   };
@@ -2791,11 +2917,13 @@ function parseMobTodLog(rawText) {
   let currentTimestamp = null;
   let section = null;
   let sectionTimestamp = null;
+  let currentAuthor = '';
   let pendingMob = null;
   let sectionHints = [];
   // Session alias overrides added via !alias commands within this paste
   const sessionAliasMap = new Map(); // mobId -> Set<string>
-  const messageTimestampRegex = /—\s*(.+)$/;
+  const authorTimestampRegex = /^(.*?)\s+—\s*(.+)$/;
+  const authorTodCounts = new Map();
   const now = new Date();
 
   const ensureContextTime = () => {
@@ -2879,13 +3007,14 @@ function parseMobTodLog(rawText) {
       return;
     }
 
-    const timestampMatch = messageTimestampRegex.exec(trimmed);
+    const timestampMatch = authorTimestampRegex.exec(trimmed);
     if (timestampMatch) {
-      const resolved = resolveTemporalExpression(timestampMatch[1], now, now);
+      currentAuthor = normalizeDiscordAuthorLabel(timestampMatch[1] || '');
+      const resolved = resolveTemporalExpression(timestampMatch[2], now, now);
       if (resolved) {
         currentTimestamp = resolved;
       } else {
-        result.warnings.push(`Line ${index + 1}: could not parse message timestamp "${timestampMatch[1]}"`);
+        result.warnings.push(`Line ${index + 1}: could not parse message timestamp "${timestampMatch[2]}"`);
         currentTimestamp = null;
       }
       sectionTimestamp = currentTimestamp;
@@ -3049,8 +3178,13 @@ function parseMobTodLog(rawText) {
             lineNumber: index + 1,
             rawTime: timeText,
             origin: 'tod-command',
+            author: currentAuthor || null,
           });
         });
+        if (currentAuthor) {
+          const existingCount = Number(authorTodCounts.get(currentAuthor) || 0);
+          authorTodCounts.set(currentAuthor, existingCount + 1);
+        }
       }
       resetPendingMob();
       return;
@@ -3145,8 +3279,103 @@ function parseMobTodLog(rawText) {
       resetPendingMob();
       return;
     }
+
+    const todHistoryCmd = trimmed.match(/^!?todhistory\s+(.+)$/i);
+    if (todHistoryCmd) {
+      const mobText = todHistoryCmd[1].trim();
+      const mobMatch = resolveMobByText(mobText);
+      if (!mobMatch) {
+        result.unknown.push({ lineNumber: index + 1, name: mobText, raw: trimmed });
+      } else {
+          const history = getMobTodHistoryById(mobMatch.mobId);
+        if (!history.length) {
+          result.reports.push(`History for ${mobMatch.mobName}: no recorded TODs yet.`);
+        } else {
+          const parts = history
+            .map((entry) => {
+              const formatted = formatTodHistoryTimestamp(entry.date);
+              if (!formatted) return null;
+              return entry.reportedBy ? `${formatted} (${entry.reportedBy})` : formatted;
+            })
+            .filter(Boolean);
+          result.reports.push(`Last ${parts.length} TODs for ${mobMatch.mobName}: ${parts.join(' | ')}`);
+        }
+      }
+      resetPendingMob();
+      return;
+    }
+
+    if (/^!?leaderboard\b/i.test(trimmed)) {
+      result.reports.push(buildLeaderboardSummaryReport(authorTodCounts));
+      resetPendingMob();
+      return;
+    }
+
+    if (/^!?timers\b/i.test(trimmed)) {
+      result.reports.push(buildTimersSummaryReport());
+      resetPendingMob();
+      return;
+    }
+
+    if (/^!?schedule\b/i.test(trimmed)) {
+      result.reports.push(buildScheduleSummaryReport());
+      resetPendingMob();
+      return;
+    }
+
+    if (/^!?help\b/i.test(trimmed)) {
+      result.reports.push(
+        'Supported local commands: !tod, !todremove, !quake, !skip, !unskip, !todhistory, !timers, !schedule, !leaderboard.'
+      );
+      resetPendingMob();
+      return;
+    }
+
+    // Handle skip commands: !skip <mob> [time text]
+    const skipCmd = trimmed.match(/^!?skip\s+(.+)$/i);
+    if (skipCmd) {
+      const body = skipCmd[1].trim();
+      const mobMatch = resolveMobByText(body);
+      if (!mobMatch) {
+        result.unknown.push({ lineNumber: index + 1, name: body, raw: trimmed });
+      } else {
+        result.entries.push({
+          mobId: mobMatch.mobId,
+          mobName: mobMatch.mobName,
+          alias: mobMatch.alias,
+          skipDelta: 1,
+          sourceLine: trimmed,
+          lineNumber: index + 1,
+          origin: 'skip-command',
+        });
+      }
+      resetPendingMob();
+      return;
+    }
+
+    // Handle unskip commands: !unskip <mob>
+    const unskipCmd = trimmed.match(/^!?unskip\s+(.+)$/i);
+    if (unskipCmd) {
+      const body = unskipCmd[1].trim();
+      const mobMatch = resolveMobByText(body);
+      if (!mobMatch) {
+        result.unknown.push({ lineNumber: index + 1, name: body, raw: trimmed });
+      } else {
+        result.entries.push({
+          mobId: mobMatch.mobId,
+          mobName: mobMatch.mobName,
+          alias: mobMatch.alias,
+          skipDelta: -1,
+          sourceLine: trimmed,
+          lineNumber: index + 1,
+          origin: 'skip-command',
+        });
+      }
+      resetPendingMob();
+      return;
+    }
     const ignoredCommands =
-      /^!\s*(register|unregister|alias|show|rename|register_link|register_clear|set_warn_time|autotod|skip|unskip|timers|schedule|leaderboard|todhistory)\b/i;
+      /^!\s*(register|unregister|alias|show|rename|register_link|register_clear|set_warn_time|autotod)\b/i;
     if (ignoredCommands.test(trimmed)) {
       resetPendingMob();
       return;
@@ -3196,7 +3425,12 @@ function parseMobTodLog(rawText) {
           lineNumber: index + 1,
           rawTime: remainder,
           origin: 'tod-command',
+          author: currentAuthor || null,
         });
+      }
+      if (currentAuthor) {
+        const existingCount = Number(authorTodCounts.get(currentAuthor) || 0);
+        authorTodCounts.set(currentAuthor, existingCount + 1);
       }
       return;
     }
@@ -3240,27 +3474,22 @@ function parseMobTodLog(rawText) {
       lineNumber: index + 1,
       rawTime: remainder,
       origin: 'tod-command',
+      author: currentAuthor || null,
     });
+
+    if (currentAuthor) {
+      const existingCount = Number(authorTodCounts.get(currentAuthor) || 0);
+      authorTodCounts.set(currentAuthor, existingCount + 1);
+    }
   });
 
   flushSectionHints();
-  // Keep clear actions and dedupe timed entries by latest timestamp
-  const clears = result.entries.filter((e) => e && e.clear === true);
-  const timed = result.entries.filter((e) => e && !e.clear && e.timestamp);
-  const deduped = new Map();
-  timed.forEach((entry) => {
-    const existing = deduped.get(entry.mobId);
-    if (!existing || entry.timestamp > existing.timestamp) {
-      deduped.set(entry.mobId, entry);
-    }
-  });
-  const orderedTimed = Array.from(deduped.values()).sort((a, b) => b.timestamp - a.timestamp);
-  result.entries = clears.concat(orderedTimed);
+  result.entries.sort((a, b) => (a.lineNumber || 0) - (b.lineNumber || 0));
   return result;
 }
 
 function formatMobTodFeedback(result) {
-  if (!result || (!result.entries.length && !result.warnings.length && !result.unknown.length)) {
+  if (!result || (!result.entries.length && !result.warnings.length && !result.unknown.length && !result.reports?.length)) {
     return { html: '', status: null };
   }
   const lines = [];
@@ -3268,10 +3497,13 @@ function formatMobTodFeedback(result) {
     'tod-command': 'via ToD command',
     'window-closes': 'from window closing estimate',
     'window-opens': 'from window opening estimate',
+    'skip-command': 'via skip command',
   };
   if (result.entries.length) {
     const clearCount = (result.entries || []).filter((e) => e && e.clear === true).length;
-    const setEntries = (result.entries || []).filter((e) => e && !e.clear);
+    const skipAddCount = (result.entries || []).filter((e) => e && Number(e.skipDelta) > 0).length;
+    const skipRemoveCount = (result.entries || []).filter((e) => e && Number(e.skipDelta) < 0).length;
+    const setEntries = (result.entries || []).filter((e) => e && !e.clear && !Number.isFinite(e.skipDelta));
     const list = setEntries
       .slice(0, 8)
       .map((entry) => {
@@ -3287,6 +3519,12 @@ function formatMobTodFeedback(result) {
     }
     if (clearCount) {
       lines.push(`${clearCount} mob${clearCount === 1 ? '' : 's'} to clear.`);
+    }
+    if (skipAddCount) {
+      lines.push(`${skipAddCount} skip command${skipAddCount === 1 ? '' : 's'} to apply.`);
+    }
+    if (skipRemoveCount) {
+      lines.push(`${skipRemoveCount} unskip command${skipRemoveCount === 1 ? '' : 's'} to apply.`);
     }
   }
   if (result.unknown.length) {
@@ -3305,9 +3543,18 @@ function formatMobTodFeedback(result) {
       lines.push(`+ ${result.warnings.length - sampleWarnings.length} additional warning(s).`);
     }
   }
+  if (Array.isArray(result.reports) && result.reports.length) {
+    lines.push(...result.reports.slice(0, 8));
+    if (result.reports.length > 8) {
+      lines.push(`+ ${result.reports.length - 8} additional command report(s).`);
+    }
+  }
+  const hasEntries = (result.entries || []).length > 0;
+  const hasIssues = (result.warnings || []).length > 0 || (result.unknown || []).length > 0;
+  const hasReports = (result.reports || []).length > 0;
   return {
     html: lines.map((line) => `<div>${escapeHtml(line)}</div>`).join(''),
-    status: result.entries.length ? (result.warnings.length || result.unknown.length ? 'warning' : 'success') : 'error',
+    status: hasEntries ? (hasIssues ? 'warning' : 'success') : (hasReports ? (hasIssues ? 'warning' : 'success') : 'error'),
   };
 }
 
@@ -3747,8 +3994,12 @@ function attachEventListeners() {
         for (const entry of parsed.entries) {
           if (entry.clear === true) {
             snapshot = await window.eqApi.clearMobKill(entry.mobId);
+          } else if (Number.isFinite(entry.skipDelta) && entry.skipDelta !== 0) {
+            snapshot = await window.eqApi.adjustMobSkip(entry.mobId, entry.skipDelta);
           } else {
-            snapshot = await window.eqApi.recordMobKill(entry.mobId, entry.timestamp.toISOString());
+            snapshot = await window.eqApi.recordMobKill(entry.mobId, entry.timestamp.toISOString(), {
+              reportedBy: entry.author || null,
+            });
           }
         }
         if (snapshot && snapshot.mobs) {
@@ -3756,9 +4007,15 @@ function attachEventListeners() {
         }
         const setCount = parsed.entries.filter((e) => !e.clear).length;
         const clearCount = parsed.entries.filter((e) => e.clear).length;
+        const skipAddCount = parsed.entries.filter((e) => Number(e.skipDelta) > 0).length;
+        const skipRemoveCount = parsed.entries.filter((e) => Number(e.skipDelta) < 0).length;
+        const todSetCount = parsed.entries.filter((e) => !e.clear && !Number.isFinite(e.skipDelta)).length;
         let summary = "";
-        if (setCount) summary += "Applied updates to " + setCount + " mob" + (setCount === 1 ? "" : "s");
+        if (todSetCount) summary += "Applied updates to " + todSetCount + " mob" + (todSetCount === 1 ? "" : "s");
         if (clearCount) summary += (summary ? "; " : "") + "cleared " + clearCount + " mob" + (clearCount === 1 ? "" : "s");
+        if (skipAddCount) summary += (summary ? "; " : "") + "applied " + skipAddCount + " skip command" + (skipAddCount === 1 ? "" : "s");
+        if (skipRemoveCount) summary += (summary ? "; " : "") + "applied " + skipRemoveCount + " unskip command" + (skipRemoveCount === 1 ? "" : "s");
+        if (!summary && setCount) summary = "Applied updates";
         const summaryLine = "<div>" + summary + ".</div>";
         const formatted = formatMobTodFeedback(parsed);
         mobTodFeedback.classList.remove('success', 'warning', 'error');
@@ -4102,6 +4359,7 @@ function attachEventListeners() {
   });
 
   triggerTreeContainer.addEventListener('click', handleTreeClick);
+  triggerTreeContainer.addEventListener('keydown', handleTreeKeydown);
   triggerDetailContainer.addEventListener('click', handleDetailClick);
   triggerDetailContainer.addEventListener('input', (event) => {
     if (event.target.dataset.role === 'trigger-field') {

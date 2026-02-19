@@ -323,6 +323,7 @@ class MobWindowManager extends EventEmitter {
     this.aliasPhrases = this.buildAliasPhraseList(this.definitions);
     this.killTimestamps = new Map();
     this.skipCounts = new Map();
+    this.todHistory = new Map();
     this.tickHandle = null;
   }
 
@@ -343,8 +344,10 @@ class MobWindowManager extends EventEmitter {
   loadState(state = {}) {
     const kills = state.kills && typeof state.kills === 'object' ? state.kills : {};
     const skips = state.skips && typeof state.skips === 'object' ? state.skips : {};
+    const history = state.history && typeof state.history === 'object' ? state.history : {};
     this.killTimestamps.clear();
     this.skipCounts.clear();
+    this.todHistory.clear();
     for (const [mobId, value] of Object.entries(kills)) {
       const parsed = asDate(value);
       if (parsed) {
@@ -355,6 +358,32 @@ class MobWindowManager extends EventEmitter {
       const count = Number(value);
       if (Number.isFinite(count) && count > 0) {
         this.skipCounts.set(mobId, Math.floor(count));
+      }
+    }
+    for (const [mobId, entries] of Object.entries(history)) {
+      if (!Array.isArray(entries)) continue;
+      const parsedEntries = entries
+        .map((value) => {
+          if (value && typeof value === 'object' && value.timestamp) {
+            const parsed = asDate(value.timestamp);
+            if (!parsed) return null;
+            return {
+              timestampMs: parsed.getTime(),
+              reportedBy:
+                typeof value.reportedBy === 'string' && value.reportedBy.trim()
+                  ? value.reportedBy.trim()
+                  : null,
+            };
+          }
+          const parsed = asDate(value);
+          if (!parsed) return null;
+          return { timestampMs: parsed.getTime(), reportedBy: null };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.timestampMs - a.timestampMs)
+        .slice(0, 10);
+      if (parsedEntries.length) {
+        this.todHistory.set(mobId, parsedEntries);
       }
     }
     this.emitUpdate();
@@ -369,7 +398,17 @@ class MobWindowManager extends EventEmitter {
     for (const [mobId, count] of this.skipCounts.entries()) {
       skips[mobId] = count;
     }
-    return { kills, skips };
+    const history = {};
+    for (const [mobId, entries] of this.todHistory.entries()) {
+      if (!Array.isArray(entries) || !entries.length) {
+        continue;
+      }
+      history[mobId] = entries.slice(0, 10).map((entry) => ({
+        timestamp: new Date(entry.timestampMs).toISOString(),
+        reportedBy: entry.reportedBy || null,
+      }));
+    }
+    return { kills, skips, history };
   }
 
   ingestLines(lines = []) {
@@ -408,12 +447,32 @@ class MobWindowManager extends EventEmitter {
       }
     }
 
+    const quakeResult = this.parseQuakeCommand(trimmedMessage, parsedTimestamp);
+    if (quakeResult) {
+      return this.resetAllKills(quakeResult.timestamp || parsedTimestamp);
+    }
+
     const todResult = this.parseTodCommand(trimmedMessage, parsedTimestamp);
     if (todResult) {
       if (todResult.kind === 'quake') {
         return this.resetAllKills(todResult.timestamp || parsedTimestamp);
       }
       return this.recordKill(todResult.mobId, todResult.timestamp || parsedTimestamp);
+    }
+
+    const skipResult = this.parseSkipCommand(trimmedMessage);
+    if (skipResult) {
+      if (skipResult.kind === 'skip') {
+        return this.incrementSkip(skipResult.mobId, 1);
+      }
+      if (skipResult.kind === 'unskip') {
+        return this.decrementSkip(skipResult.mobId, 1);
+      }
+    }
+
+    const removeResult = this.parseTodRemoveCommand(trimmedMessage);
+    if (removeResult) {
+      return this.clearKill(removeResult.mobId);
     }
 
     return false;
@@ -467,6 +526,63 @@ class MobWindowManager extends EventEmitter {
       kind: 'mob',
       mobId: parsedTarget.mobId,
       timestamp,
+    };
+  }
+
+  parseQuakeCommand(message, fallbackTimestamp = new Date()) {
+    if (!message) {
+      return null;
+    }
+    const match = message.match(/^!?quake\b\s*(.*)$/i);
+    if (!match) {
+      return null;
+    }
+    const timeText = cleanCommandTimeText(match[1]);
+    const timestamp = resolveTemporalExpression(timeText, fallbackTimestamp, new Date());
+    if (!timestamp) {
+      return null;
+    }
+    return {
+      kind: 'quake',
+      timestamp,
+    };
+  }
+
+  parseSkipCommand(message) {
+    if (!message) {
+      return null;
+    }
+    const skipMatch = message.match(/^!?skip\s+(.+)/i);
+    const unskipMatch = message.match(/^!?unskip\s+(.+)/i);
+    const kind = skipMatch ? 'skip' : unskipMatch ? 'unskip' : null;
+    const rawTarget = skipMatch ? skipMatch[1] : unskipMatch ? unskipMatch[1] : '';
+    if (!kind) {
+      return null;
+    }
+    const parsedTarget = this.extractMobAndTime(rawTarget);
+    if (!parsedTarget || !parsedTarget.mobId) {
+      return null;
+    }
+    return {
+      kind,
+      mobId: parsedTarget.mobId,
+    };
+  }
+
+  parseTodRemoveCommand(message) {
+    if (!message) {
+      return null;
+    }
+    const match = message.match(/^!?todremove\s+(.+)/i);
+    if (!match) {
+      return null;
+    }
+    const parsedTarget = this.extractMobAndTime(match[1]);
+    if (!parsedTarget || !parsedTarget.mobId) {
+      return null;
+    }
+    return {
+      mobId: parsedTarget.mobId,
     };
   }
 
@@ -539,7 +655,7 @@ class MobWindowManager extends EventEmitter {
     return null;
   }
 
-  recordKill(mobId, timestamp = new Date()) {
+  recordKill(mobId, timestamp = new Date(), options = {}) {
     const definition = this.definitionMap.get(mobId);
     if (!definition) {
       return false;
@@ -553,6 +669,13 @@ class MobWindowManager extends EventEmitter {
       return false;
     }
     this.killTimestamps.set(mobId, ms);
+    const reportedBy =
+      typeof options.reportedBy === 'string' && options.reportedBy.trim()
+        ? options.reportedBy.trim()
+        : null;
+    const history = Array.isArray(this.todHistory.get(mobId)) ? [...this.todHistory.get(mobId)] : [];
+    history.unshift({ timestampMs: ms, reportedBy });
+    this.todHistory.set(mobId, history.slice(0, 10));
     this.skipCounts.delete(mobId);
     this.emit('kill', {
       mobId,
@@ -574,6 +697,11 @@ class MobWindowManager extends EventEmitter {
       const existing = this.killTimestamps.get(definition.id);
       if (existing !== targetMs) {
         this.killTimestamps.set(definition.id, targetMs);
+        const history = Array.isArray(this.todHistory.get(definition.id))
+          ? [...this.todHistory.get(definition.id)]
+          : [];
+        history.unshift({ timestampMs: targetMs, reportedBy: null });
+        this.todHistory.set(definition.id, history.slice(0, 10));
         changed = true;
       }
     }
@@ -591,6 +719,66 @@ class MobWindowManager extends EventEmitter {
       this.emitUpdate();
     }
     return existed;
+  }
+
+  incrementSkip(mobId, amount = 1) {
+    const definition = this.definitionMap.get(mobId);
+    if (!definition) {
+      return false;
+    }
+    const delta = Math.max(1, Math.floor(Number(amount) || 1));
+    const current = Math.max(0, Math.floor(Number(this.skipCounts.get(mobId)) || 0));
+    let next = current + delta;
+    if (Number.isFinite(definition.maxSkips)) {
+      next = Math.min(next, definition.maxSkips);
+    }
+    if (next === current) {
+      return false;
+    }
+    this.skipCounts.set(mobId, next);
+    this.emit('skip', {
+      mobId,
+      definition,
+      skipCount: next,
+    });
+    this.emitUpdate();
+    return true;
+  }
+
+  decrementSkip(mobId, amount = 1) {
+    const definition = this.definitionMap.get(mobId);
+    if (!definition) {
+      return false;
+    }
+    const delta = Math.max(1, Math.floor(Number(amount) || 1));
+    const current = Math.max(0, Math.floor(Number(this.skipCounts.get(mobId)) || 0));
+    const next = Math.max(0, current - delta);
+    if (next === current) {
+      return false;
+    }
+    if (next === 0) {
+      this.skipCounts.delete(mobId);
+    } else {
+      this.skipCounts.set(mobId, next);
+    }
+    this.emit('skip', {
+      mobId,
+      definition,
+      skipCount: next,
+    });
+    this.emitUpdate();
+    return true;
+  }
+
+  adjustSkipCount(mobId, delta = 0) {
+    const parsedDelta = Math.trunc(Number(delta) || 0);
+    if (parsedDelta > 0) {
+      return this.incrementSkip(mobId, parsedDelta);
+    }
+    if (parsedDelta < 0) {
+      return this.decrementSkip(mobId, Math.abs(parsedDelta));
+    }
+    return false;
   }
 
   computeSnapshot(now = Date.now()) {
@@ -660,6 +848,12 @@ class MobWindowManager extends EventEmitter {
         secondsUntilClose,
         secondsSinceKill,
         windowProgress,
+        todHistory: (this.todHistory.get(definition.id) || [])
+          .slice(0, 10)
+          .map((entry) => ({
+            timestamp: new Date(entry.timestampMs).toISOString(),
+            reportedBy: entry.reportedBy || null,
+          })),
       };
     });
 

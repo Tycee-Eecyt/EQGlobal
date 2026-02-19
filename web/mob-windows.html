@@ -8,44 +8,57 @@
   </head>
   <body>
     <header class="site-header">
-      <h1>EQGlobal Mob Windows</h1>
-      <nav class="site-nav">
-        <a id="nav-mob-link" href="/mob-windows.html" aria-current="page" data-role="tracker">Mob Windows</a>
-        <a id="nav-admin-link" href="/admin.html" data-role="admin">Admin</a>
-      </nav>
-      <div class="header-actions">
-        <span id="inline-user-label" class="inline-user">Not signed in</span>
-        <button id="header-logout-button" class="secondary hidden" type="button">Sign Out</button>
+      <div class="header-top">
+        <h1>EQGlobal Mob Windows</h1>
+        <nav class="site-nav">
+          <a id="nav-mob-link" href="/mob-windows.html" aria-current="page" data-role="tracker">Mob Windows</a>
+          <a id="nav-admin-link" href="/admin.html" data-role="admin">Admin</a>
+        </nav>
+        <div class="header-actions">
+          <span id="inline-user-label" class="inline-user">Not signed in</span>
+          <button id="refresh-button" type="button">Refresh</button>
+          <button id="header-logout-button" class="secondary hidden" type="button">Sign Out</button>
+        </div>
       </div>
       <div class="last-updated" id="last-updated">Loading...</div>
     </header>
 
-    <main class="layout">
-      <section class="panel" aria-labelledby="panel-current-title">
-        <div class="panel-header">
-          <h2 id="panel-current-title">Mobs In Window</h2>
+    <main class="discord-shell">
+      <section class="dashboard-layout" aria-label="Mob window dashboard">
+        <div class="dashboard-columns">
+          <section class="panel" aria-labelledby="panel-current-title">
+            <div class="panel-header">
+              <h2 id="panel-current-title">Mobs In Window</h2>
+            </div>
+            <div id="current-list" class="panel-body empty">Loading...</div>
+          </section>
+
+          <section class="panel" aria-labelledby="panel-upcoming-title">
+            <div class="panel-header">
+              <h2 id="panel-upcoming-title">Opening Within 24 Hours</h2>
+            </div>
+            <div id="upcoming-list" class="panel-body empty">Loading...</div>
+          </section>
+
+          <section class="panel" aria-labelledby="panel-future-title">
+            <div class="panel-header">
+              <h2 id="panel-future-title">Opening Later (Next 72 Hours)</h2>
+            </div>
+            <div id="future-list" class="panel-body empty">Loading...</div>
+          </section>
         </div>
-        <div id="current-list" class="panel-body empty">Loading...</div>
+
+        <aside class="panel rail-panel" aria-labelledby="rail-title">
+          <div class="panel-header">
+            <h2 id="rail-title">Mobs In Window</h2>
+          </div>
+          <div id="rail-list" class="panel-body empty">Loading...</div>
+        </aside>
       </section>
 
-      <section class="panel" aria-labelledby="panel-upcoming-title">
-        <div class="panel-header">
-          <h2 id="panel-upcoming-title">Opening Within 24 Hours</h2>
-        </div>
-        <div id="upcoming-list" class="panel-body empty">Loading...</div>
-      </section>
-
-      <section class="panel" aria-labelledby="panel-future-title">
-        <div class="panel-header">
-          <h2 id="panel-future-title">Opening Later (Next 72 Hours)</h2>
-        </div>
-        <div id="future-list" class="panel-body empty">Loading...</div>
-      </section>
-
-      <section class="panel wide" aria-labelledby="panel-table-title">
+      <section class="panel table-panel wide" aria-labelledby="panel-table-title">
         <div class="panel-header">
           <h2 id="panel-table-title">All Tracked Mobs</h2>
-          <button id="refresh-button" type="button">Refresh</button>
         </div>
         <div class="panel-body">
           <table id="mob-table">
@@ -67,10 +80,6 @@
         </div>
       </section>
     </main>
-
-    <footer class="site-footer">
-      <span>Data updates automatically every 30 seconds.</span>
-    </footer>
 
     <script src="mob-windows.js" type="module"></script>
   </body>

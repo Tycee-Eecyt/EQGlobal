@@ -23,8 +23,10 @@ contextBridge.exposeInMainWorld('eqApi', {
   writeClipboardText: (text) => ipcRenderer.invoke('clipboard:write', text),
   getMobWindows: () => ipcRenderer.invoke('mob-windows:get'),
   getMobWindowDefinitions: () => ipcRenderer.invoke('mob-windows:definitions'),
-  recordMobKill: (mobId, timestamp) => ipcRenderer.invoke('mob-windows:record-kill', mobId, timestamp),
+  recordMobKill: (mobId, timestamp, metadata) =>
+    ipcRenderer.invoke('mob-windows:record-kill', mobId, timestamp, metadata),
   clearMobKill: (mobId) => ipcRenderer.invoke('mob-windows:clear', mobId),
+  adjustMobSkip: (mobId, delta) => ipcRenderer.invoke('mob-windows:adjust-skip', mobId, delta),
   getAuthState: () => ipcRenderer.invoke('auth:status'),
   login: (username, password) => ipcRenderer.invoke('auth:login', { username, password }),
   logout: () => ipcRenderer.invoke('auth:logout'),

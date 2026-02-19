@@ -509,25 +509,39 @@ async function applyMobKillUpdates(db, updates) {
   const existing = await collection.findOne({ _id: 'global' });
   const kills = existing && existing.kills ? { ...existing.kills } : {};
   const skips = existing && existing.skips ? { ...existing.skips } : {};
+  const history = existing && existing.history ? { ...existing.history } : {};
   let changed = false;
   let skipsChanged = false;
-  updates.forEach((isoTimestamp, mobId) => {
+  let historyChanged = false;
+  updates.forEach((rawUpdate, mobId) => {
+    const isoTimestamp =
+      rawUpdate && typeof rawUpdate === 'object' && rawUpdate.timestamp
+        ? String(rawUpdate.timestamp)
+        : String(rawUpdate);
+    const reportedBy =
+      rawUpdate && typeof rawUpdate === 'object' && typeof rawUpdate.reportedBy === 'string'
+        ? rawUpdate.reportedBy.trim() || null
+        : null;
     if (!kills[mobId] || isoTimestamp > kills[mobId]) {
       kills[mobId] = isoTimestamp;
       changed = true;
+      const list = Array.isArray(history[mobId]) ? [...history[mobId]] : [];
+      list.unshift({ timestamp: isoTimestamp, reportedBy });
+      history[mobId] = list.slice(0, 200);
+      historyChanged = true;
     }
     if (Object.prototype.hasOwnProperty.call(skips, mobId)) {
       delete skips[mobId];
       skipsChanged = true;
     }
   });
-  if (!changed && !skipsChanged) {
+  if (!changed && !skipsChanged && !historyChanged) {
     return null;
   }
   const updatedAt = new Date();
   await collection.updateOne(
     { _id: 'global' },
-    { $set: { kills, skips, updatedAt } },
+    { $set: { kills, skips, history, updatedAt } },
     { upsert: true }
   );
   console.log(
@@ -537,7 +551,7 @@ async function applyMobKillUpdates(db, updates) {
     updatedAt.toISOString()
   );
   const snapshot = buildSnapshotFromKills(kills, skips);
-  return { kills, skips, updatedAt, snapshot, updatedMobIds: Array.from(updates.keys()) };
+  return { kills, skips, history, updatedAt, snapshot, updatedMobIds: Array.from(updates.keys()) };
 }
 
 async function clearMobKill(db, mobId) {
@@ -546,6 +560,7 @@ async function clearMobKill(db, mobId) {
   const doc = await collection.findOne({ _id: 'global' });
   const kills = doc && doc.kills ? { ...doc.kills } : {};
   const skips = doc && doc.skips ? { ...doc.skips } : {};
+  const history = doc && doc.history ? { ...doc.history } : {};
   if (!Object.prototype.hasOwnProperty.call(kills, mobId)) {
     return null;
   }
@@ -556,11 +571,11 @@ async function clearMobKill(db, mobId) {
   const updatedAt = new Date();
   await collection.updateOne(
     { _id: 'global' },
-    { $set: { kills, skips, updatedAt } },
+    { $set: { kills, skips, history, updatedAt } },
     { upsert: true }
   );
   const snapshot = buildSnapshotFromKills(kills, skips);
-  return { kills, skips, updatedAt, snapshot, clearedMobIds: [mobId] };
+  return { kills, skips, history, updatedAt, snapshot, clearedMobIds: [mobId] };
 }
 
 app.get('/health', async (_req, res) => {
@@ -811,6 +826,7 @@ app.get(
         return res.json({
           kills: {},
           skips: {},
+          history: {},
           updatedAt: null,
           mobs: snapshot.mobs,
           snapshot,
@@ -820,6 +836,7 @@ app.get(
       res.json({
         kills: doc.kills || {},
         skips: doc.skips || {},
+        history: doc.history && typeof doc.history === 'object' ? doc.history : {},
         updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : null,
         mobs: snapshot.mobs,
         snapshot,
@@ -836,7 +853,7 @@ app.post(
   authenticateJwt,
   requireRoleAtMost(ROLE_LEVELS.OFFICER),
   async (req, res) => {
-    const { kills } = req.body || {};
+    const { kills, skips, history } = req.body || {};
     if (!kills || typeof kills !== 'object') {
       return res.status(400).json({ error: 'Expected "kills" to be an object.' });
     }
@@ -852,18 +869,69 @@ app.post(
       }
       sanitized[mobId] = new Date(iso).toISOString();
     }
+    const sanitizedSkips = {};
+    if (skips && typeof skips === 'object') {
+      for (const [mobId, count] of Object.entries(skips)) {
+        if (!mobDefinitionsById.has(mobId)) continue;
+        const parsed = Math.max(0, Math.floor(Number(count) || 0));
+        if (parsed > 0) sanitizedSkips[mobId] = parsed;
+      }
+    }
+
+    const sanitizedHistory = {};
+    if (history && typeof history === 'object') {
+      for (const [mobId, entries] of Object.entries(history)) {
+        if (!mobDefinitionsById.has(mobId) || !Array.isArray(entries)) continue;
+        const normalized = entries
+          .map((entry) => {
+            if (entry && typeof entry === 'object' && entry.timestamp) {
+              const parsed = Date.parse(entry.timestamp);
+              if (Number.isNaN(parsed)) return null;
+              const iso = new Date(parsed).toISOString();
+              return {
+                timestamp: iso,
+                reportedBy:
+                  typeof entry.reportedBy === 'string' && entry.reportedBy.trim()
+                    ? entry.reportedBy.trim()
+                    : null,
+              };
+            }
+            const parsed = Date.parse(entry);
+            if (Number.isNaN(parsed)) return null;
+            const iso = new Date(parsed).toISOString();
+            return { timestamp: iso, reportedBy: null };
+          })
+          .filter(Boolean)
+          .slice(0, 200);
+        if (normalized.length) {
+          sanitizedHistory[mobId] = normalized;
+        }
+      }
+    }
 
     try {
       const db = await ensureMongoConnection();
       const collection = db.collection('mob_windows');
+      const existing = await collection.findOne({ _id: 'global' });
+      const mergedSkips =
+        skips && typeof skips === 'object'
+          ? sanitizedSkips
+          : existing && existing.skips && typeof existing.skips === 'object'
+            ? existing.skips
+            : {};
+      const mergedHistory =
+        history && typeof history === 'object'
+          ? sanitizedHistory
+          : existing && existing.history && typeof existing.history === 'object'
+            ? existing.history
+            : {};
       const updatedAt = new Date();
       await collection.updateOne(
         { _id: 'global' },
-        { $set: { kills: sanitized, updatedAt } },
+        { $set: { kills: sanitized, skips: mergedSkips, history: mergedHistory, updatedAt } },
         { upsert: true }
       );
-      const existing = await collection.findOne({ _id: 'global' });
-      const snapshot = buildSnapshotFromKills(sanitized, existing?.skips || {});
+      const snapshot = buildSnapshotFromKills(sanitized, mergedSkips);
       notifyDiscord({
         snapshot,
         updatedMobIds: Object.keys(sanitized),
@@ -871,7 +939,8 @@ app.post(
       });
       res.json({
         kills: sanitized,
-        skips: existing?.skips || {},
+        skips: mergedSkips,
+        history: mergedHistory,
         updatedAt: updatedAt.toISOString(),
         mobs: snapshot.mobs,
         snapshot,
@@ -909,6 +978,7 @@ app.post(
         return res.json({
           kills,
           skips: doc?.skips || {},
+          history: doc?.history || {},
           updatedAt: doc?.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
           mobs: snapshot.mobs,
           snapshot,
@@ -922,6 +992,7 @@ app.post(
       res.json({
         kills: result.kills,
         skips: result.skips || {},
+        history: result.history || {},
         updatedAt: result.updatedAt ? result.updatedAt.toISOString() : null,
         mobs: result.snapshot.mobs,
         snapshot: result.snapshot,

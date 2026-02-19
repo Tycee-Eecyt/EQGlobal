@@ -649,25 +649,6 @@ button:active {
   box-shadow: inset 0 0 0 1px rgba(73, 209, 164, 0.25);
 }
 
-.tree-toggle {
-  background: none;
-  border: none;
-  color: rgba(245, 247, 250, 0.45);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.1rem;
-  height: 1.2rem;
-  padding: 0;
-  border-radius: 4px;
-}
-
-.tree-toggle:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f5f7fa;
-}
-
 .tree-toggle-placeholder {
   width: 1.1rem;
   height: 1.2rem;
@@ -699,6 +680,22 @@ button:active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.folder-toggle {
+  cursor: pointer;
+}
+
+.tree-label.folder-toggle:hover,
+.tree-icon.folder.folder-toggle:hover {
+  color: #f5f7fa;
+}
+
+.tree-label.folder-toggle:focus-visible,
+.tree-icon.folder.folder-toggle:focus-visible {
+  outline: 1px solid rgba(73, 209, 164, 0.8);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .trigger-detail-panel {

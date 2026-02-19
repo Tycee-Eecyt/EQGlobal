@@ -1301,7 +1301,11 @@ async function fetchMobWindowsFromBackend() {
     if (!data || typeof data.kills !== 'object' || !data.kills) {
       return null;
     }
-    return { kills: data.kills };
+    return {
+      kills: data.kills,
+      skips: data.skips && typeof data.skips === 'object' ? data.skips : {},
+      history: data.history && typeof data.history === 'object' ? data.history : {},
+    };
   } catch (error) {
     console.error('Failed to fetch mob windows from backend', error.message || error);
     if (isUnauthorizedError(error)) {
@@ -1344,7 +1348,15 @@ async function syncMobWindowsToBackend(state) {
     if (!headers) {
       return;
     }
-    await axios.post(joinBackendUrl(baseUrl, '/api/mob-windows'), { kills: payload.kills }, { headers });
+    await axios.post(
+      joinBackendUrl(baseUrl, '/api/mob-windows'),
+      {
+        kills: payload.kills,
+        skips: payload.skips && typeof payload.skips === 'object' ? payload.skips : {},
+        history: payload.history && typeof payload.history === 'object' ? payload.history : {},
+      },
+      { headers }
+    );
   } catch (error) {
     console.error('Failed to sync mob windows to backend', error.message || error);
     if (isUnauthorizedError(error)) {
@@ -1671,12 +1683,16 @@ function registerIpcHandlers() {
     return mobWindowManager.computeSnapshot();
   });
   ipcMain.handle('mob-windows:definitions', () => mobWindowManager.getDefinitions());
-  ipcMain.handle('mob-windows:record-kill', async (_event, mobId, timestamp) => {
+  ipcMain.handle('mob-windows:record-kill', async (_event, mobId, timestamp, metadata) => {
     const roleLevel = getCurrentRoleLevel();
     if (!roleLevel || roleLevel > ROLE_LEVELS.OFFICER) {
       throw new Error('Not authorized to record ToD updates.');
     }
-    const updated = mobWindowManager.recordKill(mobId, timestamp ? new Date(timestamp) : new Date());
+    const updated = mobWindowManager.recordKill(
+      mobId,
+      timestamp ? new Date(timestamp) : new Date(),
+      metadata && typeof metadata === 'object' ? metadata : {}
+    );
     if (updated) {
       await saveSettings(settings);
       if ((settings.backendUrl || '').trim()) {
@@ -1695,6 +1711,20 @@ function registerIpcHandlers() {
       await saveSettings(settings);
       if ((settings.backendUrl || '').trim()) {
         await syncMobWindowsToBackend(cleared);
+      }
+    }
+    return mobWindowManager.computeSnapshot();
+  });
+  ipcMain.handle('mob-windows:adjust-skip', async (_event, mobId, delta) => {
+    const roleLevel = getCurrentRoleLevel();
+    if (!roleLevel || roleLevel > ROLE_LEVELS.OFFICER) {
+      throw new Error('Not authorized to update skip counts.');
+    }
+    const changed = mobWindowManager.adjustSkipCount(mobId, delta);
+    if (changed) {
+      await saveSettings(settings);
+      if ((settings.backendUrl || '').trim()) {
+        await syncMobWindowsToBackend(changed);
       }
     }
     return mobWindowManager.computeSnapshot();
