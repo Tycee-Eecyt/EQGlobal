@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EQGlobal Command Guide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="mob-windows.css" />
+    <style>
+      .guide-shell {
+        padding: 1.35rem 1.5rem 1.6rem;
+        display: grid;
+        gap: 1rem;
+      }
+      .guide-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+      .guide-block {
+        border: 1px solid rgba(141, 169, 214, 0.12);
+        border-radius: 12px;
+        background: rgba(10, 16, 29, 0.5);
+        padding: 0.9rem;
+      }
+      .guide-block h3 {
+        margin: 0 0 0.55rem;
+        font-size: 1rem;
+      }
+      .cmd-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      .cmd-table th,
+      .cmd-table td {
+        text-align: left;
+        padding: 0.45rem 0.4rem;
+        border-bottom: 1px solid rgba(141, 169, 214, 0.12);
+        vertical-align: top;
+      }
+      .cmd-table th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-2);
+      }
+      code {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 7px;
+        padding: 0.1rem 0.35rem;
+      }
+      .examples {
+        margin: 0;
+        padding-left: 1rem;
+        display: grid;
+        gap: 0.3rem;
+      }
+      .subtle {
+        color: var(--text-2);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-top">
+        <h1>EQGlobal Mob Windows</h1>
+        <nav class="site-nav">
+          <a id="nav-mob-link" href="/mob-windows.html">Mob Windows</a>
+          <a id="nav-admin-link" href="/admin.html">Admin</a>
+          <a id="nav-commands-link" href="/commands.html" aria-current="page">Command Guide</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="guide-shell">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Discord-Style Command Guide</h2>
+        </div>
+        <div class="panel-body">
+          <p class="subtle">
+            The bulk ToD parser supports both <code>!command</code> and plain command text from copied Discord logs.
+            Commands below are the current parser behavior in EQGlobal.
+          </p>
+        </div>
+      </section>
+
+      <section class="guide-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Write Commands</h2>
+          </div>
+          <div class="panel-body">
+            <table class="cmd-table">
+              <thead>
+                <tr>
+                  <th>Command</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>!tod &lt;mob&gt; [time]</code></td>
+                  <td>Set ToD for a mob. If no time is provided, parser uses message timestamp.</td>
+                </tr>
+                <tr>
+                  <td><code>!tod quake [time]</code> / <code>!quake [time]</code></td>
+                  <td>Apply one quake timestamp to all tracked mobs.</td>
+                </tr>
+                <tr>
+                  <td><code>!todremove &lt;mob&gt;</code></td>
+                  <td>Clear ToD for a single mob.</td>
+                </tr>
+                <tr>
+                  <td><code>!skip &lt;mob&gt; [time]</code></td>
+                  <td>Record skipped spawn count (+1).</td>
+                </tr>
+                <tr>
+                  <td><code>!unskip &lt;mob&gt;</code></td>
+                  <td>Remove one skip from mob.</td>
+                </tr>
+                <tr>
+                  <td><code>!alias ...</code></td>
+                  <td>Session alias mapping in parsed paste for name matching.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Read / Emulated Commands</h2>
+          </div>
+          <div class="panel-body">
+            <table class="cmd-table">
+              <thead>
+                <tr>
+                  <th>Command</th>
+                  <th>Behavior</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>!todhistory &lt;mob&gt;</code></td>
+                  <td>Shown in preview feedback as history output.</td>
+                </tr>
+                <tr>
+                  <td><code>!leaderboard</code></td>
+                  <td>Recognized and emulated in preview summary.</td>
+                </tr>
+                <tr>
+                  <td><code>!timers</code>, <code>!schedule</code>, <code>!help</code></td>
+                  <td>Recognized as bot/read commands and ignored for writes.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Time Parsing Examples</h2>
+        </div>
+        <div class="panel-body">
+          <ul class="examples">
+            <li><code>!tod vindi now</code></li>
+            <li><code>!tod kdt 2026-02-17 14:09:00</code></li>
+            <li><code>!tod narandi [Mon Feb 16 23:46:58 2026]</code></li>
+            <li><code>!tod statue 15 minutes ago</code></li>
+            <li><code>!skip lodi 20 mins ago</code></li>
+            <li><code>!quake now</code></li>
+          </ul>
+          <p class="subtle">
+            Accepted formats include ISO, US date/time, bracketed EQ timestamps, and relative values such as
+            <code>2h ago</code>, <code>15 minutes ago</code>, or <code>-30m</code>.
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -6,12 +6,14 @@ Electron-based overlay that watches EverQuest log files, surfaces configurable t
 
 - Latest Windows installer: visit Releases and download the newest tag.
   https://github.com/Tycee-Eecyt/EQGlobal/releases
+- Current latest published release: `v1.0.11`
 
 ## Auto-Update
 
 - Packaged builds auto-check for updates on startup and every few hours.
 - System tray includes “Check for Updates…”. After an update downloads it becomes “Restart to Update”.
 - Updates are delivered via GitHub Releases.
+- Ensure each release is built from a bumped `package.json` version so updater metadata advertises a newer app version.
 
 ## Prerequisites
 
@@ -194,6 +196,13 @@ Note: For text commands, enable the bot's Message Content Intent in the Discord 
   - `!tod quake 2025-10-25 18:48`
 - Time parsing accepts formats like `now`, `M/D/YYYY HH:MM [AM/PM]`, `YYYY-MM-DD HH:MM[:SS]`, or time-only (anchored to the message timestamp).
 - A quake command applies the same timestamp to all tracked mobs.
+
+## Command Guide Page
+
+- Web dashboard includes a command guide at `/commands.html`.
+- It documents Discord-style parser commands, including:
+  - `!tod`, `!todremove`, `!skip`, `!unskip`, `!quake`
+  - `!todhistory`, `!leaderboard`, `!timers`, `!schedule`, `!help`
 
 ## Next Steps
 
