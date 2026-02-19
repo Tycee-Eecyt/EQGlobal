@@ -1291,6 +1291,8 @@ async function loginToBackend({ username, password }) {
     accessTokenExpiresAt: data.accessTokenExpiresAt || null,
     refreshTokenExpiresAt: data.refreshTokenExpiresAt || null,
   });
+  mobWindowsFetchedFromBackend = false;
+  await loadMobWindowsFromBackend({ force: true });
   return getRendererAuthState();
 }
 
@@ -1800,7 +1802,7 @@ function registerIpcHandlers() {
     if (updated) {
       await saveSettings(settings);
       if ((settings.backendUrl || '').trim()) {
-        await syncMobWindowsToBackend(updated);
+        await syncMobWindowsToBackend();
       }
     }
     return mobWindowManager.computeSnapshot();
@@ -1814,7 +1816,7 @@ function registerIpcHandlers() {
     if (cleared) {
       await saveSettings(settings);
       if ((settings.backendUrl || '').trim()) {
-        await syncMobWindowsToBackend(cleared);
+        await syncMobWindowsToBackend();
       }
     }
     return mobWindowManager.computeSnapshot();
@@ -1828,7 +1830,7 @@ function registerIpcHandlers() {
     if (changed) {
       await saveSettings(settings);
       if ((settings.backendUrl || '').trim()) {
-        await syncMobWindowsToBackend(changed);
+        await syncMobWindowsToBackend();
       }
     }
     return mobWindowManager.computeSnapshot();

@@ -349,18 +349,34 @@ class MobWindowManager extends EventEmitter {
     this.skipCounts.clear();
     this.todHistory.clear();
     for (const [mobId, value] of Object.entries(kills)) {
+      const resolvedMobId = this.resolveMobId(mobId);
+      if (!resolvedMobId) {
+        continue;
+      }
       const parsed = asDate(value);
       if (parsed) {
-        this.killTimestamps.set(mobId, parsed.getTime());
+        const nextMs = parsed.getTime();
+        const existingMs = this.killTimestamps.get(resolvedMobId);
+        if (!existingMs || nextMs > existingMs) {
+          this.killTimestamps.set(resolvedMobId, nextMs);
+        }
       }
     }
     for (const [mobId, value] of Object.entries(skips)) {
+      const resolvedMobId = this.resolveMobId(mobId);
+      if (!resolvedMobId) {
+        continue;
+      }
       const count = Number(value);
       if (Number.isFinite(count) && count > 0) {
-        this.skipCounts.set(mobId, Math.floor(count));
+        this.skipCounts.set(resolvedMobId, Math.floor(count));
       }
     }
     for (const [mobId, entries] of Object.entries(history)) {
+      const resolvedMobId = this.resolveMobId(mobId);
+      if (!resolvedMobId) {
+        continue;
+      }
       if (!Array.isArray(entries)) continue;
       const parsedEntries = entries
         .map((value) => {
@@ -383,10 +399,35 @@ class MobWindowManager extends EventEmitter {
         .sort((a, b) => b.timestampMs - a.timestampMs)
         .slice(0, 10);
       if (parsedEntries.length) {
-        this.todHistory.set(mobId, parsedEntries);
+        this.todHistory.set(resolvedMobId, parsedEntries);
       }
     }
     this.emitUpdate();
+  }
+
+  resolveMobId(rawMobId) {
+    if (!rawMobId && rawMobId !== 0) {
+      return null;
+    }
+    const raw = String(rawMobId).trim();
+    if (!raw) {
+      return null;
+    }
+    if (this.definitionMap.has(raw)) {
+      return raw;
+    }
+    const normalizedRaw = raw
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    if (normalizedRaw && this.definitionMap.has(normalizedRaw)) {
+      return normalizedRaw;
+    }
+    const aliasHit = this.lookupMobIdByAlias(raw);
+    if (aliasHit) {
+      return aliasHit;
+    }
+    return null;
   }
 
   serializeState() {
