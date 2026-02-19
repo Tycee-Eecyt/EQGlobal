@@ -944,7 +944,88 @@ function renderTabButtons(tabs) {
     .join('');
 }
 
-function renderBasicTab(trigger, categoryOptions) {
+function renderGeneralSettings(trigger, categoryOptions) {
+  const categoryOptionsMarkup = categoryOptions
+    .map(
+      (option) =>
+        `<option value="${escapeHtml(option.id)}" ${
+          (trigger.categoryId || '') === option.id ? 'selected' : ''
+        }>${escapeHtml(option.label)}</option>`
+    )
+    .join('');
+
+  return `
+    <div class="editor-section general-settings-section">
+      <h4>General Settings</h4>
+      <div class="general-settings-rows">
+        <div class="setting-row">
+          <label for="trigger-label">Trigger Name</label>
+          <input id="trigger-label" type="text" value="${escapeHtml(trigger.label || '')}" data-role="trigger-field" data-field="label" autocomplete="off" />
+        </div>
+        <div class="setting-row">
+          <label for="trigger-pattern">Search Text</label>
+          <input id="trigger-pattern" type="text" value="${escapeHtml(trigger.pattern || '')}" data-role="trigger-field" data-field="pattern" autocomplete="off" />
+        </div>
+        <div class="setting-row inline-checks">
+          <span class="setting-label">Options</span>
+          <div class="checkbox-row setting-options">
+            <input id="trigger-regex" type="checkbox" data-role="trigger-field" data-field="isRegex" data-type="boolean" ${trigger.isRegex ? 'checked' : ''} />
+            <label for="trigger-regex">Use Regular Expressions</label>
+          </div>
+          <div class="checkbox-row setting-options">
+            <input id="trigger-fast-check" type="checkbox" checked disabled />
+            <label for="trigger-fast-check">Use Fast Check</label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <label for="trigger-category">Category</label>
+          <select id="trigger-category" data-role="trigger-field" data-field="categoryId">
+            ${categoryOptionsMarkup}
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="trigger-comments">Comments</label>
+          <textarea id="trigger-comments" data-role="trigger-field" data-field="comments" rows="3">${escapeHtml(trigger.comments || '')}</textarea>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getAvailableTtsVoices() {
+  if (!('speechSynthesis' in window)) {
+    return [];
+  }
+  const voices = window.speechSynthesis.getVoices() || [];
+  return voices.map((voice) => ({
+    name: voice.name,
+    label: `${voice.name}${voice.lang ? ` (${voice.lang})` : ''}`,
+  }));
+}
+
+function renderTtsTestControls(trigger, fieldPath) {
+  const voiceSelectId = `tts-voice-${String(trigger.id || 'trigger')}-${String(fieldPath)
+    .replace(/[^a-z0-9]+/gi, '-')
+    .toLowerCase()}`;
+  const options = getAvailableTtsVoices();
+  const optionsMarkup = options
+    .map((voice) => `<option value="${escapeHtml(voice.name)}">${escapeHtml(voice.label)}</option>`)
+    .join('');
+  return `
+    <div class="editor-field audio-field tts-test-row">
+      <label>Test</label>
+      <div class="input-with-button">
+        <select id="${voiceSelectId}">
+          <option value="">System Default Voice</option>
+          ${optionsMarkup}
+        </select>
+        <button type="button" class="secondary small" data-action="test-tts" data-field="${fieldPath}" data-voice-select-id="${voiceSelectId}">Play</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderBasicTab(trigger) {
   const textSettings = trigger.textSettings || {
     display: false,
     displayText: '',
@@ -971,6 +1052,7 @@ function renderBasicTab(trigger, categoryOptions) {
           Interrupt Speech
         </label>
       </div>
+      ${renderTtsTestControls(trigger, 'audio.text')}
     `);
   }
   if (audioMode === 'file') {
@@ -983,48 +1065,8 @@ function renderBasicTab(trigger, categoryOptions) {
   }
   const audioFieldsMarkup = audioFields.join('');
 
-  const categoryOptionsMarkup = categoryOptions
-    .map(
-      (option) =>
-        `<option value="${escapeHtml(option.id)}" ${
-          (trigger.categoryId || '') === option.id ? 'selected' : ''
-        }>${escapeHtml(option.label)}</option>`
-    )
-    .join('');
-
   return `
     <div class="tab-content ${activeTriggerTab === 'basic' ? 'active' : ''}" data-tab="basic" role="tabpanel">
-      <div class="editor-grid">
-        <div class="editor-field">
-          <label for="trigger-label">Trigger Name</label>
-          <input id="trigger-label" type="text" value="${escapeHtml(trigger.label || '')}" data-role="trigger-field" data-field="label" autocomplete="off" />
-        </div>
-        <div class="editor-field">
-          <label for="trigger-pattern">Search Text</label>
-          <input id="trigger-pattern" type="text" value="${escapeHtml(trigger.pattern || '')}" data-role="trigger-field" data-field="pattern" autocomplete="off" />
-        </div>
-        <div class="editor-field">
-          <label for="trigger-category">Category</label>
-          <select id="trigger-category" data-role="trigger-field" data-field="categoryId">
-            ${categoryOptionsMarkup}
-          </select>
-        </div>
-        <div class="editor-field">
-          <label for="trigger-color">Color</label>
-          <input id="trigger-color" type="color" value="${escapeHtml(trigger.color || '#00c9ff')}" data-role="trigger-field" data-field="color" />
-        </div>
-        <div class="editor-field">
-          <label for="trigger-comments">Comments</label>
-          <textarea id="trigger-comments" data-role="trigger-field" data-field="comments" rows="3">${escapeHtml(trigger.comments || '')}</textarea>
-        </div>
-        <div class="editor-field">
-          <div class="checkbox-row">
-            <input id="trigger-regex" type="checkbox" data-role="trigger-field" data-field="isRegex" data-type="boolean" ${trigger.isRegex ? 'checked' : ''} />
-            <label for="trigger-regex">Use Regular Expressions</label>
-          </div>
-        </div>
-      </div>
-
       <div class="editor-section">
         <h4>Text Settings</h4>
         <div class="checkbox-group">
@@ -1117,6 +1159,10 @@ function renderTimerTab(trigger, durationParts) {
             <option value="ignore" ${timer.restartMode === 'ignore' ? 'selected' : ''}>Ignore new trigger</option>
           </select>
         </div>
+        <div class="editor-field">
+          <label for="trigger-color">Color</label>
+          <input id="trigger-color" type="color" value="${escapeHtml(trigger.color || '#00c9ff')}" data-role="trigger-field" data-field="color" />
+        </div>
       </div>
       <div class="editor-section">
         <h4>End Early Text</h4>
@@ -1150,6 +1196,7 @@ function renderTimerEndingTab(trigger, thresholdParts) {
           Interrupt Speech
         </label>
       </div>
+      ${renderTtsTestControls(trigger, 'timerEnding.audio.text')}
     `);
   }
   if (audioMode === 'file') {
@@ -1166,7 +1213,7 @@ function renderTimerEndingTab(trigger, thresholdParts) {
     <div class="tab-content ${activeTriggerTab === 'timerEnding' ? 'active' : ''}" data-tab="timerEnding" role="tabpanel">
       <div class="editor-section">
         <h4>Countdown Warning</h4>
-        <div class="checkbox-group">
+        <div class="checkbox-group notify-threshold-row">
           <label class="checkbox-row">
             <input type="checkbox" data-role="trigger-field" data-field="timerEnding.enabled" data-type="boolean" ${timerEnding.enabled ? 'checked' : ''} />
             Notify when timer is down to
@@ -1234,6 +1281,7 @@ function renderTimerEndedTab(trigger) {
           Interrupt Speech
         </label>
       </div>
+      ${renderTtsTestControls(trigger, 'timerEnded.audio.text')}
     `);
   }
   if (audioMode === 'file') {
@@ -1330,14 +1378,19 @@ function renderTriggerEditor(trigger) {
           <button class="danger" type="button" data-action="delete-trigger" data-trigger-id="${trigger.id}">Delete</button>
         </div>
       </div>
+      ${renderGeneralSettings(trigger, categoryOptions)}
       <div class="tab-strip" role="tablist">
         ${renderTabButtons(['basic', 'timer', 'timerEnding', 'timerEnded', 'counter'])}
       </div>
-      ${renderBasicTab(trigger, categoryOptions)}
+      ${renderBasicTab(trigger)}
       ${renderTimerTab(trigger, durationParts)}
       ${renderTimerEndingTab(trigger, timerEndingParts)}
       ${renderTimerEndedTab(trigger)}
       ${renderCounterTab(trigger, counterParts)}
+      <div class="editor-footer">
+        <button class="secondary" type="button" data-action="cancel-trigger-local">Cancel</button>
+        <button class="primary" type="button" data-action="save-trigger-local">Save</button>
+      </div>
     </div>
   `;
 }
@@ -1607,6 +1660,29 @@ function removeEndEarlyRow(trigger, entryId) {
   renderTriggerDetail();
 }
 
+function getNestedField(target, path) {
+  if (!target || !path) {
+    return undefined;
+  }
+  const parts = String(path).split('.');
+  let current = target;
+  for (const part of parts) {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+    if (Array.isArray(current)) {
+      const index = Number(part);
+      if (!Number.isInteger(index) || index < 0 || index >= current.length) {
+        return undefined;
+      }
+      current = current[index];
+    } else {
+      current = current[part];
+    }
+  }
+  return current;
+}
+
 function updateNestedField(target, path, value) {
   const parts = path.split('.');
   let current = target;
@@ -1852,6 +1928,52 @@ async function handleDetailClick(event) {
         renderTriggerDetail();
       } catch (error) {
         console.error('Failed to select sound file', error);
+      }
+      return;
+    }
+    if (event.target.matches('[data-action="test-tts"]')) {
+      const fieldPath = event.target.dataset.field;
+      const voiceSelectId = event.target.dataset.voiceSelectId;
+      const textToSpeak = String(getNestedField(trigger, fieldPath) || '').trim();
+      if (!textToSpeak) {
+        window.alert('Enter Text To Say before testing.');
+        return;
+      }
+      if (!('speechSynthesis' in window)) {
+        window.alert('Text-to-speech is not available in this environment.');
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      if (voiceSelectId) {
+        const select = document.getElementById(voiceSelectId);
+        const selectedVoiceName = select ? String(select.value || '') : '';
+        if (selectedVoiceName) {
+          const voices = window.speechSynthesis.getVoices() || [];
+          const voice = voices.find((v) => v && v.name === selectedVoiceName);
+          if (voice) {
+            utterance.voice = voice;
+          }
+        }
+      }
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
+    if (event.target.matches('[data-action="save-trigger-local"]')) {
+      try {
+        await persistSettings();
+      } catch (error) {
+        console.error('Failed to save trigger changes', error);
+        window.alert('Failed to save trigger changes.');
+      }
+      return;
+    }
+    if (event.target.matches('[data-action="cancel-trigger-local"]')) {
+      try {
+        await reloadTriggerConfiguration({ preserveSelection: true });
+      } catch (error) {
+        console.error('Failed to reload trigger settings', error);
+        window.alert('Failed to reload trigger settings.');
       }
       return;
     }
@@ -3426,6 +3548,38 @@ function serializeTriggers() {
     categoryPath: getCategoryPath(trigger.categoryId),
     category: getCategoryDisplayName(trigger.categoryId),
   }));
+}
+
+async function reloadTriggerConfiguration({ preserveSelection = true } = {}) {
+  const stored = await window.eqApi.loadSettings();
+  const previousSelection = preserveSelection && selectedNode ? { ...selectedNode } : null;
+
+  categories = normalizeCategories(stored.categories || []);
+  rebuildCategoryCaches();
+  triggers = normalizeTriggers(Array.isArray(stored.triggers) ? stored.triggers : []);
+  updateAllDerivedTriggerFields();
+  expandedCategories = new Set([ROOT_CATEGORY_ID]);
+
+  let restored = false;
+  if (previousSelection) {
+    if (previousSelection.type === 'trigger' && triggers.some((t) => t.id === previousSelection.id)) {
+      selectedNode = previousSelection;
+      restored = true;
+    } else if (
+      previousSelection.type === 'category' &&
+      categories.some((c) => c.id === previousSelection.id)
+    ) {
+      selectedNode = previousSelection;
+      restored = true;
+    }
+  }
+
+  if (!restored) {
+    selectFirstAvailableNode();
+  }
+
+  renderTriggerTree();
+  renderTriggerDetail();
 }
 
 async function persistSettings() {
