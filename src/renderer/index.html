@@ -38,6 +38,16 @@
               </div>
             </div>
             <div class="trigger-manager">
+              <aside class="trigger-characters-panel">
+                <div class="tree-panel-header">
+                  <h3>Characters</h3>
+                  <div class="character-actions">
+                    <button id="add-character" class="secondary small" type="button">Add</button>
+                    <button id="remove-character" class="secondary small" type="button">Remove</button>
+                  </div>
+                </div>
+                <div id="character-list" class="character-list" role="listbox" aria-label="Characters"></div>
+              </aside>
               <aside class="trigger-tree-panel">
                 <div class="tree-panel-header">
                   <h3>Organization</h3>
@@ -50,20 +60,6 @@
                 </div>
               </section>
             </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-header">
-              <h2>Active Timers</h2>
-              <div>
-                <button id="toggle-move-mode" class="secondary small" title="Temporarily disable click-through to move the overlays">Move Overlays</button>
-              </div>
-            </div>
-            <div id="active-timers" class="timers"></div>
-            <div class="panel-header">
-              <h2>Recent Log Lines</h2>
-            </div>
-            <ul id="recent-lines" class="recent-lines"></ul>
           </section>
         </div>
       </section>
@@ -159,6 +155,20 @@
               <span class="summary-label">Active Directory</span>
               <span class="summary-value" id="watcher-directory-summary">Not configured</span>
             </div>
+          </section>
+
+          <section class="panel settings-activity-panel">
+            <div class="panel-header">
+              <h2>Active Timers</h2>
+              <div>
+                <button id="toggle-move-mode" class="secondary small" title="Temporarily disable click-through to move the overlays">Move Overlays</button>
+              </div>
+            </div>
+            <div id="active-timers" class="timers"></div>
+            <div class="panel-header">
+              <h2>Recent Log Lines</h2>
+            </div>
+            <ul id="recent-lines" class="recent-lines"></ul>
           </section>
         </div>
       </section>

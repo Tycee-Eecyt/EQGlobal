@@ -107,6 +107,9 @@ const defaultSettings = {
   mobOverlayBounds: null,
   mobOverlayVisible: true,
   categories: [],
+  characters: [],
+  characterFilters: {},
+  selectedCharacterId: 'global',
   triggers: defaultTriggers,
   mobWindows: {
     kills: {},
@@ -476,6 +479,90 @@ function resolveRendererPath(fileName) {
   return path.join(__dirname, '..', 'renderer', fileName);
 }
 
+function toStringArray(input) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  return input.map((value) => String(value || '').trim()).filter(Boolean);
+}
+
+function getActiveTriggersForSelectedCharacter(currentSettings = settings) {
+  const allTriggers = Array.isArray(currentSettings?.triggers) ? currentSettings.triggers : [];
+  const allCategories = Array.isArray(currentSettings?.categories) ? currentSettings.categories : [];
+  const categoryById = new Map(
+    allCategories
+      .filter((category) => category && typeof category === 'object')
+      .map((category) => [String(category.id || '').trim(), category])
+      .filter(([id]) => Boolean(id))
+  );
+  const isCategoryGloballyEnabled = (categoryId) => {
+    if (!categoryId) {
+      return true;
+    }
+    const visited = new Set();
+    let currentId = String(categoryId || '').trim();
+    while (currentId) {
+      if (visited.has(currentId)) {
+        break;
+      }
+      visited.add(currentId);
+      const category = categoryById.get(currentId);
+      if (!category) {
+        break;
+      }
+      if (category.enabled === false) {
+        return false;
+      }
+      currentId =
+        typeof category.parentId === 'string' && category.parentId.trim()
+          ? category.parentId.trim()
+          : '';
+    }
+    return true;
+  };
+  const selectedCharacterId =
+    typeof currentSettings?.selectedCharacterId === 'string' && currentSettings.selectedCharacterId
+      ? currentSettings.selectedCharacterId
+      : 'global';
+
+  const rawFilters =
+    currentSettings?.characterFilters && typeof currentSettings.characterFilters === 'object'
+      ? currentSettings.characterFilters
+      : {};
+  const selectedFilter =
+    rawFilters[selectedCharacterId] && typeof rawFilters[selectedCharacterId] === 'object'
+      ? rawFilters[selectedCharacterId]
+      : null;
+  const disabledCategories = new Set(
+    selectedFilter ? toStringArray(selectedFilter.disabledCategories) : []
+  );
+  const disabledTriggers = new Set(selectedFilter ? toStringArray(selectedFilter.disabledTriggers) : []);
+
+  return allTriggers.filter((trigger) => {
+    if (!trigger || typeof trigger !== 'object') {
+      return false;
+    }
+    if (trigger.enabled === false) {
+      return false;
+    }
+    const triggerId = String(trigger.id || '').trim();
+    const categoryId = String(trigger.categoryId || '').trim();
+    if (!isCategoryGloballyEnabled(categoryId)) {
+      return false;
+    }
+    if (!selectedCharacterId || selectedCharacterId === 'global') {
+      return true;
+    }
+    if (triggerId && disabledTriggers.has(triggerId)) {
+      return false;
+    }
+    if (categoryId && disabledCategories.has(categoryId)) {
+      return false;
+    }
+    return true;
+  });
+}
+
 async function ensureSettingsLoaded() {
   if (!settingsPath) {
     settingsPath = path.join(app.getPath('userData'), 'settings.json');
@@ -513,6 +600,15 @@ async function ensureSettingsLoaded() {
     }
     if (!Array.isArray(settings.categories)) {
       settings.categories = [];
+    }
+    if (!Array.isArray(settings.characters)) {
+      settings.characters = [];
+    }
+    if (!settings.characterFilters || typeof settings.characterFilters !== 'object') {
+      settings.characterFilters = {};
+    }
+    if (typeof settings.selectedCharacterId !== 'string' || !settings.selectedCharacterId) {
+      settings.selectedCharacterId = 'global';
     }
     if (!settings.mobOverlayBounds || typeof settings.mobOverlayBounds !== 'object') {
       settings.mobOverlayBounds = null;
@@ -580,6 +676,7 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+  mainWindow.maximize();
 
   mainWindow.loadFile(resolveRendererPath('index.html'));
   mainWindow.webContents.once('did-finish-load', () => {
@@ -925,7 +1022,10 @@ async function startWatcher() {
     throw new Error('EverQuest log directory is not configured.');
   }
 
-  logWatcher = new LogWatcher(activeSettings.logDirectory, activeSettings.triggers);
+  logWatcher = new LogWatcher(
+    activeSettings.logDirectory,
+    getActiveTriggersForSelectedCharacter(activeSettings)
+  );
 
   logWatcher.on('trigger', handleTriggerMatch);
   logWatcher.on('lines', handleNewLines);
@@ -1406,8 +1506,12 @@ function registerIpcHandlers() {
       }
     }
 
-    if (partialSettings.triggers && logWatcher) {
-      logWatcher.setTriggers(settings.triggers);
+    const triggerScopeChanged =
+      Object.prototype.hasOwnProperty.call(partialSettings || {}, 'triggers') ||
+      Object.prototype.hasOwnProperty.call(partialSettings || {}, 'selectedCharacterId') ||
+      Object.prototype.hasOwnProperty.call(partialSettings || {}, 'characterFilters');
+    if (triggerScopeChanged && logWatcher) {
+      logWatcher.setTriggers(getActiveTriggersForSelectedCharacter(settings));
     }
 
     if (Object.prototype.hasOwnProperty.call(partialSettings || {}, 'logDirectory')) {
@@ -1769,7 +1873,7 @@ function registerIpcHandlers() {
       settings.triggers = colored;
       await saveSettings(settings);
       if (logWatcher) {
-        logWatcher.setTriggers(settings.triggers);
+        logWatcher.setTriggers(getActiveTriggersForSelectedCharacter(settings));
       }
 
       return colored;

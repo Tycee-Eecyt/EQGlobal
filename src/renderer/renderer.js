@@ -21,6 +21,9 @@ let categories = [];
 let selectedNode = null;
 let expandedCategories = new Set([ROOT_CATEGORY_ID]);
 let activeTriggerTab = 'basic';
+let characters = [];
+let selectedCharacterId = 'global';
+let characterFilters = {};
 let timersRaf = null;
 let recentLines = [];
 let mobWindowSnapshot = { generatedAt: null, mobs: [] };
@@ -35,6 +38,9 @@ const overlayClickThroughMobsInput = document.getElementById('overlay-clickthrou
 const watcherStatus = document.getElementById('watcher-status');
 const triggerTreeContainer = document.getElementById('trigger-tree');
 const triggerDetailContainer = document.getElementById('trigger-detail');
+const characterListContainer = document.getElementById('character-list');
+const addCharacterButton = document.getElementById('add-character');
+const removeCharacterButton = document.getElementById('remove-character');
 const activeTimersContainer = document.getElementById('active-timers');
 const recentLinesList = document.getElementById('recent-lines');
 const toggleMoveModeButton = document.getElementById('toggle-move-mode');
@@ -391,7 +397,7 @@ function normalizeCategories(rawCategories = []) {
       typeof raw.parentId === 'string' && raw.parentId.trim() ? raw.parentId.trim() : null;
     const name =
       typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : 'Untitled Category';
-    normalized.push({ id, name, parentId });
+    normalized.push({ id, name, parentId, enabled: raw.enabled !== false });
     seen.add(id);
   }
 
@@ -406,6 +412,172 @@ function normalizeCategories(rawCategories = []) {
 
 function rebuildCategoryCaches() {
   categoryMap = new Map(categories.map((cat) => [cat.id, cat]));
+}
+
+function normalizeCharacters(rawCharacters = []) {
+  const normalized = [];
+  const seen = new Set();
+  normalized.push({ id: 'global', name: 'All Characters' });
+  seen.add('global');
+  const list = Array.isArray(rawCharacters) ? rawCharacters : [];
+  for (const raw of list) {
+    if (!raw) continue;
+    const name =
+      typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : String(raw.id || '').trim();
+    if (!name) continue;
+    const id =
+      typeof raw.id === 'string' && raw.id.trim()
+        ? raw.id.trim()
+        : `char-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    if (!id || id === 'global' || seen.has(id)) continue;
+    normalized.push({ id, name });
+    seen.add(id);
+  }
+  return normalized;
+}
+
+function normalizeCharacterFilters(rawFilters = {}, charactersList = characters) {
+  const out = {};
+  const allowed = new Set((charactersList || []).map((c) => c.id).filter((id) => id && id !== 'global'));
+  const source = rawFilters && typeof rawFilters === 'object' ? rawFilters : {};
+  for (const [characterId, value] of Object.entries(source)) {
+    if (!allowed.has(characterId)) continue;
+    const disabledCategories = Array.isArray(value?.disabledCategories)
+      ? value.disabledCategories.map((id) => String(id || '').trim()).filter(Boolean)
+      : [];
+    const disabledTriggers = Array.isArray(value?.disabledTriggers)
+      ? value.disabledTriggers.map((id) => String(id || '').trim()).filter(Boolean)
+      : [];
+    out[characterId] = {
+      disabledCategories: Array.from(new Set(disabledCategories)),
+      disabledTriggers: Array.from(new Set(disabledTriggers)),
+    };
+  }
+  return out;
+}
+
+function pruneCharacterFilters() {
+  const categoryIds = new Set(categories.map((category) => category.id));
+  const triggerIds = new Set(triggers.map((trigger) => trigger.id));
+  Object.values(characterFilters).forEach((filter) => {
+    if (!filter || typeof filter !== 'object') return;
+    filter.disabledCategories = (Array.isArray(filter.disabledCategories) ? filter.disabledCategories : [])
+      .filter((id) => categoryIds.has(id));
+    filter.disabledTriggers = (Array.isArray(filter.disabledTriggers) ? filter.disabledTriggers : [])
+      .filter((id) => triggerIds.has(id));
+  });
+}
+
+function ensureCharacterSelectionValid() {
+  const exists = characters.some((character) => character.id === selectedCharacterId);
+  if (!exists) {
+    selectedCharacterId = 'global';
+  }
+}
+
+function getCurrentCharacterFilter() {
+  if (!selectedCharacterId || selectedCharacterId === 'global') {
+    return null;
+  }
+  if (!characterFilters[selectedCharacterId]) {
+    characterFilters[selectedCharacterId] = {
+      disabledCategories: [],
+      disabledTriggers: [],
+    };
+  }
+  return characterFilters[selectedCharacterId];
+}
+
+function isCategoryEnabledForSelectedCharacter(categoryId) {
+  if (!categoryId) {
+    return true;
+  }
+  const category = getCategoryById(categoryId);
+  if (category && category.enabled === false) {
+    return false;
+  }
+  if (category?.parentId && !isCategoryEnabledForSelectedCharacter(category.parentId)) {
+    return false;
+  }
+  if (selectedCharacterId === 'global') {
+    return true;
+  }
+  const filter = getCurrentCharacterFilter();
+  if (!filter) return true;
+  return !filter.disabledCategories.includes(categoryId);
+}
+
+function isTriggerEnabledForSelectedCharacter(triggerId, categoryId = null) {
+  if (!triggerId) {
+    return false;
+  }
+  const trigger = triggers.find((entry) => entry && entry.id === triggerId);
+  if (trigger && trigger.enabled === false) {
+    return false;
+  }
+  if (categoryId && !isCategoryEnabledForSelectedCharacter(categoryId)) {
+    return false;
+  }
+  if (selectedCharacterId === 'global') {
+    return true;
+  }
+  const filter = getCurrentCharacterFilter();
+  if (!filter) return true;
+  return !filter.disabledTriggers.includes(triggerId);
+}
+
+function setCategoryEnabledForSelectedCharacter(categoryId, enabled) {
+  const filter = getCurrentCharacterFilter();
+  if (!filter || !categoryId) return;
+  const descendantIds = [categoryId, ...getDescendantCategoryIds(categoryId)];
+  const categoryIdSet = new Set(descendantIds);
+  const triggerIds = triggers
+    .filter((trigger) => trigger && categoryIdSet.has(trigger.categoryId || ''))
+    .map((trigger) => trigger.id);
+
+  if (enabled) {
+    filter.disabledCategories = filter.disabledCategories.filter((id) => !categoryIdSet.has(id));
+    const triggerSet = new Set(triggerIds);
+    filter.disabledTriggers = filter.disabledTriggers.filter((id) => !triggerSet.has(id));
+  } else {
+    filter.disabledCategories = Array.from(new Set([...filter.disabledCategories, ...descendantIds]));
+    filter.disabledTriggers = Array.from(new Set([...filter.disabledTriggers, ...triggerIds]));
+  }
+}
+
+function setTriggerEnabledForSelectedCharacter(triggerId, enabled) {
+  const filter = getCurrentCharacterFilter();
+  if (!filter || !triggerId) return;
+  if (enabled) {
+    filter.disabledTriggers = filter.disabledTriggers.filter((id) => id !== triggerId);
+  } else if (!filter.disabledTriggers.includes(triggerId)) {
+    filter.disabledTriggers.push(triggerId);
+  }
+}
+
+function renderCharacterList() {
+  if (!characterListContainer) {
+    return;
+  }
+  ensureCharacterSelectionValid();
+  characterListContainer.innerHTML = characters
+    .map((character) => {
+      const selected = character.id === selectedCharacterId;
+      const isGlobal = character.id === 'global';
+      return `
+        <button type="button" class="character-item ${selected ? 'selected' : ''} ${isGlobal ? 'global' : ''}" data-character-id="${escapeHtml(
+          character.id
+        )}" role="option" aria-selected="${selected}">
+          <span class="character-status-dot"></span>
+          <span class="character-label">${escapeHtml(character.name)}</span>
+        </button>
+      `;
+    })
+    .join('');
+
+  if (removeCharacterButton) {
+    removeCharacterButton.disabled = selectedCharacterId === 'global';
+  }
 }
 
 function getCategoryById(id) {
@@ -445,7 +617,7 @@ function isCategoryDescendant(categoryId, ancestorId) {
   return descendants.includes(categoryId);
 }
 
-function ensureCategoryPath(pathSegments = []) {
+function ensureCategoryPath(pathSegments = [], enabledSegments = []) {
   const cleaned = pathSegments
     .map((segment) => (typeof segment === 'string' ? segment.trim() : null))
     .filter(Boolean);
@@ -454,13 +626,19 @@ function ensureCategoryPath(pathSegments = []) {
   }
 
   let parentId = null;
-  for (const segment of cleaned) {
+  for (let index = 0; index < cleaned.length; index += 1) {
+    const segment = cleaned[index];
+    const segmentEnabled = enabledSegments[index] !== false;
     let existing = categories.find(
       (cat) => cat.parentId === parentId && cat.name.toLowerCase() === segment.toLowerCase()
     );
     if (!existing) {
-      existing = { id: createId('cat'), name: segment, parentId };
+      existing = { id: createId('cat'), name: segment, parentId, enabled: segmentEnabled };
       categories.push(existing);
+    } else if (existing.enabled === false && segmentEnabled !== false) {
+      // keep existing disabled category disabled if any imported source says disabled
+    } else if (existing.enabled !== false && segmentEnabled === false) {
+      existing.enabled = false;
     }
     parentId = existing.id;
   }
@@ -488,6 +666,26 @@ function getCategoryPath(id) {
   }
 
   return path;
+}
+
+function getCategoryEnabledPath(id) {
+  if (!id) {
+    return [];
+  }
+  const enabledPath = [];
+  const visited = new Set();
+  let current = id;
+
+  while (current) {
+    if (visited.has(current)) break;
+    visited.add(current);
+    const category = getCategoryById(current);
+    if (!category) break;
+    enabledPath.unshift(category.enabled !== false);
+    current = category.parentId || null;
+  }
+
+  return enabledPath;
 }
 
 function getCategoryDisplayName(id) {
@@ -634,6 +832,10 @@ function normalizeTrigger(raw = {}) {
     counter: normalizeCounter(raw.counter || {}),
     categoryId: typeof raw.categoryId === 'string' && raw.categoryId.trim() ? raw.categoryId.trim() : null,
     categoryPath: Array.isArray(raw.categoryPath) ? raw.categoryPath.filter(Boolean) : [],
+    categoryPathEnabled: Array.isArray(raw.categoryPathEnabled)
+      ? raw.categoryPathEnabled.map((value) => value !== false)
+      : [],
+    enabled: raw.enabled !== false,
   };
 
   trigger.duration = Math.max(
@@ -653,7 +855,7 @@ function normalizeTriggers(rawTriggers = []) {
     if (trigger.categoryId && getCategoryById(trigger.categoryId)) {
       categoryId = trigger.categoryId;
     } else if (Array.isArray(trigger.categoryPath) && trigger.categoryPath.length > 0) {
-      categoryId = ensureCategoryPath(trigger.categoryPath);
+      categoryId = ensureCategoryPath(trigger.categoryPath, trigger.categoryPathEnabled);
     } else if (typeof raw.category === 'string' && raw.category.trim()) {
       const segments = raw.category
         .split(/[\\/›>]/g)
@@ -744,9 +946,11 @@ function clearCurrentDropTarget() {
 function renderTreeNode(node) {
   if (node.type === 'trigger') {
     const isSelected = selectedNode && selectedNode.type === 'trigger' && selectedNode.id === node.id;
+    const enabled = isTriggerEnabledForSelectedCharacter(node.id, node.trigger?.categoryId || null);
     return `
       <li>
-        <div class="tree-item trigger ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="trigger" role="treeitem" aria-selected="${isSelected}" draggable="true" data-drag-type="trigger">
+        <div class="tree-item trigger ${isSelected ? 'selected' : ''} ${enabled ? '' : 'disabled'}" data-node-id="${node.id}" data-node-type="trigger" role="treeitem" aria-selected="${isSelected}" draggable="true" data-drag-type="trigger">
+          <input type="checkbox" class="tree-enable-toggle" data-action="toggle-node-enabled" data-enabled-node-type="trigger" data-enabled-node-id="${node.id}" ${enabled ? 'checked' : ''} ${selectedCharacterId === 'global' ? 'disabled' : ''} />
           <span class="tree-toggle-placeholder"></span>
           <span class="tree-icon trigger"></span>
           <span class="tree-label">${escapeHtml(node.name)}</span>
@@ -758,6 +962,7 @@ function renderTreeNode(node) {
   const isExpanded = expandedCategories.has(node.id);
   const hasChildren = Array.isArray(node.children) && node.children.length > 0;
   const isSelected = selectedNode && selectedNode.type === 'category' && selectedNode.id === node.id;
+  const enabled = isCategoryEnabledForSelectedCharacter(node.id);
 
   const childrenMarkup =
     hasChildren && isExpanded
@@ -766,7 +971,8 @@ function renderTreeNode(node) {
 
   return `
     <li>
-      <div class="tree-item category ${isSelected ? 'selected' : ''}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}" data-drop-target="category" data-category-id="${node.id}" draggable="true" data-drag-type="category">
+      <div class="tree-item category ${isSelected ? 'selected' : ''} ${enabled ? '' : 'disabled'}" data-node-id="${node.id}" data-node-type="category" role="treeitem" aria-expanded="${isExpanded}" aria-selected="${isSelected}" data-drop-target="category" data-category-id="${node.id}" draggable="true" data-drag-type="category">
+        <input type="checkbox" class="tree-enable-toggle" data-action="toggle-node-enabled" data-enabled-node-type="category" data-enabled-node-id="${node.id}" ${enabled ? 'checked' : ''} ${selectedCharacterId === 'global' ? 'disabled' : ''} />
         <span class="tree-toggle-placeholder"></span>
         <span class="tree-icon folder ${hasChildren ? 'folder-toggle' : ''}" data-action="${hasChildren ? 'toggle-category' : ''}" data-category-id="${node.id}" role="${hasChildren ? 'button' : ''}" aria-label="${hasChildren ? (isExpanded ? 'Collapse category' : 'Expand category') : ''}" tabindex="${hasChildren ? '0' : ''}"></span>
         <span class="tree-label ${hasChildren ? 'folder-toggle' : ''}" data-action="${hasChildren ? 'toggle-category' : ''}" data-category-id="${node.id}" role="${hasChildren ? 'button' : ''}" aria-label="${hasChildren ? (isExpanded ? 'Collapse category' : 'Expand category') : ''}" tabindex="${hasChildren ? '0' : ''}">${escapeHtml(node.name)}</span>
@@ -793,6 +999,7 @@ function ensureSelectionValid() {
 }
 
 function renderTriggerTree() {
+  pruneCharacterFilters();
   ensureSelectionValid();
   const root = buildCategoryTree();
   if (!root.children || root.children.length === 0) {
@@ -803,6 +1010,7 @@ function renderTriggerTree() {
 
   triggerTreeContainer.innerHTML = `
     <div class="tree-item category root-drop" data-node-type="root" data-drop-target="root" role="treeitem" aria-label="All triggers">
+      <span class="tree-enable-spacer"></span>
       <span class="tree-toggle-placeholder"></span>
       <span class="tree-icon folder root"></span>
       <span class="tree-label">All Triggers</span>
@@ -964,6 +1172,10 @@ function renderGeneralSettings(trigger, categoryOptions) {
         </div>
         <div class="setting-row inline-checks">
           <span class="setting-label">Options</span>
+          <div class="checkbox-row setting-options">
+            <input id="trigger-enabled" type="checkbox" data-role="trigger-field" data-field="enabled" data-type="boolean" ${trigger.enabled !== false ? 'checked' : ''} />
+            <label for="trigger-enabled">Enabled</label>
+          </div>
           <div class="checkbox-row setting-options">
             <input id="trigger-regex" type="checkbox" data-role="trigger-field" data-field="isRegex" data-type="boolean" ${trigger.isRegex ? 'checked' : ''} />
             <label for="trigger-regex">Use Regular Expressions</label>
@@ -1428,6 +1640,12 @@ function renderCategoryEditor(category) {
             ${optionsMarkup}
           </select>
         </div>
+        <div class="editor-field">
+          <label class="checkbox-row">
+            <input type="checkbox" data-role="category-field" data-field="enabled" data-type="boolean" ${category.enabled !== false ? 'checked' : ''} />
+            Enabled
+          </label>
+        </div>
         ${
           canDelete
             ? ''
@@ -1862,6 +2080,16 @@ function handleCategoryFieldChange(event) {
     updateAllDerivedTriggerFields();
     renderTriggerTree();
     renderTriggerDetail();
+    return;
+  }
+
+  if (field === 'enabled') {
+    category.enabled = event.target.checked;
+    updateAllDerivedTriggerFields();
+    renderTriggerTree();
+    if (event.type === 'change') {
+      renderTriggerDetail();
+    }
   }
 }
 
@@ -1981,6 +2209,25 @@ async function handleDetailClick(event) {
 }
 
 function handleTreeClick(event) {
+  const enableToggle = event.target.closest('[data-action="toggle-node-enabled"]');
+  if (enableToggle) {
+    event.stopPropagation();
+    if (selectedCharacterId === 'global') {
+      return;
+    }
+    const nodeType = enableToggle.dataset.enabledNodeType;
+    const nodeId = enableToggle.dataset.enabledNodeId;
+    const checked = Boolean(enableToggle.checked);
+    if (nodeType === 'category') {
+      setCategoryEnabledForSelectedCharacter(nodeId, checked);
+    } else if (nodeType === 'trigger') {
+      setTriggerEnabledForSelectedCharacter(nodeId, checked);
+    }
+    renderTriggerTree();
+    persistSettings().catch(() => {});
+    return;
+  }
+
   const toggle = event.target.closest('[data-action="toggle-category"]');
   if (toggle) {
     event.stopPropagation();
@@ -1993,6 +2240,71 @@ function handleTreeClick(event) {
   const nodeType = item.dataset.nodeType;
   const nodeId = item.dataset.nodeId;
   setSelectedNode(nodeType, nodeId);
+}
+
+function handleCharacterListClick(event) {
+  const item = event.target.closest('[data-character-id]');
+  if (!item) {
+    return;
+  }
+  const nextId = item.dataset.characterId || 'global';
+  if (!characters.some((character) => character.id === nextId)) {
+    return;
+  }
+  selectedCharacterId = nextId;
+  renderCharacterList();
+  renderTriggerTree();
+  persistSettings().catch(() => {});
+}
+
+async function handleAddCharacter() {
+  const name = window.prompt('Character name');
+  if (!name || !name.trim()) {
+    return;
+  }
+  const trimmedName = name.trim();
+  const duplicate = characters.some(
+    (character) => character.name.toLowerCase() === trimmedName.toLowerCase()
+  );
+  if (duplicate) {
+    window.alert('Character already exists.');
+    return;
+  }
+  const baseId = `char-${trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  let id = baseId || createId('char');
+  let suffix = 2;
+  while (characters.some((character) => character.id === id)) {
+    id = `${baseId}-${suffix}`;
+    suffix += 1;
+  }
+  characters.push({ id, name: trimmedName });
+  selectedCharacterId = id;
+  renderCharacterList();
+  renderTriggerTree();
+  await persistSettings();
+}
+
+async function handleRemoveCharacter() {
+  if (!selectedCharacterId || selectedCharacterId === 'global') {
+    return;
+  }
+  const character = characters.find((entry) => entry.id === selectedCharacterId);
+  if (!character) {
+    selectedCharacterId = 'global';
+    renderCharacterList();
+    renderTriggerTree();
+    return;
+  }
+  const confirmed = window.confirm(`Remove character "${character.name}"?`);
+  if (!confirmed) {
+    return;
+  }
+  characters = characters.filter((entry) => entry.id !== selectedCharacterId);
+  delete characterFilters[selectedCharacterId];
+  selectedCharacterId = 'global';
+  renderCharacterList();
+  renderTriggerTree();
+  await persistSettings();
 }
 
 function handleTreeKeydown(event) {
@@ -3793,6 +4105,7 @@ function serializeTriggers() {
     counter: { ...trigger.counter },
     categoryId: trigger.categoryId || null,
     categoryPath: getCategoryPath(trigger.categoryId),
+    categoryPathEnabled: getCategoryEnabledPath(trigger.categoryId),
     category: getCategoryDisplayName(trigger.categoryId),
   }));
 }
@@ -3805,6 +4118,13 @@ async function reloadTriggerConfiguration({ preserveSelection = true } = {}) {
   rebuildCategoryCaches();
   triggers = normalizeTriggers(Array.isArray(stored.triggers) ? stored.triggers : []);
   updateAllDerivedTriggerFields();
+  characters = normalizeCharacters(stored.characters || []);
+  characterFilters = normalizeCharacterFilters(stored.characterFilters || {}, characters);
+  selectedCharacterId =
+    typeof stored.selectedCharacterId === 'string' && stored.selectedCharacterId
+      ? stored.selectedCharacterId
+      : 'global';
+  ensureCharacterSelectionValid();
   expandedCategories = new Set([ROOT_CATEGORY_ID]);
 
   let restored = false;
@@ -3825,6 +4145,7 @@ async function reloadTriggerConfiguration({ preserveSelection = true } = {}) {
     selectFirstAvailableNode();
   }
 
+  renderCharacterList();
   renderTriggerTree();
   renderTriggerDetail();
 }
@@ -3838,6 +4159,11 @@ async function persistSettings() {
     overlayClickThroughMobs: Boolean(overlayClickThroughMobsInput?.checked),
     categories: serializeCategories(),
     triggers: serializeTriggers(),
+    characters: characters
+      .filter((character) => character && character.id !== 'global')
+      .map((character) => ({ id: character.id, name: character.name })),
+    characterFilters: { ...characterFilters },
+    selectedCharacterId,
   };
 
   updateDirectorySummary(payload.logDirectory);
@@ -3885,9 +4211,17 @@ async function hydrate() {
   rebuildCategoryCaches();
   triggers = normalizeTriggers(Array.isArray(stored.triggers) ? stored.triggers : []);
   updateAllDerivedTriggerFields();
+  characters = normalizeCharacters(stored.characters || []);
+  characterFilters = normalizeCharacterFilters(stored.characterFilters || {}, characters);
+  selectedCharacterId =
+    typeof stored.selectedCharacterId === 'string' && stored.selectedCharacterId
+      ? stored.selectedCharacterId
+      : 'global';
+  ensureCharacterSelectionValid();
 
   expandedCategories = new Set([ROOT_CATEGORY_ID]);
   selectFirstAvailableNode();
+  renderCharacterList();
   renderTriggerTree();
   renderTriggerDetail();
 
@@ -4142,6 +4476,24 @@ function attachEventListeners() {
   document.getElementById('add-category').addEventListener('click', () => {
     handleAddCategory();
   });
+
+  if (characterListContainer) {
+    characterListContainer.addEventListener('click', handleCharacterListClick);
+  }
+  if (addCharacterButton) {
+    addCharacterButton.addEventListener('click', () => {
+      handleAddCharacter().catch((error) => {
+        console.error('Failed to add character', error);
+      });
+    });
+  }
+  if (removeCharacterButton) {
+    removeCharacterButton.addEventListener('click', () => {
+      handleRemoveCharacter().catch((error) => {
+        console.error('Failed to remove character', error);
+      });
+    });
+  }
 
   document.getElementById('reset-triggers').addEventListener('click', async () => {
     const defaults = await window.eqApi.loadDefaultTriggers();

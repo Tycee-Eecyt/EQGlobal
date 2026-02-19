@@ -30,6 +30,19 @@ function To-Bool {
   return $s.Trim().ToLowerInvariant() -in @('true','1','yes')
 }
 
+function To-BoolOrDefault {
+  param(
+    $Value,
+    [bool]$DefaultValue = $true
+  )
+  if ($null -eq $Value) { return $DefaultValue }
+  $s = ([string]$Value).Trim().ToLowerInvariant()
+  if ([string]::IsNullOrWhiteSpace($s)) { return $DefaultValue }
+  if ($s -in @('true','1','yes')) { return $true }
+  if ($s -in @('false','0','no')) { return $false }
+  return $DefaultValue
+}
+
 function To-Int {
   param($Value)
   if ($null -eq $Value) { return 0 }
@@ -46,6 +59,171 @@ function Get-NodeText {
     if ($null -ne $v) { return [string]$v }
   }
   return [string]$Node
+}
+
+function To-ArraySafe {
+  param($Value)
+  if ($null -eq $Value) { return @() }
+  if ($Value -is [string]) { return @($Value) }
+  if ($Value -is [System.Collections.IEnumerable]) {
+    $out = @()
+    foreach ($item in $Value) { $out += $item }
+    return @($out)
+  }
+  return @($Value)
+}
+
+function Get-ItemCount {
+  param($Value)
+  $count = 0
+  foreach ($item in (To-ArraySafe $Value)) { $count++ }
+  return $count
+}
+
+function Split-CategorySegments {
+  param([string]$Text)
+  if ([string]::IsNullOrWhiteSpace($Text)) { return @() }
+  return @(
+    ($Text -split '[\\\/›>]+') |
+      ForEach-Object { "$_".Trim() } |
+      Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and $_ -ne 'Default' }
+  )
+}
+
+function Get-TriggerGroupPath {
+  param($TriggerNode)
+  if ($null -eq $TriggerNode) { return @() }
+  $ancestors = @()
+  $current = $TriggerNode.ParentNode
+  while ($null -ne $current) {
+    if ($current.LocalName -eq 'TriggerGroup') {
+      $ancestors += $current
+    }
+    $current = $current.ParentNode
+  }
+  if ((Get-ItemCount $ancestors) -eq 0) { return @() }
+
+  [array]::Reverse($ancestors)
+  $path = @()
+  foreach ($group in $ancestors) {
+    if ($null -eq $group) { continue }
+    $name = Get-NodeText ($group.SelectSingleNode('Name'))
+    if (-not [string]::IsNullOrWhiteSpace($name) -and $name -ne 'Default') {
+      $path += $name.Trim()
+    }
+  }
+  return @($path)
+}
+
+function Get-TriggerGroupEnabledPath {
+  param($TriggerNode)
+  if ($null -eq $TriggerNode) { return @() }
+  $ancestors = @()
+  $current = $TriggerNode.ParentNode
+  while ($null -ne $current) {
+    if ($current.LocalName -eq 'TriggerGroup') {
+      $ancestors += $current
+    }
+    $current = $current.ParentNode
+  }
+  if ((Get-ItemCount $ancestors) -eq 0) { return @() }
+
+  [array]::Reverse($ancestors)
+  $enabledPath = @()
+  foreach ($group in $ancestors) {
+    if ($null -eq $group) { continue }
+    $enabledNode = $group.SelectSingleNode('Enabled')
+    $enabledPath += (To-BoolOrDefault (Get-NodeText $enabledNode) $true)
+  }
+  return @($enabledPath)
+}
+
+function Compare-PathPrefix {
+  param(
+    [string[]]$Prefix,
+    [string[]]$Value
+  )
+  $prefixList = To-ArraySafe $Prefix
+  $valueList = To-ArraySafe $Value
+  $prefixCount = Get-ItemCount $prefixList
+  $valueCount = Get-ItemCount $valueList
+  if ($prefixCount -gt $valueCount) { return $false }
+  for ($i = 0; $i -lt $prefixCount; $i++) {
+    if ((([string]$prefixList[$i]).ToLowerInvariant()) -ne (([string]$valueList[$i]).ToLowerInvariant())) {
+      return $false
+    }
+  }
+  return $true
+}
+
+function Merge-CategoryPath {
+  param(
+    [string[]]$GroupPath,
+    [string[]]$CategoryPath
+  )
+
+  $g = @(To-ArraySafe $GroupPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+  $c = @(To-ArraySafe $CategoryPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+  $gCount = Get-ItemCount $g
+  $cCount = Get-ItemCount $c
+  if ($gCount -eq 0) { return @($c) }
+  if ($cCount -eq 0) { return @($g) }
+
+  $sameLength = $gCount -eq $cCount
+  if ($sameLength) {
+    $allEqual = $true
+    for ($i = 0; $i -lt $gCount; $i++) {
+      if ((([string]$g[$i]).ToLowerInvariant()) -ne (([string]$c[$i]).ToLowerInvariant())) {
+        $allEqual = $false
+        break
+      }
+    }
+    if ($allEqual) {
+      return @($g)
+    }
+  }
+
+  if (Compare-PathPrefix -Prefix $g -Value $c) { return @($c) }
+  if (Compare-PathPrefix -Prefix $c -Value $g) { return @($g) }
+
+  if ($cCount -eq 1) {
+    $leaf = $c[0]
+    if ((([string]$g[$gCount - 1]).ToLowerInvariant()) -eq (([string]$leaf).ToLowerInvariant())) {
+      return @($g)
+    }
+    return @($g + $c)
+  }
+
+  if ($cCount -gt $gCount) { return @($c) }
+  return @($g)
+}
+
+function Build-CategoryEnabledPath {
+  param(
+    [string[]]$ResolvedPath,
+    [string[]]$GroupPath,
+    [bool[]]$GroupEnabledPath
+  )
+  $resolved = To-ArraySafe $ResolvedPath
+  $resolvedCount = Get-ItemCount $resolved
+  if ($resolvedCount -eq 0) { return @() }
+
+  $group = To-ArraySafe $GroupPath
+  $enabled = To-ArraySafe $GroupEnabledPath
+  $groupCount = Get-ItemCount $group
+  $enabledCount = Get-ItemCount $enabled
+  $out = @()
+  for ($i = 0; $i -lt $resolvedCount; $i++) {
+    $isEnabled = $true
+    if ($i -lt $groupCount -and $i -lt $enabledCount) {
+      if ((([string]$resolved[$i]).ToLowerInvariant()) -eq (([string]$group[$i]).ToLowerInvariant())) {
+        $isEnabled = [bool]$enabled[$i]
+      }
+    }
+    $out += $isEnabled
+  }
+  return @($out)
 }
 
 function Build-AudioSettings {
@@ -121,7 +299,6 @@ function Build-TriggersFromXml {
     $endedTriggerNode = $t.SelectSingleNode('TimerEndedTrigger')
     $endingNode = $t.SelectSingleNode('TimerEndingTime')
     $catNode = $t.SelectSingleNode('Category')
-    $groupNameNode = $t.SelectSingleNode('ancestor::TriggerGroup[1]/Name')
 
     $name = Get-NodeText $nameNode
     $pattern = Get-NodeText $textNode
@@ -137,7 +314,23 @@ function Build-TriggersFromXml {
       if ($ms -gt 0) { $seconds = [math]::Round($ms / 1000) }
     }
     $category = Get-NodeText $catNode
-    $groupName = Get-NodeText $groupNameNode
+    $categorySegments = Split-CategorySegments $category
+    $groupPath = Get-TriggerGroupPath $t
+    if ((Get-ItemCount $groupPath) -eq 0) {
+      $nearestGroupName = Get-NodeText ($t.SelectSingleNode('ancestor::TriggerGroup[1]/Name'))
+      if (-not [string]::IsNullOrWhiteSpace($nearestGroupName) -and $nearestGroupName -ne 'Default') {
+        $groupPath = Split-CategorySegments $nearestGroupName
+      }
+    }
+    $groupEnabledPath = Get-TriggerGroupEnabledPath $t
+    $categoryPath = Merge-CategoryPath $groupPath $categorySegments
+    $categoryPathEnabled = Build-CategoryEnabledPath $categoryPath $groupPath $groupEnabledPath
+    $triggerEnabled = To-BoolOrDefault (Get-NodeText ($t.SelectSingleNode('Enabled'))) $true
+    if ((Get-ItemCount $categoryPath) -gt 0) {
+      $category = $categoryPath -join ' › '
+    } elseif (-not [string]::IsNullOrWhiteSpace($category)) {
+      $category = $category.Trim()
+    }
     $hasTsToken = [regex]::IsMatch([string]$pattern, '\{TS\}', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
 
     if ([string]::IsNullOrWhiteSpace($pattern)) { continue }
@@ -152,9 +345,7 @@ function Build-TriggersFromXml {
     if ($seconds -le 0) { continue }
 
     if ([string]::IsNullOrWhiteSpace($category) -or $category -eq 'Default') {
-      if (-not [string]::IsNullOrWhiteSpace($groupName) -and $groupName -ne 'Default') {
-        $category = $groupName
-      }
+      $category = $null
     }
 
     $baseId = Normalize-Id $name
@@ -173,6 +364,9 @@ function Build-TriggersFromXml {
       duration = $seconds
     }
     if ($category) { $obj.category = $category }
+    if ((Get-ItemCount $categoryPath) -gt 0) { $obj.categoryPath = $categoryPath }
+    if ((Get-ItemCount $categoryPathEnabled) -gt 0) { $obj.categoryPathEnabled = $categoryPathEnabled }
+    if (-not $triggerEnabled) { $obj.enabled = $false }
     if ($hasTsToken) { $obj.dynamicDuration = 'ts' }
     if (-not [string]::IsNullOrWhiteSpace($timerName)) {
       $obj.timer = [ordered]@{
