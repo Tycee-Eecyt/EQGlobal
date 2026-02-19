@@ -35,7 +35,7 @@ jobs:
       - name: Build installer and publish to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win nsis -p always
+        run: npx electron-builder --win nsis -p never
 
       - name: Upload artifacts (for CI browsing)
         uses: actions/upload-artifact@v4
@@ -45,6 +45,15 @@ jobs:
             dist/EQGlobal-Setup-*.exe
             dist/EQGlobal-Setup-*.exe.blockmap
             dist/latest.yml
+
+      - name: Attach Windows assets to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/EQGlobal-Setup-*.exe
+            dist/EQGlobal-Setup-*.exe.blockmap
+            dist/latest.yml
+          fail_on_unmatched_files: true
 
   build-macos:
     name: Build macOS App
@@ -71,7 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO: 'false'
-        run: npx electron-builder --mac dmg -p always
+        run: npx electron-builder --mac dmg -p never
 
       - name: Upload artifacts (for CI browsing)
         uses: actions/upload-artifact@v4
@@ -81,6 +90,15 @@ jobs:
             dist/*.dmg
             dist/*-mac.zip
             dist/latest-mac.yml
+
+      - name: Attach macOS assets to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.dmg
+            dist/*-mac.zip
+            dist/latest-mac.yml
+          fail_on_unmatched_files: true
 
   build-linux:
     name: Build Linux App
@@ -106,7 +124,7 @@ jobs:
       - name: Build Linux (AppImage) and publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --linux AppImage -p always
+        run: npx electron-builder --linux AppImage -p never
 
       - name: Upload artifacts (for CI browsing)
         uses: actions/upload-artifact@v4
@@ -115,4 +133,12 @@ jobs:
           path: |
             dist/*.AppImage
             dist/latest-linux.yml
+
+      - name: Attach Linux assets to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.AppImage
+            dist/latest-linux.yml
+          fail_on_unmatched_files: true
 
