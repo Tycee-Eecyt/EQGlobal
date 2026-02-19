@@ -1,5 +1,15 @@
 const { EventEmitter } = require('events');
 
+function applyTemplate(template, groups = {}) {
+  const text = String(template || '');
+  if (!text) return text;
+  return text
+    .replace(/\{TS\}/gi, String(groups.ts || ''))
+    .replace(/\{S\}/gi, String(groups.s || ''))
+    .replace(/\$\{ts\}/gi, String(groups.ts || ''))
+    .replace(/\$\{s\}/gi, String(groups.s || ''));
+}
+
 class TimerManager extends EventEmitter {
   constructor({ tickRateMs = 500 } = {}) {
     super();
@@ -32,9 +42,12 @@ class TimerManager extends EventEmitter {
 
     const restartMode = trigger?.timer?.restartMode || 'restart-current';
     const triggerKey = trigger.id || trigger.label || trigger.pattern;
-    const timerName =
-      (trigger.timer && trigger.timer.name) || trigger.label || trigger.id || trigger.pattern;
+    const matchGroups = trigger.matchGroups && typeof trigger.matchGroups === 'object' ? trigger.matchGroups : {};
+    const baseTimerName = (trigger.timer && trigger.timer.name) || trigger.label || trigger.id || trigger.pattern;
+    const timerName = applyTemplate(baseTimerName, matchGroups);
     const timerType = trigger?.timer?.type || 'countdown';
+    const timerEnding = trigger?.timerEnding && typeof trigger.timerEnding === 'object' ? trigger.timerEnding : null;
+    const timerEnded = trigger?.timerEnded && typeof trigger.timerEnded === 'object' ? trigger.timerEnded : null;
 
     const existingTimers = [];
     for (const timer of this.timers.values()) {
@@ -60,6 +73,12 @@ class TimerManager extends EventEmitter {
         timerType,
         timerName,
         restartMode,
+        matchGroups,
+        triggerAudio: trigger?.audio && typeof trigger.audio === 'object' ? { ...trigger.audio } : null,
+        timerEnding,
+        timerEnded,
+        endingAnnounced: false,
+        endedAnnounced: false,
       };
       this.timers.set(current.id, updated);
       for (let i = 1; i < existingTimers.length; i += 1) {
@@ -73,7 +92,7 @@ class TimerManager extends EventEmitter {
     const id = `${triggerKey}-${Date.now()}`;
     const timer = {
       id,
-      label: trigger.label || trigger.id || trigger.pattern,
+      label: applyTemplate(trigger.label || trigger.id || trigger.pattern, matchGroups),
       color: trigger.color || '#00c9ff',
       duration: trigger.duration,
       startsAt: startsAt.toISOString(),
@@ -83,6 +102,12 @@ class TimerManager extends EventEmitter {
       timerName,
       timerType,
       restartMode,
+      matchGroups,
+      triggerAudio: trigger?.audio && typeof trigger.audio === 'object' ? { ...trigger.audio } : null,
+      timerEnding,
+      timerEnded,
+      endingAnnounced: false,
+      endedAnnounced: false,
     };
 
     this.timers.set(id, timer);
@@ -101,7 +126,31 @@ class TimerManager extends EventEmitter {
     const now = Date.now();
     for (const [id, timer] of this.timers.entries()) {
       const expiresAt = Date.parse(timer.expiresAt);
-      if (Number.isNaN(expiresAt) || expiresAt <= now) {
+      if (Number.isNaN(expiresAt)) {
+        this.timers.delete(id);
+        continue;
+      }
+
+      const remainingMs = Math.max(0, expiresAt - now);
+      const thresholdSeconds = Number(timer?.timerEnding?.thresholdSeconds) || 0;
+      const thresholdMs = Math.max(0, thresholdSeconds * 1000);
+      const endingEnabled = Boolean(timer?.timerEnding?.enabled);
+      if (endingEnabled && !timer.endingAnnounced && remainingMs <= thresholdMs) {
+        timer.endingAnnounced = true;
+        this.emit('alert', {
+          kind: 'timer-ending',
+          timer: { ...timer },
+        });
+      }
+
+      if (expiresAt <= now) {
+        if (!timer.endedAnnounced) {
+          timer.endedAnnounced = true;
+          this.emit('alert', {
+            kind: 'timer-ended',
+            timer: { ...timer },
+          });
+        }
         this.timers.delete(id);
       }
     }

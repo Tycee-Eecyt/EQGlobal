@@ -1,6 +1,6 @@
 ﻿const path = require('path');
 const fs = require('fs');
-const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage, clipboard } = require('electron');
 let autoUpdater;
 try {
   // Loaded at runtime; only used in packaged builds
@@ -69,6 +69,13 @@ timerManager.on('update', (timers) => {
   }
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.webContents.send('timers:update', timers);
+  }
+});
+timerManager.on('alert', (payload) => {
+  try {
+    handleTimerAlert(payload);
+  } catch (error) {
+    console.warn('Failed to process timer alert payload', error);
   }
 });
 
@@ -777,6 +784,137 @@ function sendStatus(status) {
   }
 }
 
+function applyAlertTemplate(template, context = {}) {
+  const text = String(template || '');
+  if (!text) return text;
+  const map = {
+    S: context.s ?? context.S ?? context.timerName ?? '',
+    TS: context.ts ?? context.TS ?? '',
+  };
+  return text
+    .replace(/\{TS\}/gi, String(map.TS))
+    .replace(/\{S\}/gi, String(map.S))
+    .replace(/\$\{TS\}/gi, String(map.TS))
+    .replace(/\$\{S\}/gi, String(map.S));
+}
+
+function buildAudioAlertPayload({ source, audioConfig, context = {}, triggerId = null, timerId = null }) {
+  if (!audioConfig || typeof audioConfig !== 'object') {
+    return null;
+  }
+  const mode = String(audioConfig.mode || 'none').toLowerCase();
+  if (mode !== 'tts' && mode !== 'file') {
+    return null;
+  }
+
+  const text = applyAlertTemplate(audioConfig.text || '', context);
+  const soundFile = String(audioConfig.soundFile || '').trim();
+  if (mode === 'tts' && !text) {
+    return null;
+  }
+  if (mode === 'file' && !soundFile) {
+    return null;
+  }
+
+  return {
+    source,
+    mode,
+    text,
+    soundFile,
+    interrupt: Boolean(audioConfig.interrupt),
+    triggerId,
+    timerId,
+  };
+}
+
+function buildTextAlertPayload({ source, textSettings, context = {}, triggerId = null, timerId = null }) {
+  if (!textSettings || typeof textSettings !== 'object') {
+    return null;
+  }
+  const displayEnabled = Boolean(textSettings.display);
+  const clipboardEnabled = Boolean(textSettings.clipboard);
+  if (!displayEnabled && !clipboardEnabled) {
+    return null;
+  }
+
+  const displayText = displayEnabled ? applyAlertTemplate(textSettings.displayText || '', context) : '';
+  const clipboardText = clipboardEnabled
+    ? applyAlertTemplate(textSettings.clipboardText || textSettings.displayText || '', context)
+    : '';
+
+  return {
+    source,
+    mode: 'text',
+    displayText,
+    clipboardText,
+    triggerId,
+    timerId,
+  };
+}
+
+function dispatchAlert(alertPayload) {
+  if (!alertPayload) {
+    return;
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('alerts:play', alertPayload);
+  }
+}
+
+function handleTimerAlert(payload) {
+  const kind = payload?.kind;
+  const timer = payload?.timer;
+  if (!kind || !timer) {
+    return;
+  }
+
+  const context = {
+    ...(timer.matchGroups && typeof timer.matchGroups === 'object' ? timer.matchGroups : {}),
+    timerName: timer.timerName || '',
+  };
+
+  if (kind === 'timer-ending') {
+    if (!timer?.timerEnding?.enabled) return;
+    const textPayload = buildTextAlertPayload({
+      source: 'timer-ending',
+      textSettings: timer.timerEnding.textSettings,
+      context,
+      triggerId: timer.triggerId || null,
+      timerId: timer.id || null,
+    });
+    const alertPayload = buildAudioAlertPayload({
+      source: 'timer-ending',
+      audioConfig: timer.timerEnding.audio,
+      context,
+      triggerId: timer.triggerId || null,
+      timerId: timer.id || null,
+    });
+    dispatchAlert(textPayload);
+    dispatchAlert(alertPayload);
+    return;
+  }
+
+  if (kind === 'timer-ended') {
+    if (!timer?.timerEnded?.enabled) return;
+    const textPayload = buildTextAlertPayload({
+      source: 'timer-ended',
+      textSettings: timer.timerEnded.textSettings,
+      context,
+      triggerId: timer.triggerId || null,
+      timerId: timer.id || null,
+    });
+    const alertPayload = buildAudioAlertPayload({
+      source: 'timer-ended',
+      audioConfig: timer.timerEnded.audio,
+      context,
+      triggerId: timer.triggerId || null,
+      timerId: timer.id || null,
+    });
+    dispatchAlert(textPayload);
+    dispatchAlert(alertPayload);
+  }
+}
+
 async function startWatcher() {
   if (logWatcher) {
     return;
@@ -815,6 +953,27 @@ async function stopWatcher() {
 
 function handleTriggerMatch(payload) {
   const timer = timerManager.addTimer(payload);
+  const trigger = payload?.trigger;
+  const context = {
+    ...(trigger?.matchGroups && typeof trigger.matchGroups === 'object' ? trigger.matchGroups : {}),
+    timerName: timer?.timerName || trigger?.label || '',
+  };
+  const triggerAlert = buildAudioAlertPayload({
+    source: 'trigger',
+    audioConfig: trigger?.audio,
+    context,
+    triggerId: trigger?.id || null,
+    timerId: timer?.id || null,
+  });
+  const triggerText = buildTextAlertPayload({
+    source: 'trigger',
+    textSettings: trigger?.textSettings,
+    context,
+    triggerId: trigger?.id || null,
+    timerId: timer?.id || null,
+  });
+  dispatchAlert(triggerText);
+  dispatchAlert(triggerAlert);
   queueBackendEvent(payload, timer);
 }
 
@@ -1316,6 +1475,10 @@ function registerIpcHandlers() {
 
     return result.filePaths[0];
   });
+  ipcMain.handle('clipboard:write', async (_event, text) => {
+    clipboard.writeText(String(text || ''));
+    return true;
+  });
 
   ipcMain.handle('watcher:start', async () => {
     await startWatcher();
@@ -1564,7 +1727,12 @@ function registerIpcHandlers() {
 
       // Load converted triggers (strip any BOM defensively)
       const raw = await fs.promises.readFile(outputPath, 'utf8');
-      const imported = JSON.parse(raw.replace(/^\uFEFF/, ''));
+      const normalizedRaw = raw.replace(/^\uFEFF/, '').trim();
+      if (!normalizedRaw) {
+        throw new Error('Converted GINA file was empty. No triggers were exported from the package.');
+      }
+      const parsed = JSON.parse(normalizedRaw);
+      const imported = Array.isArray(parsed) ? parsed : [parsed];
       const colored = applyCategoryColors(imported);
 
       // Update settings and watcher

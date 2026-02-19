@@ -8,6 +8,55 @@ const NEWLINE_REGEXP = /\r?\n/;
 const SUPPORTED_EXTENSIONS = ['.log', '.txt'];
 const DEFAULT_FILE_PATTERNS = ['*.log', 'eqlog_*.txt'];
 
+function parseTsToSeconds(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  const compact = text.toLowerCase().replace(/\s+/g, '');
+
+  const hhmmss = compact.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (hhmmss) {
+    const hours = Number(hhmmss[1]);
+    const minutes = Number(hhmmss[2]);
+    const seconds = Number(hhmmss[3]);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes) || !Number.isFinite(seconds)) return null;
+    return Math.max(1, hours * 3600 + minutes * 60 + seconds);
+  }
+
+  const mmss = compact.match(/^(\d{1,2}):(\d{2})$/);
+  if (mmss) {
+    const minutes = Number(mmss[1]);
+    const seconds = Number(mmss[2]);
+    if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return null;
+    return Math.max(1, minutes * 60 + seconds);
+  }
+
+  const valueWithUnit = compact.match(
+    /^(\d+(?:\.\d+)?)(ms|msec|millisecond(?:s)?|s|sec|secs|second(?:s)?|m|min|mins|minute(?:s)?|h|hr|hrs|hour(?:s)?|d|day(?:s)?)?$/
+  );
+  if (!valueWithUnit) return null;
+
+  const amount = Number(valueWithUnit[1]);
+  const unit = valueWithUnit[2] || 's';
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  if (unit.startsWith('ms') || unit.startsWith('msec') || unit.startsWith('millisecond')) {
+    return Math.max(1, Math.round(amount / 1000));
+  }
+  if (unit === 's' || unit.startsWith('sec') || unit.startsWith('second')) {
+    return Math.max(1, Math.round(amount));
+  }
+  if (unit === 'm' || unit.startsWith('min') || unit.startsWith('minute')) {
+    return Math.max(1, Math.round(amount * 60));
+  }
+  if (unit === 'h' || unit.startsWith('hr') || unit.startsWith('hour')) {
+    return Math.max(1, Math.round(amount * 3600));
+  }
+  if (unit === 'd' || unit.startsWith('day')) {
+    return Math.max(1, Math.round(amount * 86400));
+  }
+  return null;
+}
+
 function isSupportedLogFile(fileName = '') {
   const lower = fileName.toLowerCase();
   if (!SUPPORTED_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
@@ -64,11 +113,11 @@ class LogWatcher extends EventEmitter {
   setTriggers(triggers = []) {
     this.triggers = triggers.map((trigger) => {
       let matcher;
+      let compiled = null;
       if (trigger.isRegex) {
         const flags = trigger.flags || 'i';
         const original = String(trigger.pattern || '');
         const sanitized = sanitizeRegexPattern(original);
-        let compiled = null;
         try {
           compiled = new RegExp(sanitized, flags);
         } catch (err) {
@@ -88,6 +137,10 @@ class LogWatcher extends EventEmitter {
       return {
         id: trigger.id || trigger.label || trigger.pattern,
         ...trigger,
+        compiledRegex: trigger.isRegex ? compiled : null,
+        hasTsPlaceholder:
+          String(trigger.dynamicDuration || '').toLowerCase() === 'ts' ||
+          /\{ts\}/i.test(String(trigger.pattern || '')),
         matcher,
       };
     });
@@ -225,6 +278,24 @@ class LogWatcher extends EventEmitter {
 
     for (const trigger of this.triggers) {
       try {
+        if (trigger.compiledRegex) {
+          const match = trigger.compiledRegex.exec(parsed.message);
+          if (match) {
+            if (trigger.hasTsPlaceholder) {
+              const tsValue = match?.groups?.ts;
+              const tsSeconds = parseTsToSeconds(tsValue);
+              if (tsSeconds && tsSeconds > 0) {
+                return {
+                  trigger: { ...trigger, duration: tsSeconds, matchGroups: match?.groups || {} },
+                  ...parsed,
+                };
+              }
+            }
+            return { trigger: { ...trigger, matchGroups: match?.groups || {} }, ...parsed };
+          }
+          continue;
+        }
+
         if (trigger.matcher(parsed.message)) {
           return { trigger, ...parsed };
         }

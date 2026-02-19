@@ -71,7 +71,7 @@ function renderTimers() {
         >
           <div class="overlay-timer-fill" style="width: ${pct}%;"></div>
           <div class="overlay-timer-content">
-            <span class="overlay-timer-label">${escapeHtml(timer.label || '')}</span>
+            <span class="overlay-timer-label">${escapeHtml(timer.timerName || timer.label || '')}</span>
             <span class="overlay-timer-time">${formatHMS(remainingSeconds)}</span>
           </div>
         </div>

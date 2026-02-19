@@ -127,6 +127,146 @@ function asDate(value) {
   return new Date(parsed);
 }
 
+function applyTimeToDate(baseDate, hours, minutes, seconds, ampm) {
+  if (!baseDate || !Number.isFinite(hours)) return null;
+  const result = new Date(baseDate.getTime());
+  let h = Number(hours);
+  if (ampm) {
+    const marker = String(ampm).toLowerCase();
+    h = h % 12;
+    if (marker === 'pm') h += 12;
+  }
+  if (!ampm && h === 24) h = 0;
+  result.setHours(h, Number(minutes) || 0, Number(seconds) || 0, 0);
+  return result;
+}
+
+function parseTimeOnlyExpression(value, contextDate) {
+  if (!value || !contextDate) return null;
+  const m = String(value).trim().match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!m) return null;
+  const hours = Number(m[1]);
+  const minutes = m[2] ? Number(m[2]) : 0;
+  const seconds = m[3] ? Number(m[3]) : 0;
+  const marker = m[4] ? m[4].toLowerCase() : null;
+  return applyTimeToDate(contextDate, hours, minutes, seconds, marker);
+}
+
+function unitToMillis(unit) {
+  if (!unit) return null;
+  const u = String(unit).toLowerCase();
+  if (u.startsWith('m')) return 60_000;
+  if (u.startsWith('h')) return 3_600_000;
+  if (u.startsWith('d')) return 86_400_000;
+  return null;
+}
+
+function resolveTemporalExpression(rawValue, contextDate, now = new Date()) {
+  const base = contextDate ? new Date(contextDate) : null;
+  const fallbackBase = base || (now ? new Date(now) : null);
+  if (rawValue === null || rawValue === undefined) {
+    return fallbackBase ? new Date(fallbackBase) : null;
+  }
+  let value = String(rawValue).trim();
+  if (!value) {
+    return fallbackBase ? new Date(fallbackBase) : null;
+  }
+
+  const lower = value.toLowerCase();
+  if (lower === 'now' || lower === 'now!' || lower === 'now.') {
+    return fallbackBase ? new Date(fallbackBase) : new Date();
+  }
+
+  const dashMatch = lower.match(/^-(\d+(?:\.\d+)?)(?:\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days))?$/);
+  if (dashMatch) {
+    const amount = Number(dashMatch[1]);
+    const unitMs = unitToMillis(dashMatch[2]) || 60_000;
+    if (fallbackBase) return new Date(fallbackBase.getTime() - amount * unitMs);
+    return null;
+  }
+
+  const agoMatch = lower.match(/^(\d+(?:\.\d+)?)\s*(minutes?|minute|min|mins|hours?|hour|hrs|h|days?|day|d)\s+ago$/);
+  if (agoMatch) {
+    const amount = Number(agoMatch[1]);
+    const unitMs = unitToMillis(agoMatch[2]);
+    if (fallbackBase && unitMs) return new Date(fallbackBase.getTime() - amount * unitMs);
+    return null;
+  }
+
+  const relativeMatch = lower.match(/^(yesterday|today|tomorrow)(?:\s+at\s+(.+))?$/);
+  if (relativeMatch) {
+    const keyword = relativeMatch[1];
+    const timePart = relativeMatch[2];
+    const reference = fallbackBase ? new Date(fallbackBase) : new Date(now);
+    reference.setHours(0, 0, 0, 0);
+    if (keyword === 'yesterday') reference.setDate(reference.getDate() - 1);
+    else if (keyword === 'tomorrow') reference.setDate(reference.getDate() + 1);
+    if (timePart) {
+      const t = parseTimeOnlyExpression(timePart, reference);
+      if (t) return t;
+    }
+    return reference;
+  }
+
+  let candidate = value
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/\b(about|approximately|approx|ish)\b/gi, '')
+    .replace(/\b(st|nd|rd|th)\b/gi, '')
+    .replace(/\b(EST|EDT|CST|CDT|PST|PDT|UTC|GMT)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .replace(/,\s*/g, ' ')
+    .trim();
+
+  candidate = candidate.replace(/(\d)(am|pm)\b/gi, '$1 $2');
+
+  const parsedNative = Date.parse(candidate);
+  if (!Number.isNaN(parsedNative)) return new Date(parsedNative);
+
+  let m = candidate.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s+(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (m) {
+    const year = Number(m[1]);
+    const month = Number(m[2]) - 1;
+    const day = Number(m[3]);
+    let hour = Number(m[4]);
+    const minute = m[5] ? Number(m[5]) : 0;
+    const second = m[6] ? Number(m[6]) : 0;
+    const marker = m[7] ? m[7].toLowerCase() : null;
+    if (marker) {
+      hour = hour % 12;
+      if (marker === 'pm') hour += 12;
+    }
+    return new Date(year, month, day, hour, minute, second, 0);
+  }
+
+  m = candidate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (m) {
+    const month = Number(m[1]) - 1;
+    const day = Number(m[2]);
+    const year = Number(m[3]);
+    let hour = Number(m[4]);
+    const minute = m[5] ? Number(m[5]) : 0;
+    const second = m[6] ? Number(m[6]) : 0;
+    const marker = m[7] ? m[7].toLowerCase() : null;
+    if (marker) {
+      hour = hour % 12;
+      if (marker === 'pm') hour += 12;
+    }
+    return new Date(year, month, day, hour, minute, second, 0);
+  }
+
+  const timeOnly = parseTimeOnlyExpression(candidate, fallbackBase || new Date());
+  if (timeOnly) return timeOnly;
+
+  return null;
+}
+
+function cleanCommandTimeText(raw) {
+  let text = String(raw || '').trim();
+  text = text.replace(/^[,|]+\s*/, '');
+  text = text.replace(/^-\s+/, '');
+  return text.trim();
+}
+
 function secondsBetween(startMs, endMs) {
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
     return null;
@@ -180,6 +320,7 @@ class MobWindowManager extends EventEmitter {
 
     this.definitionMap = new Map(this.definitions.map((def) => [def.id, def]));
     this.aliasIndex = buildAliasIndex(this.definitions);
+    this.aliasPhrases = this.buildAliasPhraseList(this.definitions);
     this.killTimestamps = new Map();
     this.skipCounts = new Map();
     this.tickHandle = null;
@@ -269,6 +410,9 @@ class MobWindowManager extends EventEmitter {
 
     const todResult = this.parseTodCommand(trimmedMessage, parsedTimestamp);
     if (todResult) {
+      if (todResult.kind === 'quake') {
+        return this.resetAllKills(todResult.timestamp || parsedTimestamp);
+      }
       return this.recordKill(todResult.mobId, todResult.timestamp || parsedTimestamp);
     }
 
@@ -279,7 +423,7 @@ class MobWindowManager extends EventEmitter {
     if (!message) {
       return null;
     }
-    const match = message.match(/!tod\s+(.+)/i);
+    const match = message.match(/^!?tod\s+(.+)/i);
     if (!match) {
       return null;
     }
@@ -288,31 +432,98 @@ class MobWindowManager extends EventEmitter {
       return null;
     }
 
-    remainder = remainder.replace(/^[`"'â€œâ€â€˜â€™]+/, '').replace(/[`"'â€œâ€â€˜â€™]+$/, '');
+    remainder = remainder.replace(/^[`"']+/, '').replace(/[`"']+$/, '');
     remainder = remainder.replace(/#.*$/, '').trim();
-
-    let explicitTime = null;
-    const nowMatch = remainder.match(/(?:^|[\s,|])now[.!?]?$/i);
-    if (nowMatch) {
-      explicitTime = 'now';
-      remainder = remainder.slice(0, nowMatch.index).trim();
-    }
-
-    remainder = remainder.replace(/[,|]+$/, '').trim();
+    remainder = remainder.replace(/\s+/g, ' ');
     if (!remainder) {
       return null;
     }
 
-    const mobId = this.lookupMobIdByAlias(remainder);
-    if (!mobId) {
+    const quakeMatch = remainder.match(/^quake\b/i);
+    if (quakeMatch) {
+      let timeText = remainder.slice(quakeMatch[0].length).trim();
+      timeText = cleanCommandTimeText(timeText);
+      const timestamp = resolveTemporalExpression(timeText, fallbackTimestamp, new Date());
+      if (!timestamp) {
+        return null;
+      }
+      return {
+        kind: 'quake',
+        timestamp,
+      };
+    }
+
+    const parsedTarget = this.extractMobAndTime(remainder);
+    if (!parsedTarget || !parsedTarget.mobId) {
       return null;
     }
 
-    const timestamp = explicitTime === 'now' ? fallbackTimestamp : null;
+    const timestamp = resolveTemporalExpression(parsedTarget.timeText, fallbackTimestamp, new Date());
+    if (!timestamp) {
+      return null;
+    }
+
     return {
-      mobId,
+      kind: 'mob',
+      mobId: parsedTarget.mobId,
       timestamp,
     };
+  }
+
+  buildAliasPhraseList(definitions = []) {
+    const phrases = [];
+    const seen = new Set();
+    definitions.forEach((definition) => {
+      if (!definition || !definition.id) return;
+      const aliases = [definition.name, ...(Array.isArray(definition.aliases) ? definition.aliases : [])];
+      aliases.forEach((aliasText) => {
+        const normalized = String(aliasText || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, ' ');
+        if (!normalized) return;
+        const key = `${definition.id}:${normalized}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        phrases.push({ mobId: definition.id, alias: normalized });
+      });
+    });
+    phrases.sort((a, b) => b.alias.length - a.alias.length);
+    return phrases;
+  }
+
+  extractMobAndTime(remainder) {
+    const input = String(remainder || '').trim();
+    if (!input) return null;
+
+    const separatorIndex = input.search(/[|,]/);
+    if (separatorIndex >= 0) {
+      const mobText = input.slice(0, separatorIndex).trim();
+      let timeText = input.slice(separatorIndex + 1).trim();
+      timeText = cleanCommandTimeText(timeText);
+      const mobId = this.lookupMobIdByAlias(mobText);
+      if (!mobId) return null;
+      return { mobId, timeText };
+    }
+
+    const exactMobId = this.lookupMobIdByAlias(input);
+    if (exactMobId) {
+      return { mobId: exactMobId, timeText: '' };
+    }
+
+    const lowered = input.toLowerCase();
+    for (const phrase of this.aliasPhrases) {
+      if (!lowered.startsWith(phrase.alias)) continue;
+      if (lowered.length > phrase.alias.length) {
+        const boundaryChar = lowered.charAt(phrase.alias.length);
+        if (!/[\s,|#-]/.test(boundaryChar)) continue;
+      }
+      let timeText = input.slice(phrase.alias.length).trim();
+      timeText = cleanCommandTimeText(timeText);
+      return { mobId: phrase.mobId, timeText };
+    }
+
+    return null;
   }
 
   lookupMobIdByAlias(text) {

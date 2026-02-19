@@ -72,6 +72,8 @@ const viewButtons = Array.from(document.querySelectorAll('[data-view-target]'));
 const views = Array.from(document.querySelectorAll('.view'));
 const watcherDirectorySummary = document.getElementById('watcher-directory-summary');
 let currentView = 'dashboard';
+let activeAlertAudio = null;
+let activeAlertAudioSource = null;
 
 let categoryMap = new Map();
 let mobAliasMatchers = [];
@@ -92,6 +94,106 @@ function escapeHtml(value) {
 
 function escapeRegex(value = '') {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function toFileUrl(filePath = '') {
+  const raw = String(filePath || '').trim();
+  if (!raw) return '';
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) return raw;
+  const normalized = raw.replace(/\\/g, '/');
+  if (/^[a-z]:\//i.test(normalized)) {
+    return `file:///${encodeURI(normalized)}`;
+  }
+  if (normalized.startsWith('/')) {
+    return `file://${encodeURI(normalized)}`;
+  }
+  return `file:///${encodeURI(normalized)}`;
+}
+
+function playTtsAlert(text, interrupt) {
+  const message = String(text || '').trim();
+  if (!message || !('speechSynthesis' in window)) {
+    return;
+  }
+  if (interrupt) {
+    window.speechSynthesis.cancel();
+  }
+  const utterance = new SpeechSynthesisUtterance(message);
+  window.speechSynthesis.speak(utterance);
+}
+
+function playSoundAlert(soundFile, interrupt) {
+  const src = toFileUrl(soundFile);
+  if (!src) {
+    return;
+  }
+  if (interrupt && activeAlertAudio) {
+    try {
+      activeAlertAudio.pause();
+      activeAlertAudio.currentTime = 0;
+    } catch (_) {}
+    activeAlertAudio = null;
+    activeAlertAudioSource = null;
+  }
+  if (!interrupt && activeAlertAudio && activeAlertAudioSource === src) {
+    return;
+  }
+  const audio = new Audio(src);
+  activeAlertAudio = audio;
+  activeAlertAudioSource = src;
+  audio.addEventListener('ended', () => {
+    if (activeAlertAudio === audio) {
+      activeAlertAudio = null;
+      activeAlertAudioSource = null;
+    }
+  });
+  audio.addEventListener('error', () => {
+    if (activeAlertAudio === audio) {
+      activeAlertAudio = null;
+      activeAlertAudioSource = null;
+    }
+  });
+  audio.play().catch((err) => {
+    if (activeAlertAudio === audio) {
+      activeAlertAudio = null;
+      activeAlertAudioSource = null;
+    }
+    console.warn('Failed to play alert sound', err?.message || err);
+  });
+}
+
+function handleAlertPlay(payload) {
+  const mode = String(payload?.mode || '').toLowerCase();
+  const interrupt = Boolean(payload?.interrupt);
+  if (mode === 'text') {
+    const displayText = String(payload?.displayText || '').trim();
+    const clipboardText = String(payload?.clipboardText || '').trim();
+    if (displayText) {
+      recentLines = [
+        {
+          timestamp: new Date().toISOString(),
+          line: `[Alert] ${displayText}`,
+        },
+        ...recentLines,
+      ].slice(0, 30);
+      renderRecentLines();
+    }
+    if (clipboardText) {
+      if (window.eqApi && typeof window.eqApi.writeClipboardText === 'function') {
+        window.eqApi.writeClipboardText(clipboardText).catch(() => {});
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(clipboardText).catch(() => {});
+      }
+    }
+    return;
+  }
+  if (mode === 'tts') {
+    playTtsAlert(payload?.text || '', interrupt);
+    return;
+  }
+  if (mode === 'file') {
+    playSoundAlert(payload?.soundFile || '', interrupt);
+  }
 }
 
 function createId(prefix = 'id') {
@@ -1322,12 +1424,10 @@ function renderTriggerDetail() {
 function selectFirstAvailableNode() {
   if (triggers.length > 0) {
     selectedNode = { type: 'trigger', id: triggers[0].id };
-    expandForCategory(triggers[0].categoryId);
     return;
   }
   if (categories.length > 0) {
     selectedNode = { type: 'category', id: categories[0].id };
-    expandForCategory(categories[0].id);
     return;
   }
   selectedNode = null;
@@ -3269,7 +3369,7 @@ function renderTimers(timers) {
             <div class="timer-progress-fill" style="transform: scaleX(${scaledProgress.toFixed(4)})"></div>
           </div>
           <div class="timer-content">
-            <span>${escapeHtml(timer.label || '')}</span>
+            <span>${escapeHtml(timer.timerName || timer.label || '')}</span>
             <span class="remaining">${minutes}:${seconds.toString().padStart(2, '0')}</span>
           </div>
         </div>
@@ -3385,7 +3485,7 @@ async function hydrate() {
   triggers = normalizeTriggers(Array.isArray(stored.triggers) ? stored.triggers : []);
   updateAllDerivedTriggerFields();
 
-  expandedCategories = new Set([ROOT_CATEGORY_ID, ...categories.filter((cat) => !cat.parentId).map((cat) => cat.id)]);
+  expandedCategories = new Set([ROOT_CATEGORY_ID]);
   selectFirstAvailableNode();
   renderTriggerTree();
   renderTriggerDetail();
@@ -3637,7 +3737,7 @@ function attachEventListeners() {
     categories = [];
     triggers = normalizeTriggers(Array.isArray(defaults) ? defaults : []);
     updateAllDerivedTriggerFields();
-    expandedCategories = new Set([ROOT_CATEGORY_ID, ...categories.filter((cat) => !cat.parentId).map((cat) => cat.id)]);
+    expandedCategories = new Set([ROOT_CATEGORY_ID]);
     selectFirstAvailableNode();
     renderTriggerTree();
     renderTriggerDetail();
@@ -3653,7 +3753,7 @@ function attachEventListeners() {
           categories = [];
           triggers = normalizeTriggers(imported);
           updateAllDerivedTriggerFields();
-          expandedCategories = new Set([ROOT_CATEGORY_ID, ...categories.filter((cat) => !cat.parentId).map((cat) => cat.id)]);
+          expandedCategories = new Set([ROOT_CATEGORY_ID]);
           selectFirstAvailableNode();
           renderTriggerTree();
           renderTriggerDetail();
@@ -3903,6 +4003,12 @@ function subscribeToIpc() {
     recentLines = [...lines, ...recentLines].slice(0, 30);
     renderRecentLines();
   });
+
+  if (typeof window.eqApi.onAlertPlay === 'function') {
+    window.eqApi.onAlertPlay((payload) => {
+      handleAlertPlay(payload);
+    });
+  }
 }
 
 document.addEventListener('keydown', (event) => {

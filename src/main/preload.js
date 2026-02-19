@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('eqApi', {
   importGinaGtp: () => ipcRenderer.invoke('triggers:import-gtp'),
   exportTriggers: (triggers) => ipcRenderer.invoke('triggers:export', triggers),
   selectSoundFile: () => ipcRenderer.invoke('dialog:select-sound-file'),
+  writeClipboardText: (text) => ipcRenderer.invoke('clipboard:write', text),
   getMobWindows: () => ipcRenderer.invoke('mob-windows:get'),
   getMobWindowDefinitions: () => ipcRenderer.invoke('mob-windows:definitions'),
   recordMobKill: (mobId, timestamp) => ipcRenderer.invoke('mob-windows:record-kill', mobId, timestamp),
@@ -49,6 +50,11 @@ contextBridge.exposeInMainWorld('eqApi', {
     const listener = (_event, lines) => callback(lines);
     ipcRenderer.on('watcher:lines', listener);
     return () => ipcRenderer.removeListener('watcher:lines', listener);
+  },
+  onAlertPlay: (callback) => {
+    const listener = (_event, alertPayload) => callback(alertPayload);
+    ipcRenderer.on('alerts:play', listener);
+    return () => ipcRenderer.removeListener('alerts:play', listener);
   },
   onOverlayMoveMode: (callback) => {
     const listener = (_event, enabled) => callback(enabled);
