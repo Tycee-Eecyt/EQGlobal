@@ -30,6 +30,7 @@ const navMobLink = document.getElementById('nav-mob-link');
 const navAdminLink = document.getElementById('nav-admin-link');
 
 const REFRESH_INTERVAL = 30000;
+const FETCH_TIMEOUT_MS = 12000;
 const UPCOMING_WINDOW_SECONDS = 24 * 60 * 60;
 const FUTURE_WINDOW_SECONDS = 72 * 60 * 60;
 let authState = getAuthState();
@@ -424,20 +425,15 @@ async function fetchAndRender() {
   if (!canViewMobWindows()) {
     return;
   }
-
-  if (railList) {
-    railList.innerHTML = '';
-    const railItems = current.slice(0, 8);
-    if (railItems.length === 0) {
-      railList.classList.add('empty');
-      railList.textContent = 'No active window entries.';
-    } else {
-      railList.classList.remove('empty');
-      railItems.forEach((mob) => renderMobCard(railList, mob, { compact: true }));
-    }
-  }
   try {
-    const response = await fetchWithAuth('/api/mob-windows', { method: 'GET', cache: 'no-store' });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const response = await fetchWithAuth('/api/mob-windows', {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
@@ -450,9 +446,12 @@ async function fetchAndRender() {
   } catch (error) {
     console.error('Failed to load mob windows', error);
     const unauthorized = error && error.message === 'Unauthorized';
+    const timedOut = error && error.name === 'AbortError';
     const message = unauthorized
       ? 'Tracker access required to view mob windows.'
-      : 'Failed to load mob windows. Please try again.';
+      : timedOut
+        ? 'Mob window request timed out. Press Refresh to retry.'
+        : 'Failed to load mob windows. Please try again.';
     clearDisplays(message);
     if (unauthorized) {
       updateAuthUI(message);
