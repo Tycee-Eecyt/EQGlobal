@@ -340,6 +340,32 @@ a {
   transform-origin: left center;
 }
 
+.window-progress {
+  height: 18px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(90deg, rgba(225, 230, 236, 0.88), rgba(225, 230, 236, 0.88)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 26px,
+      rgba(12, 16, 28, 0.22) 26px 28px
+    );
+}
+
+.window-progress-fill {
+  height: 100%;
+  background:
+    linear-gradient(90deg, #8fcb72, #77b35d),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 26px,
+      rgba(10, 17, 24, 0.2) 26px 28px
+    );
+  transform-origin: left center;
+}
+
 .mob-meta {
   display: flex;
   flex-wrap: wrap;

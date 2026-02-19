@@ -297,11 +297,11 @@ function renderMobCard(container, mob, options = {}) {
   chip.textContent = status.text;
   card.appendChild(chip);
 
-  if (compact) {
+  if (compact || mob?.inWindow) {
     const progressRow = document.createElement('div');
-    progressRow.className = 'rail-progress';
+    progressRow.className = compact ? 'rail-progress' : 'window-progress';
     const fill = document.createElement('div');
-    fill.className = 'rail-progress-fill';
+    fill.className = compact ? 'rail-progress-fill' : 'window-progress-fill';
     const progress = Number.isFinite(mob.windowProgress) ? Math.max(0, Math.min(1, mob.windowProgress)) : 0;
     fill.style.transform = `scaleX(${progress.toFixed(4)})`;
     progressRow.appendChild(fill);
