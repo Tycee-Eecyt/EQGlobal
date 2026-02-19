@@ -1,20 +1,32 @@
 .site-nav {
   display: flex;
-  gap: 1rem;
+  gap: 0.35rem;
+  padding: 0.33rem;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(141, 169, 214, 0.18);
+  border-radius: 999px;
 }
 .site-nav a {
   color: #cfe6ff;
   text-decoration: none;
-  opacity: 0.9;
+  opacity: 0.95;
+  padding: 0.42rem 0.88rem;
+  border-radius: 999px;
+  transition: background 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 .site-nav a[aria-current="page"] {
-  color: #49d1a4;
+  color: #0a121d;
   font-weight: 600;
+  background: linear-gradient(135deg, #5ec7f8, #63d8be);
+  opacity: 1;
 }
 .site-nav a.disabled {
   opacity: 0.45;
   cursor: not-allowed;
   color: #9aa4b5;
+}
+.site-nav a:not([aria-current="page"]):not(.disabled):hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 .header-actions {
   margin-left: auto;
