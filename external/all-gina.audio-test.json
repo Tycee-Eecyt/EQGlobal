@@ -1,0 +1,4744 @@
+[
+    {
+        "id":  "plane-of-sky-dt-mobs",
+        "label":  "Plane of Sky DT Mobs",
+        "pattern":  "^(?\u003cmob\u003eSister of the Spire|The Spiroc Lord|Bazzt Zzzt|Eye of Veeshan|Keeper of Souls|Overseer of Air|the Hand of Veeshan|a greater sphinx|Key Master)(?\u003e )shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "DT Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Death touch",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dread",
+        "label":  "Dread",
+        "pattern":  "^Dread shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Dread DT Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Death touch",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fright",
+        "label":  "Fright",
+        "pattern":  "^(?:Fr)ight shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Fright DT Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Death touch",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "master-yael",
+        "label":  "Master Yael",
+        "pattern":  "^(?:Master) Yael shouts \u0027(?\u003crip\u003e[A-Z]{4,})\u0027$",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Master Yael DT Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Death touch",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "gorenaire",
+        "label":  "Gorenaire",
+        "pattern":  "Gorenaire begins to cast a spell.",
+        "duration":  10,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Gorenaire - Complete Heal"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "CH",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "jorlleag",
+        "label":  "Jorlleag",
+        "pattern":  "Jorlleag begins to cast a spell.",
+        "duration":  10,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Jorlleag - Complete Heal"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "CH",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "dragon-roar",
+        "label":  "Dragon Roar",
+        "pattern":  "You lose control of yourself!",
+        "duration":  36,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Dragon Roar Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Fear off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "dragon-roar-resist",
+        "label":  "Dragon Roar (Resist)",
+        "pattern":  "You resist the Dragon Roar spell!",
+        "duration":  36,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Dragon Roar Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Fear off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "gating",
+        "label":  "Gating",
+        "pattern":  "^(?:{s} begins to cast the) gate spell\\.$",
+        "duration":  5,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Gating Mob"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Gating!"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "stun-breath",
+        "label":  "Stun Breath",
+        "pattern":  "Your eardrums rupture.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Stun Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Stun off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "stun-breath-resist",
+        "label":  "Stun Breath (Resist)",
+        "pattern":  "You resist the Stun Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Stun Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Stun off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "dragon-charm-resist",
+        "label":  "Dragon Charm (Resist)",
+        "pattern":  "You resist the Dragon Charm spell!",
+        "duration":  15,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Dragon Charm Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Charm off"
+                  }
+    },
+    {
+        "id":  "summoned",
+        "label":  "Summoned",
+        "pattern":  "^(?:{s} says \u0027You will )not evade me (?\u003ctarget\u003e[^!]+)!\u0027$",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Summon - {s}"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Summon",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cloud-of-disempowerment",
+        "label":  "Cloud of Disempowerment",
+        "pattern":  "^(?\u003eYou feel your s)kin freeze\\.$",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Cloud of Disempowerment Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cloud-of-disempowerment-resist",
+        "label":  "Cloud of Disempowerment (Resist)",
+        "pattern":  "You resist the Cloud of Disempowerment spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Cloud of Disempowerment Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "cloud-of-silence-resist",
+        "label":  "Cloud of Silence (Resist)",
+        "pattern":  "You resist the Cloud of Silence spell!",
+        "duration":  15,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Cloud of Silence Recast"
+                  }
+    },
+    {
+        "id":  "avatar-power",
+        "label":  "Avatar Power",
+        "pattern":  "You are knocked backward.",
+        "duration":  35,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Avatar Power Recast"
+                  }
+    },
+    {
+        "id":  "electric-blast",
+        "label":  "Electric Blast",
+        "pattern":  "Your body is electrified as lightning strikes you.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Electric Blast Recast"
+                  }
+    },
+    {
+        "id":  "electric-blast-resist",
+        "label":  "Electric Blast (Resist)",
+        "pattern":  "You resist the Electric Blast spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Electric Blast Recast"
+                  }
+    },
+    {
+        "id":  "wave-of-heat",
+        "label":  "Wave of Heat",
+        "pattern":  "A blast of heat sears your skin.",
+        "duration":  8,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Wave of Heat Recast"
+                  }
+    },
+    {
+        "id":  "wave-of-heat-resist",
+        "label":  "Wave of Heat (Resist)",
+        "pattern":  "You resist the Wave of Heat spell!",
+        "duration":  8,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Wave of Heat Recast"
+                  }
+    },
+    {
+        "id":  "the-dain-s-justice",
+        "label":  "The Dain\u0027s Justice",
+        "pattern":  "^(?:The justice of Dain Frostreaver casts you into the pit\\.|{s} is cast into the pit by Dain Frostreavers justice\\.)",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "The Dain\u0027s Justice Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Banished",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "silver-breath",
+        "label":  "Silver Breath",
+        "pattern":  "You feel your skin freeze.  You have taken 400 points of damage.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Silver Breath Recast"
+                  }
+    },
+    {
+        "id":  "lightning-breath",
+        "label":  "Lightning Breath",
+        "pattern":  "Your body is electrified as the lightning strikes you.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Lightning Breath Recast"
+                  }
+    },
+    {
+        "id":  "lightning-breath-resist",
+        "label":  "Lightning Breath (Resist)",
+        "pattern":  "You resist the Lightning Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Lightning Breath Recast"
+                  }
+    },
+    {
+        "id":  "rain-of-molten-lava",
+        "label":  "Rain of Molten Lava",
+        "pattern":  "Lava sears your skin.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Rain of Molten Lava Recast"
+                  }
+    },
+    {
+        "id":  "rain-of-molten-lava-resist",
+        "label":  "Rain of Molten Lava (Resist)",
+        "pattern":  "You resist the Rain of Molten Lava spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Rain of Molten Lava Recast"
+                  }
+    },
+    {
+        "id":  "wave-of-cold",
+        "label":  "Wave of Cold",
+        "pattern":  "A blast of cold freezes your skin.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Wave of Cold Recast"
+                  }
+    },
+    {
+        "id":  "wave-of-cold-resist",
+        "label":  "Wave of Cold (Resist)",
+        "pattern":  "You resist the Wave of Cold spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Wave of Cold Recast"
+                  }
+    },
+    {
+        "id":  "lava-breath",
+        "label":  "Lava Breath",
+        "pattern":  "Your body combusts as the lava hits you.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Lava Breath Recast"
+                  }
+    },
+    {
+        "id":  "lava-breath-resist",
+        "label":  "Lava Breath (Resist)",
+        "pattern":  "You resist the Lava Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Lava Breath Recast"
+                  }
+    },
+    {
+        "id":  "chill-of-unlife",
+        "label":  "Chill of Unlife",
+        "pattern":  "The chill of unlife wracks your body.",
+        "duration":  5,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Chill of Unlife Recast"
+                  }
+    },
+    {
+        "id":  "chill-of-unlife-resist",
+        "label":  "Chill of Unlife (Resist)",
+        "pattern":  "You resist the Chill of Unlife spell!",
+        "duration":  5,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Chill of Unlife Recast"
+                  }
+    },
+    {
+        "id":  "freezing-breath",
+        "label":  "Freezing Breath",
+        "pattern":  "An icy cold shoots through your body, slowing your movements.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Freezing Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "freezing-breath-resist",
+        "label":  "Freezing Breath (Resist)",
+        "pattern":  "You resist the Freezing Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Freezing Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "frost-breath",
+        "label":  "Frost Breath",
+        "pattern":  "Your body freezes as the frost hits you.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Frost Breath Recast"
+                  }
+    },
+    {
+        "id":  "frost-breath-resist",
+        "label":  "Frost Breath (Resist)",
+        "pattern":  "You resist the Frost Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Frost Breath Recast"
+                  }
+    },
+    {
+        "id":  "diseased-cloud",
+        "label":  "Diseased Cloud",
+        "pattern":  "Your body begins to rot.",
+        "duration":  12,
+        "category":  "CH Chain",
+        "timer":  {
+                      "name":  "Diseased Cloud Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "diseased-cloud-resist",
+        "label":  "Diseased Cloud (Resist)",
+        "pattern":  "You resist the Diseased Cloud spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Diseased Cloud Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "entomb-in-ice",
+        "label":  "Entomb in Ice",
+        "pattern":  "You are entombed in ice.",
+        "duration":  18,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Entomb in Ice Recast"
+                  }
+    },
+    {
+        "id":  "cloud-of-fear",
+        "label":  "Cloud of Fear",
+        "pattern":  "Your mind is wracked by fear.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Cloud of Fear Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "cloud-of-fear-resist",
+        "label":  "Cloud of Fear (Resist)",
+        "pattern":  "You resist the Cloud of Fear spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Cloud of Fear Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "bellowing-winds",
+        "label":  "Bellowing Winds",
+        "pattern":  "You begin to spin.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Bellowing Winds Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "bellowing-winds-resist",
+        "label":  "Bellowing Winds (Resist)",
+        "pattern":  "You resist the Bellowing Winds spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Bellowing Winds Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "tsunami",
+        "label":  "Tsunami",
+        "pattern":  "A tsunami crushes you.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Tsunami Recast"
+                  }
+    },
+    {
+        "id":  "tsunami-resist",
+        "label":  "Tsunami (Resist)",
+        "pattern":  "You resist the Tsunami spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Tsunami Recast"
+                  }
+    },
+    {
+        "id":  "wave-of-flame",
+        "label":  "Wave of Flame",
+        "pattern":  "You feel your skin burn.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Wave of Flame Recast"
+                  }
+    },
+    {
+        "id":  "wave-of-flame-resist",
+        "label":  "Wave of Flame (Resist)",
+        "pattern":  "You resist the Wave of Flame spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Wave of Flame Recast"
+                  }
+    },
+    {
+        "id":  "flame-song-of-ro",
+        "label":  "Flame Song of Ro",
+        "pattern":  "You are immolated by flame.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Flame Song of Ro Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "flame-song-of-ro-resist",
+        "label":  "Flame Song of Ro (Resist)",
+        "pattern":  "You resist the Flame Song of Ro spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Flame Song of Ro Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "scream-of-chaos",
+        "label":  "Scream of Chaos",
+        "pattern":  "You experience chaotic weightlessness.  You have taken 100 points of damage.",
+        "duration":  12,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Scream of Chaos Recast"
+                  }
+    },
+    {
+        "id":  "scream-of-chaos-resist",
+        "label":  "Scream of Chaos (Resist)",
+        "pattern":  "You resist the Scream of Chaos spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Scream of Chaos Recast"
+                  }
+    },
+    {
+        "id":  "ice-breath",
+        "label":  "Ice Breath",
+        "pattern":  "Shards of magical ice rend you.",
+        "duration":  120,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Ice Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  10,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "D.A.",
+                                          "interrupt":  true
+                                      }
+                        }
+    },
+    {
+        "id":  "ice-breath-resist",
+        "label":  "Ice Breath (Resist)",
+        "pattern":  "You resist the Ice Breath spell!",
+        "duration":  120,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Ice Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  10,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "D.A.",
+                                          "interrupt":  true
+                                      }
+                        }
+    },
+    {
+        "id":  "mind-cloud",
+        "label":  "Mind Cloud",
+        "pattern":  "A cloud of pain covers you.",
+        "duration":  120,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Mind Cloud Recast"
+                  }
+    },
+    {
+        "id":  "mind-cloud-resist",
+        "label":  "Mind Cloud (Resist)",
+        "pattern":  "You resist the Mind Cloud spell!",
+        "duration":  120,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Mind Cloud Recast"
+                  }
+    },
+    {
+        "id":  "stream-of-acid",
+        "label":  "Stream of Acid",
+        "pattern":  "Your body burns as the acid hits you.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Stream of Acid Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "stream-of-acid-resist",
+        "label":  "Stream of Acid (Resist)",
+        "pattern":  "You resist the Stream of Acid Spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Stream of Acid Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "chaos-breath",
+        "label":  "Chaos Breath",
+        "pattern":  "^(?:You experience cha)otic weightlessness\\.  You have taken 12(?:33|60|64) points of damage\\.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Chaos Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "chaos-breath-resist",
+        "label":  "Chaos Breath (Resist)",
+        "pattern":  "You resist the Chaos Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Chaos Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "ceticious-cloud",
+        "label":  "Ceticious Cloud",
+        "pattern":  "Your legs lock in pain as you choke on the noxious poison.",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Ceticious Cloud Recast"
+                  }
+    },
+    {
+        "id":  "ceticious-cloud-resist",
+        "label":  "Ceticious Cloud (Resist)",
+        "pattern":  "You resist the Ceticious Cloud spell!",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Ceticious Cloud Recast"
+                  }
+    },
+    {
+        "id":  "immolating-breath",
+        "label":  "Immolating Breath",
+        "pattern":  "Your flesh is seared from your bones.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Immolating Breath Recast"
+                  }
+    },
+    {
+        "id":  "immolating-breath-resist",
+        "label":  "Immolating Breath (Resist)",
+        "pattern":  "You resist the Immolating Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Immolating Breath Recast"
+                  }
+    },
+    {
+        "id":  "blinding-fear",
+        "label":  "Blinding Fear",
+        "pattern":  "You freeze in terror.",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Blinding Fear Recast"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  24,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Blinding Fear stun off"
+                                      }
+                        }
+    },
+    {
+        "id":  "poison-breath",
+        "label":  "Poison Breath",
+        "pattern":  "A green mist seeps in to your skin.  You have taken ",
+        "duration":  35,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Poison Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Poison breath AOE"
+                  }
+    },
+    {
+        "id":  "poison-breath-resist",
+        "label":  "Poison Breath (Resist)",
+        "pattern":  "You resist the Poison Breath spell!",
+        "duration":  35,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Poison Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Resist Poison breath AOE"
+                  }
+    },
+    {
+        "id":  "trakanon-s-touch",
+        "label":  "Trakanon\u0027s Touch",
+        "pattern":  "You have been teleported.",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Trakanon\u0027s Touch Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Banished",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "ancient-breath",
+        "label":  "Ancient Breath",
+        "pattern":  "Your life force drains away.",
+        "duration":  60,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Ancient Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  10,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "DPS out",
+                                          "interrupt":  true
+                                      }
+                        }
+    },
+    {
+        "id":  "ancient-breath-resist",
+        "label":  "Ancient Breath (Resist)",
+        "pattern":  "You resist the Ancient Breath spell!",
+        "duration":  60,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Ancient Breath Recast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  10,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "DPS out",
+                                          "interrupt":  true
+                                      }
+                        }
+    },
+    {
+        "id":  "gift-of-aerr",
+        "label":  "Gift of Aerr",
+        "pattern":  "A small piece of your soul is sucked out of you.",
+        "duration":  15,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Gift of Aerr Recast"
+                  }
+    },
+    {
+        "id":  "mesmerizing-breath",
+        "label":  "Mesmerizing Breath",
+        "pattern":  "You are in a cloud of silence.",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Mesmerizing Breath Rescast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "mesmerizing-breath-resist",
+        "label":  "Mesmerizing Breath (Resist)",
+        "pattern":  "You resist the Mesmerizing Breath spell!",
+        "duration":  12,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Mesmerizing Breath Rescast"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "AoE off",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "putrefy-flesh",
+        "label":  "Putrefy Flesh",
+        "pattern":  "Your flesh begins to liquefy.",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Putrefy Flesh Recast"
+                  }
+    },
+    {
+        "id":  "putrefy-flesh-resist",
+        "label":  "Putrefy Flesh (Resist)",
+        "pattern":  "You resist the Putrefy Flesh spell!",
+        "duration":  30,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Putrefy Flesh Recast"
+                  }
+    },
+    {
+        "id":  "rotting-flesh",
+        "label":  "Rotting Flesh",
+        "pattern":  "Your flesh begins to rot.",
+        "duration":  35,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Rotting Flesh Recast"
+                  }
+    },
+    {
+        "id":  "rotting-flesh-resist",
+        "label":  "Rotting Flesh (Resist)",
+        "pattern":  "You resist the Rotting Flesh spell!",
+        "duration":  35,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Rotting Flesh Recast"
+                  }
+    },
+    {
+        "id":  "avatar-of-war-depop",
+        "label":  "Avatar of War depop",
+        "pattern":  "The Avatar of War shouts \u0027Who dares defile my temple?! Come forth and face me!\u0027",
+        "duration":  3600,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Avatar of War depop"
+                  }
+    },
+    {
+        "id":  "statue-lockout",
+        "label":  "Statue lockout",
+        "pattern":  "The Avatar of War shouts \u0027Who dares defile my temple?! Come forth and face me!\u0027",
+        "duration":  1200,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Statue Lockout"
+                  }
+    },
+    {
+        "id":  "pog-respawn",
+        "label":  "PoG respawn",
+        "pattern":  "^(?:a protecto)r of growth has been slain by (?:[^!]+)!$|^(?:You have slain a protecto)r of growth!$",
+        "duration":  1440,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Protector of Growth Respawn"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Protector re-spawn in one minute"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-1",
+        "label":  "1 - 1",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  210,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "1 - 1"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-2",
+        "label":  "1 - 2",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  420,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "1 - 2"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-3",
+        "label":  "1 - 3",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  630,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "1 - 3"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-4",
+        "label":  "1 - 4 ",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  840,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "1 - 4 "
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-5",
+        "label":  "1 - 5",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1050,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "1 - 5"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-6",
+        "label":  "1 - 6",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1260,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "1 - 6"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "1-7",
+        "label":  "1 - 7",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1470,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "1 - 7"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-1",
+        "label":  "2 - 1",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  1986,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "2 - 1"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-2",
+        "label":  "2 - 2",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2196,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "2 - 2"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-3",
+        "label":  "2 - 3 ",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2406,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "2 - 3 "
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-4",
+        "label":  "2 - 4",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2616,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "2 - 4"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-5",
+        "label":  "2 - 5",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  2826,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "2 - 5"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-6",
+        "label":  "2 - 6",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3036,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "2 - 6"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "2-7",
+        "label":  "2 - 7",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3246,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "2 - 7"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-1",
+        "label":  "3 - 1",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3761,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "3 - 1"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-2",
+        "label":  "3 - 2",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  3971,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "3 - 2"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-3",
+        "label":  "3 - 3",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4181,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "3 - 3"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-4",
+        "label":  "3 - 4",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4391,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "3 - 4"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-5",
+        "label":  "3 - 5",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4601,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "3 - 5"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-6",
+        "label":  "3 - 6",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  4811,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "3 - 6"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "3-7",
+        "label":  "3 - 7",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  5021,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "3 - 7"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "4-narandi",
+        "label":  "4 - Narandi",
+        "pattern":  "^Narandi the Wretched shouts, \u0027No need to pray to your little God stumpymen, you\u0027ll be meeting him in person soon enough!",
+        "duration":  5526,
+        "category":  "Ring War",
+        "timer":  {
+                      "name":  "4 - Narandi"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "coth",
+        "label":  "COTH",
+        "pattern":  "^(?:(?\u003ccother\u003e[^ ]+) tells the group), \u0027COTH (?\u003ccothee\u003e[^\u0027]+)\u0027",
+        "duration":  12,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "COTH ${cothee}"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "COTH COTH COTH",
+                      "interrupt":  true
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  2,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Landing",
+                                          "interrupt":  true
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "coth2",
+        "label":  "COTH2",
+        "pattern":  "^(?:(?\u003ccother\u003e[^ ]+) tells the guild), \u0027COTH (?\u003ccothee\u003e[^\u0027]+)\u0027",
+        "duration":  12,
+        "category":  "COTH",
+        "timer":  {
+                      "name":  "COTH ${cothee}"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "COTH COTH COTH "
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  2,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Landing"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "black-disease",
+        "label":  "Black (Disease)",
+        "pattern":  "You are covered by an aura of black petals.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Black Flower"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Black Flower"
+                                      }
+                        }
+    },
+    {
+        "id":  "blue-magic",
+        "label":  "Blue (Magic)",
+        "pattern":  "You are covered by an aura of blue petals.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Blue Flower"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Blue Flower"
+                                      }
+                        }
+    },
+    {
+        "id":  "green-poison",
+        "label":  "Green (Poison)",
+        "pattern":  "You are covered by an aura of green petals.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Green Flower"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Green Flower"
+                                      }
+                        }
+    },
+    {
+        "id":  "red-fire",
+        "label":  "Red (Fire)",
+        "pattern":  "You are covered by an aura of red petals.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Red Flower"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Red Flower"
+                                      }
+                        }
+    },
+    {
+        "id":  "white-cold",
+        "label":  "White (Cold)",
+        "pattern":  "You are covered by an aura of white petals.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "White Flower"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "White Flower"
+                                      }
+                        }
+    },
+    {
+        "id":  "captain-nalot-s-quickening",
+        "label":  "Captain Nalot\u0027s Quickening",
+        "pattern":  "You are filled by the spirit of water.",
+        "duration":  600,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Captain Nalot\u0027s Quickening"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Eyepatch of Plunder"
+                                      }
+                        }
+    },
+    {
+        "id":  "eye-of-zomm-beads",
+        "label":  "Eye of Zomm (Beads)",
+        "pattern":  "Your Holgresh Elder Beads begins to glow.",
+        "duration":  35,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Eye of Zomm"
+                  }
+    },
+    {
+        "id":  "gather-shadows",
+        "label":  "Gather Shadows",
+        "pattern":  "You gather shadows about you.",
+        "duration":  1200,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Gather Shadows"
+                  }
+    },
+    {
+        "id":  "grim-aura",
+        "label":  "Grim Aura",
+        "pattern":  "A dull aura covers your hand.",
+        "duration":  1620,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Grim Aura"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Grim Aura"
+                                      }
+                        }
+    },
+    {
+        "id":  "journeyman-s-boots",
+        "label":  "Journeyman\u0027s Boots",
+        "pattern":  "Your feet feel quick.",
+        "duration":  1080,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Journeyman\u0027s Boots"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  120,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Journeyman\u0027s Boots"
+                                      }
+                        }
+    },
+    {
+        "id":  "kilva-s-skin-of-flame",
+        "label":  "Kilva\u0027s Skin of Flame",
+        "pattern":  "Your skin beings to steam.",
+        "duration":  780,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Kilva\u0027s Skin of Flame"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Kilva\u0027s Skin of Flame"
+                                      }
+                        }
+    },
+    {
+        "id":  "null-potion",
+        "label":  "Null Potion",
+        "pattern":  "You begin casting Null Aura.",
+        "duration":  1804,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Null Potion"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  120,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Null Potion"
+                                      }
+                        }
+    },
+    {
+        "id":  "spikecoat",
+        "label":  "Spikecoat",
+        "pattern":  "Spikes spring from your skin.",
+        "duration":  10800,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Spikecoat"
+                  }
+    },
+    {
+        "id":  "divine-aura",
+        "label":  "Divine Aura",
+        "pattern":  "The gods have rendered you invulnerable.",
+        "duration":  18,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Divine Aura"
+                  }
+    },
+    {
+        "id":  "divine-barrier",
+        "label":  "Divine Barrier",
+        "pattern":  "You are surrounded by a divine barrier.",
+        "duration":  18,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Divine Barrier"
+                  }
+    },
+    {
+        "id":  "harmshield",
+        "label":  "Harmshield",
+        "pattern":  "You no longer feel pain.",
+        "duration":  18,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Harmshield"
+                  }
+    },
+    {
+        "id":  "quivering-veil-of-xarn",
+        "label":  "Quivering Veil of Xarn",
+        "pattern":  "You are surrounded by the Quivering Veil of Xarn.",
+        "duration":  18,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Quivering Veil of Xarn"
+                  }
+    },
+    {
+        "id":  "resist-cold",
+        "label":  "Resist Cold",
+        "pattern":  "You feel resistant from cold.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Resist Cold"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Cold Resist"
+                                      }
+                        }
+    },
+    {
+        "id":  "resist-disease",
+        "label":  "Resist Disease",
+        "pattern":  "You feel resistant from disease.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Resist Disease"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Disease Resist"
+                                      }
+                        }
+    },
+    {
+        "id":  "resist-fire",
+        "label":  "Resist Fire",
+        "pattern":  "You feel resistant from fire.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Resist Fire"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Fire Resist"
+                                      }
+                        }
+    },
+    {
+        "id":  "resist-magic",
+        "label":  "Resist Magic",
+        "pattern":  "You feel resistant from magic.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Resist Magic"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Magic Resist"
+                                      }
+                        }
+    },
+    {
+        "id":  "resist-poison",
+        "label":  "Resist Poison",
+        "pattern":  "You feel resistant from poison.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Resist Poison"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Poison Resist"
+                                      }
+                        }
+    },
+    {
+        "id":  "invisibility",
+        "label":  "Invisibility",
+        "pattern":  "You vanish.",
+        "duration":  1440,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Invisibility"
+                  }
+    },
+    {
+        "id":  "see-invis-ultravision",
+        "label":  "See Invis / Ultravision",
+        "pattern":  "Your eyes tingle.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "See Invis / Ultravision"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Ultravision"
+                                      }
+                        }
+    },
+    {
+        "id":  "spirit-of-wolf",
+        "label":  "Spirit of Wolf",
+        "pattern":  "You feel the spirit of wolf enter you.",
+        "duration":  2166,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Spirit of Wolf"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Spirit of Wolf"
+                                      }
+                        }
+    },
+    {
+        "id":  "regrowth",
+        "label":  "Regrowth",
+        "pattern":  "You begin to regenerate.",
+        "duration":  1140,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Regrowth"
+                  }
+    },
+    {
+        "id":  "avatar",
+        "label":  "Avatar",
+        "pattern":  "Your body screams with the power of an Avatar.",
+        "duration":  360,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Avatar"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Prock"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Avatar"
+                                      }
+                        }
+    },
+    {
+        "id":  "illusion",
+        "label":  "Illusion",
+        "pattern":  "You feel different.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Illusion"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "1 minute until illusion drops"
+                                      }
+                        }
+    },
+    {
+        "id":  "scale-of-wolf",
+        "label":  "Scale of Wolf",
+        "pattern":  "You feel the spirit-scale of wolf enter you.",
+        "duration":  2700,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Scale of Wolf"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Scale of Wolf"
+                                      }
+                        }
+    },
+    {
+        "id":  "levitate",
+        "label":  "Levitate",
+        "pattern":  "Your feet leave the ground.",
+        "duration":  726,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Levitate"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Levitate"
+                                      }
+                        }
+    },
+    {
+        "id":  "bind-sight",
+        "label":  "Bind Sight",
+        "pattern":  "Your sight is bound.",
+        "duration":  720,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Bind Sight"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Bind Sight"
+                                      }
+                        }
+    },
+    {
+        "id":  "shifting-sight",
+        "label":  "Shifting Sight",
+        "pattern":  "You shift your sight.",
+        "duration":  900,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Shifting Sight"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Shifting Sight"
+                                      }
+                        }
+    },
+    {
+        "id":  "dance-of-the-blade",
+        "label":  "Dance of the Blade",
+        "pattern":  "The edge of the blade sharpens your mind..",
+        "duration":  150,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Dance of the Blade"
+                  }
+    },
+    {
+        "id":  "aegis",
+        "label":  "Aegis",
+        "pattern":  "An aegis of faith engulfs you.",
+        "duration":  8640,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Aegis"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Aegis"
+                                      }
+                        }
+    },
+    {
+        "id":  "aegolism",
+        "label":  "Aegolism",
+        "pattern":  "You are filled with the power of Aegolism.",
+        "duration":  9000,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Aegolism"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Aegolism"
+                                      }
+                        }
+    },
+    {
+        "id":  "bulwark-of-faith",
+        "label":  "Bulwark of Faith",
+        "pattern":  "A bulwark of faith engulfs you.",
+        "duration":  4860,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Bulwark of Faith"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Bulwark of Faith"
+                                      }
+                        }
+    },
+    {
+        "id":  "celestial-elixir",
+        "label":  "Celestial Elixir",
+        "pattern":  "Celestial Elixir pumps through your body.",
+        "duration":  24,
+        "category":  "Heals",
+        "timer":  {
+                      "name":  "Celestial Elixir"
+                  }
+    },
+    {
+        "id":  "celestial-healing",
+        "label":  "Celestial Healing",
+        "pattern":  "Celestial light pumps through your body.",
+        "duration":  24,
+        "category":  "Heals",
+        "timer":  {
+                      "name":  "Celestial Healing"
+                  }
+    },
+    {
+        "id":  "divine-intervention",
+        "label":  "Divine Intervention",
+        "pattern":  "^(:?{s} feels? the watchful eyes of th)e gods upon (?:them|you)\\.",
+        "duration":  600,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Divine Intervention"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  30
+                        },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "D.I. off",
+                                         "interrupt":  true
+                                     }
+                       },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "heroic-bond",
+        "label":  "Heroic Bond",
+        "pattern":  "You feel heroic.",
+        "duration":  4320,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Heroic Bond"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Heroic Bond"
+                                      }
+                        }
+    },
+    {
+        "id":  "symbol-of-marzin",
+        "label":  "Symbol of Marzin",
+        "pattern":  "A mystic symbol flashes before your eyes.",
+        "duration":  3780,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Symbol of Marzin"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Symbol"
+                                      }
+                        }
+    },
+    {
+        "id":  "symbol-of-naltron",
+        "label":  "Symbol of Naltron",
+        "pattern":  "A mystic symbol flashes before your eyes.",
+        "duration":  3240,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Symbol of Naltron"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Symbol"
+                                      }
+                        }
+    },
+    {
+        "id":  "circle-of-summer",
+        "label":  "Circle of Summer",
+        "pattern":  "You are surrounded by a summer haze.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Circle of Summer"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Circle of Summer"
+                                      }
+                        }
+    },
+    {
+        "id":  "circle-of-winter",
+        "label":  "Circle of Winter",
+        "pattern":  "You are surrounded by a winter haze.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Circle of Winter"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Circle of Winter"
+                                      }
+                        }
+    },
+    {
+        "id":  "protection-of-the-glades",
+        "label":  "Protection of the Glades",
+        "pattern":  "Your skin shimmers.",
+        "duration":  6000,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Protection of the Glades"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Protection of the Glades"
+                                      }
+                        }
+    },
+    {
+        "id":  "aanya-s-quickening",
+        "label":  "Aanya\u0027s Quickening",
+        "pattern":  "You experience a quickening.",
+        "duration":  1440,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Aanya\u0027s Quickening"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Aanya\u0027s Quickening"
+                                      }
+                        }
+    },
+    {
+        "id":  "clarity-ii",
+        "label":  "Clarity II",
+        "pattern":  "^(A soft br)eeze slips through your mind\\.$",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Clarity II"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Clarity 2"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "enlightenment",
+        "label":  "Enlightenment",
+        "pattern":  "You have been enlightened.",
+        "duration":  3600,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Enlightenment"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Enlightenment"
+                                      }
+                        }
+    },
+    {
+        "id":  "gift-of-brilliance",
+        "label":  "Gift of Brilliance",
+        "pattern":  "Your thoughts begin to race and flow faster.",
+        "duration":  6000,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Gift of Brilliance"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Gift of Brilliance"
+                                      }
+                        }
+    },
+    {
+        "id":  "group-resist-magic",
+        "label":  "Group Resist Magic",
+        "pattern":  "You feel protected from magic.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Group Resist Magic"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Group Resist Magic"
+                                      }
+                        }
+    },
+    {
+        "id":  "rune-v",
+        "label":  "Rune V",
+        "pattern":  "A coat of shimmering runes surround you.",
+        "duration":  6600,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Rune"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Rune"
+                                      }
+                        }
+    },
+    {
+        "id":  "speed-of-the-shissar",
+        "label":  "Speed of the Shissar",
+        "pattern":  "Your body pulses with the spirit of the Shissar.",
+        "duration":  1800,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Speed of the Shissar"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Speed of the Shissar"
+                                      }
+                        }
+    },
+    {
+        "id":  "visions-of-grandeur",
+        "label":  "Visions of Grandeur",
+        "pattern":  "You experience visions of grandeur.",
+        "duration":  2520,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Visions of Grandeur"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Visions of Grandeur"
+                                      }
+                        }
+    },
+    {
+        "id":  "wonderous-rapidity",
+        "label":  "Wonderous Rapidity",
+        "pattern":  "You begin to move with wonderous rapidity.",
+        "duration":  1140,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Wonderous Rapidity"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Wonderous Rapidity"
+                                      }
+                        }
+    },
+    {
+        "id":  "gift-of-pure-thought",
+        "label":  "Gift of Pure Thought",
+        "pattern":  "A soft breeze slips through your mind..",
+        "duration":  1980,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Gift of Pure Thought"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Gift of Pure Thought"
+                                      }
+                        }
+    },
+    {
+        "id":  "bedlam",
+        "label":  "Bedlam",
+        "pattern":  "Your eyes gleam with bedlam.",
+        "duration":  420,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Bedlam"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Bedlam"
+                                      }
+                        }
+    },
+    {
+        "id":  "cadeau-of-flame",
+        "label":  "Cadeau of Flame",
+        "pattern":  "You are enveloped in a cadeau of flame.",
+        "duration":  420,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Cadeau of Flame"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Cadeau of Flame"
+                                      }
+                        }
+    },
+    {
+        "id":  "dead-man-floating",
+        "label":  "Dead Man Floating",
+        "pattern":  "You become like the dead.",
+        "duration":  4320,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Dead Man Floating"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Dead Man Floating"
+                                      }
+                        }
+    },
+    {
+        "id":  "divine-glory",
+        "label":  "Divine Glory",
+        "pattern":  "You begin to radiate with divine glory.",
+        "duration":  3000,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Divine Glory"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Divine Glory"
+                                      }
+                        }
+    },
+    {
+        "id":  "divine-strength",
+        "label":  "Divine Strength",
+        "pattern":  "You begin to radiate with divine strength.",
+        "duration":  3000,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Divine Strength"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Divine Strength"
+                                      }
+                        }
+    },
+    {
+        "id":  "call-of-the-predator",
+        "label":  "Call of the Predator",
+        "pattern":  "The spirit of the predator strengthens your attacks.",
+        "duration":  4524,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Call of the Predator"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300
+                        }
+    },
+    {
+        "id":  "strength-of-nature",
+        "label":  "Strength of Nature",
+        "pattern":  "Nature\u0027s strength flows through your muscles.",
+        "duration":  3600,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Strength of Nature"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  5
+                        }
+    },
+    {
+        "id":  "assidious-vision",
+        "label":  "Assidious Vision",
+        "pattern":  "Your spirit drifts from your body.",
+        "duration":  10800,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Assidious Vision"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Assidious Vision"
+                                      }
+                        }
+    },
+    {
+        "id":  "focus-of-spirit",
+        "label":  "Focus of Spirit",
+        "pattern":  "You feel focused.",
+        "duration":  6000,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Focus of Spirit"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Focus of Spirit"
+                                      }
+                        }
+    },
+    {
+        "id":  "primal-essence",
+        "label":  "Primal Essence",
+        "pattern":  "You feel primeval.",
+        "duration":  3780,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Primal Essence"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Primal Essence"
+                                      }
+                        }
+    },
+    {
+        "id":  "riotous-health",
+        "label":  "Riotous Health",
+        "pattern":  "Your body shines with riotous health.",
+        "duration":  4320,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Riotous Health"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Riotous Health"
+                                      }
+                        }
+    },
+    {
+        "id":  "talisman-of-jasinth",
+        "label":  "Talisman of Jasinth",
+        "pattern":  "You have been protected by the Talisman of Jasinth.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Talisman of Jasinth"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Talisman of Jasinth"
+                                      }
+                        }
+    },
+    {
+        "id":  "torpor",
+        "label":  "Torpor",
+        "pattern":  "You fall into a state of torpor.",
+        "duration":  24,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Torpor"
+                  }
+    },
+    {
+        "id":  "unfailing-reverence",
+        "label":  "Unfailing Reverence",
+        "pattern":  "People look at you with unfailing reverence.",
+        "duration":  4320,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Unfailing Reverence"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Unfailing Reverence"
+                                      }
+                        }
+    },
+    {
+        "id":  "overwhelming-splendor",
+        "label":  "Overwhelming Splendor",
+        "pattern":  "You are adorned in an aura of radiant grace.",
+        "duration":  4860,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Overwhelming Splendor"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Overwelming Splendor"
+                                      }
+                        }
+    },
+    {
+        "id":  "nimble",
+        "label":  "Nimble",
+        "pattern":  "You feel deliriously nimble.",
+        "duration":  4320,
+        "category":  "Shaman",
+        "timer":  {
+                      "name":  "Nimble"
+                  }
+    },
+    {
+        "id":  "shield-of-the-magi",
+        "label":  "Shield of the Magi",
+        "pattern":  "You feel armored.",
+        "duration":  5400,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Shield of the Magi"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Shield of the Mayje-eye"
+                                      }
+                        }
+    },
+    {
+        "id":  "razor-fang",
+        "label":  "Razor Fang",
+        "pattern":  "{S} is surrounded by an aura of nature.",
+        "duration":  120,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Blessing of Nature"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Blessing of Nature",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "feign-death",
+        "label":  "Feign Death",
+        "pattern":  "You must be sitting to prepare to camp.",
+        "duration":  10,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Feign Death"
+                  }
+    },
+    {
+        "id":  "mend",
+        "label":  "Mend",
+        "pattern":  "You mend your wounds and heal some damage.",
+        "duration":  360,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Mend"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Mend available"
+                                     }
+                       }
+    },
+    {
+        "id":  "envenomed-bolt",
+        "label":  "Envenomed Bolt",
+        "pattern":  "^{s}(?: has be)en poisoned\\.$",
+        "duration":  48,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Envenomed Bolt"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "plague",
+        "label":  "Plague",
+        "pattern":  "^(?:{s} sweats and shivers, looking )feverish\\.$",
+        "duration":  132,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Plague"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "soul-well",
+        "label":  "Soul Well",
+        "pattern":  "^(?:{s} has taken 11 damage from your )Soul Well\\.$",
+        "duration":  57,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Soul Well"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "splurt",
+        "label":  "Splurt",
+        "pattern":  "^(?:{s} has taken 11 damage from yo)ur Splurt\\.$",
+        "duration":  102,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Splurt"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cajole-undead",
+        "label":  "Cajole Undead",
+        "pattern":  "^{s} moans\\.$",
+        "duration":  1140,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Cajole Undead"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dread-of-night",
+        "label":  "Dread of Night",
+        "pattern":  "^(?:{s} has been instilled with the )dread of night\\.$",
+        "duration":  48,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Dread of Night"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "augmentation-of-death",
+        "label":  "Augmentation of Death",
+        "pattern":  "^(?:{s}\u0027s eyes) gleam with madness\\.$",
+        "duration":  1050,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "{s} - Augmentation of Death"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "deadeye",
+        "label":  "Deadeye",
+        "pattern":  "Your vision shifts.",
+        "duration":  1620,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Deadeye"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Deadeye"
+                                      }
+                        }
+    },
+    {
+        "id":  "lich",
+        "label":  "Lich",
+        "pattern":  "You feel the skin peel from your bones.",
+        "duration":  1140,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Lich"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Litch"
+                                      }
+                        }
+    },
+    {
+        "id":  "manaskin",
+        "label":  "Manaskin",
+        "pattern":  "Your skin gleams with an incandescent glow.",
+        "duration":  7200,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Manaskin"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Manaskin"
+                                      }
+                        }
+    },
+    {
+        "id":  "shield-of-the-magi-2",
+        "label":  "Shield of the Magi",
+        "pattern":  "You feel armored.",
+        "duration":  5400,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Shield of the Magi"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Shield of the Magi"
+                                      }
+                        }
+    },
+    {
+        "id":  "feign-death-2",
+        "label":  "Feign Death",
+        "pattern":  "You begin casting Feign Death.",
+        "duration":  16,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Feign Death"
+                  }
+    },
+    {
+        "id":  "pact-of-shadow",
+        "label":  "Pact of Shadow",
+        "pattern":  "^(?:{s} pulses with a blue-gr)een aura\\.$",
+        "duration":  24,
+        "category":  "Heals",
+        "timer":  {
+                      "name":  "{s} - Pact of Shadow"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "screaming-terror",
+        "label":  "Screaming Terror",
+        "pattern":  "^(?:{s} begins) to scream\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Screaming Terror"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "sight-graft",
+        "label":  "Sight Graft",
+        "pattern":  "You begin casting Sight Graft.",
+        "duration":  1625,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Sight Graft"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  300,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Sight Graft"
+                                      }
+                        }
+    },
+    {
+        "id":  "backstab",
+        "label":  "Backstab",
+        "pattern":  "(^You backstab .*)|(^You try to backstab .*)",
+        "duration":  5,
+        "category":  "Middle // Short Duration Resist Buffs",
+        "timer":  {
+                      "name":  "Backstab"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "evade-success",
+        "label":  "Evade Success",
+        "pattern":  "You have momentarily ducked away from the main combat.",
+        "duration":  10,
+        "category":  "Middle // Short Duration Resist Buffs",
+        "timer":  {
+                      "name":  "Evade Success"
+                  }
+    },
+    {
+        "id":  "evade-fail",
+        "label":  "Evade Fail",
+        "pattern":  "Your attempts at ducking clear of combat fail.",
+        "duration":  10,
+        "category":  "Middle // Short Duration Resist Buffs",
+        "timer":  {
+                      "name":  "Evade Fail"
+                  }
+    },
+    {
+        "id":  "silver-whip",
+        "label":  "Silver Whip",
+        "pattern":  "Your skin takes on a silvery hue.",
+        "duration":  2160,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Silver Whip"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Rune Prock",
+                      "interrupt":  true
+                  }
+    },
+    {
+        "id":  "burnout",
+        "label":  "Burnout",
+        "pattern":  "{S} goes berserk.",
+        "duration":  900,
+        "category":  "Self-Buffs",
+        "timer":  {
+                      "name":  "{S} Burnout"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dark-cloak-of-the-sky",
+        "label":  "Dark Cloak of the Sky",
+        "pattern":  "You feel your heart begin to race.",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Dark Cloak of the Sky"
+                  }
+    },
+    {
+        "id":  "bind-wound",
+        "label":  "Bind Wound",
+        "pattern":  "^(?:You begin )to bandage {s}\\.$",
+        "duration":  10,
+        "category":  "Heals",
+        "timer":  {
+                      "name":  "Bind Wound - {s}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "camping",
+        "label":  "Camping",
+        "pattern":  "It will take you about 30 seconds to prepare your camp.",
+        "duration":  30,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Camping"
+                  }
+    },
+    {
+        "id":  "enrage-begin",
+        "label":  "Enrage (Begin)",
+        "pattern":  "^(?:{s} has become) ENRAGED\\.$",
+        "duration":  14,
+        "category":  "AoEs",
+        "timer":  {
+                      "name":  "Enrage"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Enraged!",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "server-shutdown",
+        "label":  "Server Shutdown",
+        "pattern":  "\u003c[SERVER MESSAGE]\u003e: Server shut down initiated. Please find a safe place to camp. Server will shut down in 10 minutes.",
+        "duration":  600,
+        "category":  "Notifications",
+        "timer":  {
+                      "name":  "Server Shutdown"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  60,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Shutdown in one minute"
+                                      }
+                        }
+    },
+    {
+        "id":  "nillipuss-death",
+        "label":  "Nillipuss death",
+        "pattern":  "My body lies broken by your wicked hand. I place a curse on your soul and a pox on this land!",
+        "duration":  7200,
+        "category":  "Common",
+        "timer":  {
+                      "name":  "Nillipuss Spawn"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Killed"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  120,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "two minutes"
+                                      }
+                        }
+    },
+    {
+        "id":  "forage",
+        "label":  "Forage",
+        "pattern":  "(You have scrounged up some food|You have scrounged up some water|You fail to locate any food nearby|You have scrounged up some fishing grubs)",
+        "duration":  100,
+        "category":  "Common",
+        "timer":  {
+                      "name":  "Forage"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  1,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "forage"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "wort-pot",
+        "label":  "Wort Pot",
+        "pattern":  "^You feel your body go numb\\.$",
+        "duration":  360,
+        "category":  "Middle // Short Duration Resist Buffs",
+        "timer":  {
+                      "name":  "Wort Pot \u003e\u003e {COUNTER}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "calm",
+        "label":  "Calm",
+        "pattern":  "^(?:{s} looks )less aggressive\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "CALM - {s}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "pacify",
+        "label":  "Pacify",
+        "pattern":  "^(?:{s} looks )less aggressive\\.$",
+        "duration":  420,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "PACIFY - {s}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "rest-the-dead",
+        "label":  "Rest the Dead",
+        "pattern":  "^{s} looks ambivalent\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Rest the Dead"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "resurrection-effects",
+        "label":  "Resurrection Effects",
+        "pattern":  "You regain some experience from resurrection.",
+        "duration":  326,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "Resurrection Effects"
+                  }
+    },
+    {
+        "id":  "denon-s-bereavement",
+        "label":  "Denon\u0027s Bereavement",
+        "pattern":  "^{s} convulses\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Denon\u0027s Bereavement"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Den ons",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "angstlich-s-assonance",
+        "label":  "Angstlich\u0027s Assonance",
+        "pattern":  "^(?:{s} has b)een deafened\\.$",
+        "duration":  60,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Angstlich\u0027s Assonance"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Bard slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "asphyxiate",
+        "label":  "Asphyxiate",
+        "pattern":  "^(?:{s} begins) to choke\\.$",
+        "duration":  120,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Asphyxiate"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cripple",
+        "label":  "Cripple",
+        "pattern":  "^(?:{s} has bee)n crippled\\.$",
+        "duration":  360,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Cripple"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fixation-of-ro",
+        "label":  "Fixation of Ro",
+        "pattern":  "^(?:{s} is surrounded by an outline of) cold flame\\.$",
+        "duration":  600,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Fixation of Ro"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fufil-s-curtailing-chant",
+        "label":  "Fufil\u0027s Curtailing Chant",
+        "pattern":  "^{s}\u0027s hair stands on end\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Fufil\u0027s Curtailing Chant"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Foo fils",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "insipid-weakness",
+        "label":  "Insipid Weakness",
+        "pattern":  "^{s} is weakened\\.$",
+        "duration":  215,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Insipid Weakness"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "occlusion-of-sound",
+        "label":  "Occlusion of Sound",
+        "pattern":  "^{s} reels in pain and loses concentration\\.$",
+        "duration":  18,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Occlusion of Sound"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Occlusioned",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ro-s-fiery-sundering",
+        "label":  "Ro\u0027s Fiery Sundering",
+        "pattern":  "^{s} is immolated by blazing flames\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Ro\u0027s Fiery Sundering"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "scent-of-terris",
+        "label":  "Scent of Terris",
+        "pattern":  "^({s} is surrounded by a d)ark haze\\.$",
+        "duration":  780,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Scent of Terris"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "torment-of-argli",
+        "label":  "Torment of Argli",
+        "pattern":  "^(?:{s} screams from the Torment )of Argli\\.$",
+        "duration":  120,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Torment of Argli"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "tashania",
+        "label":  "Tashania",
+        "pattern":  "^(?:{s} gla)nces nervously about\\.$",
+        "duration":  780,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Tashania"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Tash",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "forlorn-deeds",
+        "label":  "Forlorn Deeds",
+        "pattern":  "^{s} slows down\\.$",
+        "duration":  180,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Forlorn Deeds"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Enchanter slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "turgur-s-insects",
+        "label":  "Turgur\u0027s Insects",
+        "pattern":  "^{s} yawns\\.$",
+        "duration":  360,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Turgur\u0027s Insects"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Shaman slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "waves-of-the-deep-sea",
+        "label":  "Waves of the Deep Sea",
+        "pattern":  "^(?:{s} is crushe)d by a wall of water\\.$",
+        "duration":  150,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Trident Slow"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Trident slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "mark-of-karn",
+        "label":  "Mark of Karn",
+        "pattern":  "^(?:{s}\u0027s sk)in gleams with a pure aura\\.$",
+        "duration":  210,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Mark of Karn"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Mock",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "earthcall",
+        "label":  "Earthcall",
+        "pattern":  "^(?:{s} is slowed by) the embracing earth\\.$",
+        "duration":  150,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Earthcall"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Ranger slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "breath-of-the-sea",
+        "label":  "Breath of the Sea",
+        "pattern":  "^(?:{s} is slowed by the )mist of the seas\\.$ ",
+        "duration":  60,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Breath of the Sea"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Wavecrasher slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "mesmerize",
+        "label":  "Mesmerize",
+        "pattern":  "^(?:{s} has b)een mesmerized\\.$",
+        "duration":  24,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "Mesmerize"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "malo",
+        "label":  "Malo",
+        "pattern":  "^(?:{s} looks v)ery uncomfortable\\.$",
+        "duration":  780,
+        "category":  "Debuffs",
+        "timer":  {
+                      "name":  "{s} - Malo"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Malo",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "razor-fang-2",
+        "label":  "Razor Fang",
+        "pattern":  "{S} is surrounded by an aura of nature.",
+        "duration":  120,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Blessing of Nature"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Blessing of Nature",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "deftdance",
+        "label":  "Deftdance",
+        "pattern":  "You prance about nimbly.",
+        "duration":  15,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Deftdance"
+                  }
+    },
+    {
+        "id":  "deftdance-cooldown",
+        "label":  "Deftdance (Cooldown)",
+        "pattern":  "Your movements return to normal.",
+        "duration":  4304,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Deftdance (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "deftdance-others",
+        "label":  "Deftdance (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) dances abo)ut nimbly\\.$",
+        "duration":  15,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Deftdance"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "puretone",
+        "label":  "Puretone",
+        "pattern":  "Your voice becomes perfectly melodious..",
+        "duration":  240,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Puretone"
+                  }
+    },
+    {
+        "id":  "puretone-cooldown",
+        "label":  "Puretone (Cooldown)",
+        "pattern":  "Your voice loses its perfection.",
+        "duration":  4079,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Puretone (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "puretone-others",
+        "label":  "Puretone (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s voice becomes perfec)tly melodious\\.$",
+        "duration":  240,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Puretone"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "innerflame",
+        "label":  "Innerflame",
+        "pattern":  "Your muscles bulge with the force of will.",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Innerflame"
+                  }
+    },
+    {
+        "id":  "innerflame-cooldown",
+        "label":  "Innerflame (Cooldown)",
+        "pattern":  "Your strength of will fades.",
+        "duration":  1607,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Innerflame (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "innerflame-others",
+        "label":  "Innerflame (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s muscles) bulge with the force of will\\.$",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Innerflame"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "stonestance",
+        "label":  "Stonestance",
+        "pattern":  "Your body becomes one with the earth.",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Stonestance"
+                  }
+    },
+    {
+        "id":  "stonestance-cooldown",
+        "label":  "Stonestance (Cooldown)",
+        "pattern":  "You are no longer one with the earth.",
+        "duration":  227,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Stonestance (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "stonestance-others",
+        "label":  "Stonestance (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s feet become one with )the earth\\.$",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Stonestance"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "voiddance",
+        "label":  "Voiddance",
+        "pattern":  "You become untouchable.",
+        "duration":  8,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Voiddance"
+                  }
+    },
+    {
+        "id":  "voiddance-cooldown",
+        "label":  "Voiddance (Cooldown)",
+        "pattern":  "You movements return to normal.",
+        "duration":  3231,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Voiddance (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "voiddance-others",
+        "label":  "Voiddance (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) beco)mes untouchable\\.$",
+        "duration":  8,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Voiddance"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "whirlwind",
+        "label":  "Whirlwind",
+        "pattern":  "Your instincts take over as you turn aside every attack.",
+        "duration":  9,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Whirlwind"
+                  }
+    },
+    {
+        "id":  "whirlwind-cooldown",
+        "label":  "Whirlwind (Cooldown)",
+        "pattern":  "Your fury fades.",
+        "duration":  3170,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Whirlwind (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "whirlwind-others",
+        "label":  "Whirlwind (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s face becomes twisted w)ith fury\\.$",
+        "duration":  9,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Whirlwind"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "weapon-shield",
+        "label":  "Weapon Shield",
+        "pattern":  "Your weapons begin to spin.",
+        "duration":  20,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Weapon Shield"
+                  }
+    },
+    {
+        "id":  "weapon-shield-cooldown",
+        "label":  "Weapon Shield (Cooldown)",
+        "pattern":  "Your weapons slow down.",
+        "duration":  4299,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Weapon Shield (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "weapon-shield-others",
+        "label":  "Weapon Shield (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^\u0027]+)\u0027s weapons begin) to spin\\.$",
+        "duration":  20,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Weapon Shield"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "defensive",
+        "label":  "Defensive",
+        "pattern":  "You assume a defensive fighting style..",
+        "duration":  180,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Defensive"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  30,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Defensive"
+                                      }
+                        }
+    },
+    {
+        "id":  "defensive-cooldown",
+        "label":  "Defensive (Cooldown)",
+        "pattern":  "^(?:You return to your nor)mal fighting style\\.$",
+        "duration":  419,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Defensive (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "defensive-others",
+        "label":  "Defensive (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) assumes a defe)nsive fighting style\\.$",
+        "duration":  180,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Defensive"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  30,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Defensive on ${name}"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "evasive",
+        "label":  "Evasive",
+        "pattern":  "You assume an evasive fighting style.",
+        "duration":  180,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Evasive"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  30,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Evasive"
+                                      }
+                        }
+    },
+    {
+        "id":  "evasive-cooldown",
+        "label":  "Evasive (Cooldown)",
+        "pattern":  "You return to your normal fighting style..",
+        "duration":  239,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "Evasive (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "evasive-others",
+        "label":  "Evasive (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) assumes an ev)asive fighting style\\.$",
+        "duration":  180,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Evasive"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  30,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Evasive on ${name}"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "nimble-2",
+        "label":  "Nimble",
+        "pattern":  "You bounce about nimbly.",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Nimble"
+                  }
+    },
+    {
+        "id":  "nimble-cooldown",
+        "label":  "Nimble (Cooldown)",
+        "pattern":  "Your movements return to normal.",
+        "duration":  1487,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Nimble (Cooldown)"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Disk up"
+                                     }
+                       }
+    },
+    {
+        "id":  "nimble-others",
+        "label":  "Nimble (Others)",
+        "pattern":  "^(?:(?\u003cname\u003e[^ ]+) bounces abou)t nimbly\\.$",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "${name} - Nimble"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "duelist",
+        "label":  "Duelist",
+        "pattern":  "Your muscles quiver with power.",
+        "duration":  12,
+        "category":  "Disciplines",
+        "timer":  {
+                      "name":  "{c} - Duelist"
+                  }
+    },
+    {
+        "id":  "duelist-cooldown",
+        "label":  "Duelist Cooldown",
+        "pattern":  "Your fury fades.",
+        "duration":  1800,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "Duelist Cooldown"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "DUELIST UP"
+                                     }
+                       }
+    },
+    {
+        "id":  "argli",
+        "label":  "ARGLI",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027ARGLI\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Torment of Argli"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Argli",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "cripple-2",
+        "label":  "CRIPPLE",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027CRIPPLED?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  360,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Cripple"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "denon",
+        "label":  "DENON",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027DENONS?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  18,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Denon\u0027s Bereavement"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Den ons",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "enc-slow",
+        "label":  "ENC SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027ENCH? SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  180,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Forlorn Deeds"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Enchanter slowed",
+                      "interrupt":  true
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  120,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Re-slow needed"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "fufils",
+        "label":  "FUFILS",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027FUFILS?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  18,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Fufil\u0027s Curtailing Chant"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Foo fils",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "malo-2",
+        "label":  "MALO",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027MALO(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Malo"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Malo",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "malosini",
+        "label":  "MALOSINI",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027MALOSINI\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  1200,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Malosini"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Malo sinnie",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "oos",
+        "label":  "OOS",
+        "pattern":  "^(?:(?:[^ ]+) tells the gui)ld, \u0027OOS\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  18,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Occlusion of Sound"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Occlusioned",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ro",
+        "label":  "RO",
+        "pattern":  "^(?:(?:[^ ]+) tells the gu)ild, \u0027RO\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  600,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Fixation of Ro"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "shm-slow",
+        "label":  "SHM SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the gu)ild, \u0027SHA?M(?\u003eAN)? SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  360,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Turgur\u0027s Insects"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Shaman slowed",
+                      "interrupt":  true
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  120,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Re-slow needed"
+                                      }
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "sunder",
+        "label":  "SUNDER",
+        "pattern":  "^(?:(?:[^ ]+) tells the guild), \u0027SUNDER\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  180,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Ro\u0027s Fiery Sundering"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "terris",
+        "label":  "TERRIS",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027TERRIS\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Scent of Terris"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Terris",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "tash",
+        "label":  "TASH",
+        "pattern":  "^(?:(?:[^ ]+) tells the guil)d, \u0027TASH(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  780,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Tashania"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Tash",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "bard-slow",
+        "label":  "BARD SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the g)uild, \u0027BA?RD SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  60,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Angstlich\u0027s Assonance"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Bard slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "rng-slow",
+        "label":  "RNG SLOW",
+        "pattern":  "^(?:(?:[^ ]+) tells the gu)ild, \u0027RNG SLO?W(?\u003eED)?\\s+-+\\s+{s}\\s*\u0027$",
+        "duration":  150,
+        "category":  "Debuffs (Guild)",
+        "timer":  {
+                      "name":  "{s} - Earthcall"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Ranger slowed",
+                      "interrupt":  true
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ch-chain",
+        "label":  "CH Chain",
+        "pattern":  "^(?\u003ccaster\u003e[^ ]+) (?:(?:tell(?\u003es the g(?\u003euild|roup)| your party)|say(?:s?(?\u003e out of character)?| to your guild)|shouts?|auctions?)), \u0027(?\u003cnum\u003e[0-9]{3}) - CH - (?\u003ctarget\u003e.*?)\u0027$",
+        "duration":  10,
+        "category":  "CH Chain",
+        "timer":  {
+                      "name":  "${num} CH -- ${target} (${caster})"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "rt-chain",
+        "label":  "RT Chain",
+        "pattern":  "^(?\u003ccaster\u003e[^ ]+) (?:(?:tell(?\u003es the g(?\u003euild|roup)| your party)|say(?:s?(?\u003e out of character)?| to your guild)|shouts?|auctions?)), \u0027(?\u003cnum\u003e[0-9]{3}) - RCH - (?\u003ctarget\u003e.*?)\u0027$",
+        "duration":  10,
+        "category":  "RT Chain",
+        "timer":  {
+                      "name":  "${num} CH -- ${target} (${caster})"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "ch-shout",
+        "label":  "CH_shout",
+        "pattern":  "^({s}|You) shouts?, \u0027(?\u003cnum\u003e[0-9]{3}) - CH - (?\u003ctarget\u003e.*?)\u0027$",
+        "duration":  10,
+        "category":  "CH Chain",
+        "timer":  {
+                      "name":  "${1} \u003e ${2}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "frenzied-strength-self",
+        "label":  "Frenzied Strength (self)",
+        "pattern":  "Your muscles erupt with frenzied strength.",
+        "duration":  180,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "STR: Self"
+                  }
+    },
+    {
+        "id":  "frenzied-strength-other",
+        "label":  "Frenzied Strength (other)",
+        "pattern":  "^([A-Za-z ]*)\\\u0027s muscles bulge with frenzied strength.",
+        "duration":  180,
+        "category":  "Buffs",
+        "timer":  {
+                      "name":  "STR: ${1}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-goes-berserk-burnout",
+        "label":  "{S} goes berserk. Burnout",
+        "pattern":  "{S} goes berserk.",
+        "duration":  900,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "{S} Burnout"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-looks-uncomfortable",
+        "label":  "{S} looks uncomfortable.",
+        "pattern":  "{S} looks uncomfortable.",
+        "duration":  540,
+        "category":  "Magician",
+        "timer":  {
+                      "name":  "{S} looks uncomfortable."
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "mend-2",
+        "label":  "Mend",
+        "pattern":  "you mend your wounds and heal some damage",
+        "duration":  360,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "Mend"
+                  }
+    },
+    {
+        "id":  "kick-try",
+        "label":  "Kick Try",
+        "pattern":  "you try to kick",
+        "duration":  6,
+        "category":  "Skills",
+        "timer":  {
+                      "name":  "You Miss"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "Football"
+                  }
+    },
+    {
+        "id":  "you-kick",
+        "label":  "You Kick",
+        "pattern":  "you kick",
+        "duration":  6,
+        "category":  "Skills",
+        "timer":  {
+                      "name":  "You Strike"
+                  },
+        "audio":  {
+                      "mode":  "tts",
+                      "text":  "John Madden"
+                  }
+    },
+    {
+        "id":  "feign-death-timer",
+        "label":  "Feign Death Timer",
+        "pattern":  "fd is not online at this time.",
+        "duration":  10,
+        "category":  "Skills",
+        "timer":  {
+                      "name":  "Feign Death"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "clear"
+                                     }
+                       }
+    },
+    {
+        "id":  "complete-heal-chain",
+        "label":  "Complete Heal Chain",
+        "pattern":  "CH - {S}",
+        "duration":  10,
+        "category":  "Cleric",
+        "timer":  {
+                      "name":  "CH - {S}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "immobilize",
+        "label":  "Immobilize",
+        "pattern":  "{S}\u0027s feet adhere to the ground.",
+        "duration":  60,
+        "category":  "Detrimental",
+        "timer":  {
+                      "name":  "{S} - Immobilize"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  10
+                        },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "auc-ch",
+        "label":  "AUC CH",
+        "pattern":  "${1} - CH - ${2}",
+        "duration":  10,
+        "category":  "Cleric",
+        "timer":  {
+                      "name":  "${1} - CH - ${2}"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-has-been-mesmerized",
+        "label":  "{S} has been mesmerized.",
+        "pattern":  "{S} has been mesmerized.",
+        "duration":  24,
+        "category":  "Enchanter",
+        "timer":  {
+                      "name":  "{S} has been mesmerized."
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-looks-less-aggressive",
+        "label":  "{S} looks less aggressive.",
+        "pattern":  "{S} looks less aggressive.",
+        "duration":  180,
+        "category":  "Enchanter",
+        "timer":  {
+                      "name":  "{S} calm"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-has-been-entranced",
+        "label":  " {S} has been entranced.",
+        "pattern":  " {S} has been entranced.",
+        "duration":  59,
+        "category":  "Enchanter",
+        "timer":  {
+                      "name":  " {S} has been entranced."
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-slows-down",
+        "label":  "{S} slows down.",
+        "pattern":  "{S} slows down.",
+        "duration":  180,
+        "category":  "Enchanter",
+        "timer":  {
+                      "name":  "{S} slows down."
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "wr",
+        "label":  "WR",
+        "pattern":  "{S} begins to move with wonderous rapidity.",
+        "duration":  1230,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "{S} WR"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "aq",
+        "label":  "AQ",
+        "pattern":  "{S} experiences a quickening.",
+        "duration":  1440,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "{S} AQ"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "dictate",
+        "label":  "Dictate",
+        "pattern":  "{S} has been charmed.",
+        "duration":  48,
+        "category":  "Enchanter",
+        "timer":  {
+                      "name":  "Dictate"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-is-engulfed-in-darkness",
+        "label":  "{S} is engulfed in darkness.",
+        "pattern":  "{S} is engulfed in darkness.",
+        "duration":  66,
+        "category":  "SK",
+        "timer":  {
+                      "name":  "{S} is engulfed in darkness."
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-looks-very-afraid",
+        "label":  " {S} looks very afraid.",
+        "pattern":  " {S} looks very afraid.",
+        "duration":  18,
+        "category":  "SK",
+        "timer":  {
+                      "name":  " {S} looks very afraid."
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "s-has-the-fear-of-life-put-in-them",
+        "label":  " {S} has the fear of life put in them.",
+        "pattern":  " {S} has the fear of life put in them.",
+        "duration":  18,
+        "category":  "SK",
+        "timer":  {
+                      "name":  " {S} has the fear of life put in them."
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "epic",
+        "label":  "Epic",
+        "pattern":  "{S} has been gripped by nature\u0027s wrath.",
+        "duration":  180,
+        "category":  "Druid",
+        "timer":  {
+                      "name":  "{S} Nature\u0027s Wrath"
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "drones",
+        "label":  "Drones",
+        "pattern":  "{S} is engulfed in a swarm.",
+        "duration":  60,
+        "category":  "Drones",
+        "timer":  {
+                      "name":  "{S} Drones "
+                  },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "you-have-slain-a-noble",
+        "label":  "You have slain a noble!",
+        "pattern":  "You have slain a noble!",
+        "duration":  360,
+        "category":  "Mobs",
+        "timer":  {
+                      "name":  "You have slain a noble!"
+                  }
+    },
+    {
+        "id":  "you-have-slain-isabella-cellus",
+        "label":  "You have slain Isabella Cellus!",
+        "pattern":  "You have slain Isabella Cellus!",
+        "duration":  360,
+        "category":  "Mobs",
+        "timer":  {
+                      "name":  "You have slain Isabella Cellus!"
+                  }
+    },
+    {
+        "id":  "you-have-slain-lozani",
+        "label":  "You have slain Lozani!",
+        "pattern":  "You have slain Lozani!",
+        "duration":  360,
+        "category":  "Mobs",
+        "timer":  {
+                      "name":  "You have slain Lozani!"
+                  }
+    },
+    {
+        "id":  "a-hermit",
+        "label":  "a hermit",
+        "pattern":  "Your act of murder",
+        "duration":  120,
+        "category":  "Mobs",
+        "timer":  {
+                      "name":  "a hermit"
+                  }
+    },
+    {
+        "id":  "you-have-slain-a-body-guard",
+        "label":  "You have slain a body guard!",
+        "pattern":  "You have slain a body guard!",
+        "duration":  1080,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "body guard"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "body guard"
+                                     }
+                       }
+    },
+    {
+        "id":  "a-body-guard-has-been-slain-by-s",
+        "label":  "a body guard has been slain by {s}",
+        "pattern":  "a body guard has been slain by {s}",
+        "duration":  1080,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "a body guard {s}"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "body guard"
+                                     }
+                       },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "27min",
+        "label":  "27min",
+        "pattern":  "27min{S} is not online at this time.",
+        "duration":  1620,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "27min {S}"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       },
+        "isRegex":  true,
+        "flags":  "i"
+    },
+    {
+        "id":  "you-open-your-mouth-wide-and-yawn",
+        "label":  "You open your mouth wide and yawn.",
+        "pattern":  "You open your mouth wide and yawn.",
+        "duration":  870,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "Timer"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  1
+                        }
+    },
+    {
+        "id":  "vhalen-nostrolo-has-been-slain",
+        "label":  "Vhalen Nostrolo has been slain",
+        "pattern":  "Vhalen Nostrolo has been slain",
+        "duration":  360,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "Vhalen Nostrolo"
+                  }
+    },
+    {
+        "id":  "you-have-slain-vhalen-nostrolo",
+        "label":  "you have slain Vhalen Nostrolo",
+        "pattern":  "you have slain Vhalen Nostrolo",
+        "duration":  360,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "Vhalen Nostrolo"
+                  }
+    },
+    {
+        "id":  "your-feet-leave-the-ground",
+        "label":  "Your feet leave the ground.",
+        "pattern":  "Your feet leave the ground.",
+        "duration":  720,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "Levitate"
+                  }
+    },
+    {
+        "id":  "29min",
+        "label":  "29min",
+        "pattern":  "29min is not online at this time.",
+        "duration":  1740,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "29min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "18min",
+        "label":  "18min",
+        "pattern":  "18min is not online at this time.",
+        "duration":  1080,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "18min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "6-40",
+        "label":  "6:40",
+        "pattern":  "64 is not online at this time.",
+        "duration":  400,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "6:40"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "22min",
+        "label":  "22min",
+        "pattern":  "22min is not online at this time.",
+        "duration":  1320,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "22min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "6min",
+        "label":  "6min",
+        "pattern":  "6min is not online at this time.",
+        "duration":  360,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "6min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "guard-blayle",
+        "label":  "Guard Blayle",
+        "pattern":  "You have slain Guard Blayle!",
+        "duration":  180,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "Guard Blayle"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Hala Hala Get Dollar"
+                                     }
+                       }
+    },
+    {
+        "id":  "11min",
+        "label":  "11min",
+        "pattern":  "11min is not online at this time.",
+        "duration":  660,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "11min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "guard-chopin",
+        "label":  "Guard Chopin",
+        "pattern":  "You have slain Guard Chopin!",
+        "duration":  180,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "Guard Chopin"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Holler Holler get doller"
+                                     }
+                       }
+    },
+    {
+        "id":  "20min",
+        "label":  "20min",
+        "pattern":  "20min is not online at this time.",
+        "duration":  1200,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "20min"
+                  }
+    },
+    {
+        "id":  "28min",
+        "label":  "28min",
+        "pattern":  "28min is not online at this time.",
+        "duration":  1680,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "28min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "10min",
+        "label":  "10min",
+        "pattern":  "10min is not online at this time.",
+        "duration":  600,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "10min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "14-5min",
+        "label":  "14.5min",
+        "pattern":  "14.5min is not online at this time.",
+        "duration":  870,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "14.5min"
+                  },
+        "timerEnded":  {
+                           "enabled":  true,
+                           "audio":  {
+                                         "mode":  "tts",
+                                         "text":  "Times Up"
+                                     }
+                       }
+    },
+    {
+        "id":  "9min",
+        "label":  "9min",
+        "pattern":  "9min is not online at this time.",
+        "duration":  540,
+        "category":  "Timers",
+        "timer":  {
+                      "name":  "9min"
+                  },
+        "timerEnding":  {
+                            "enabled":  true,
+                            "thresholdSeconds":  1,
+                            "audio":  {
+                                          "mode":  "tts",
+                                          "text":  "Times up!"
+                                      }
+                        }
+    }
+]
